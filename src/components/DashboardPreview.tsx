@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart as RechartsPi
 import DashboardNavigation from './DashboardNavigation';
 import DashboardTopNav from './DashboardTopNav';
 import MainDashboard from './MainDashboard';
+import TopNavigation from './TopNavigation';
 
 interface DashboardPreviewProps {
   config: any;
@@ -199,7 +199,6 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
                 cx="50%"
                 cy="50%"
                 outerRadius={60}
-                fill="#8884d8"
                 dataKey="value"
               >
                 {mockData.pieData.map((entry: any, index: number) => (
@@ -220,6 +219,88 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
           </div>
         );
     }
+  };
+
+  const renderDashboardLayout = () => {
+    if (config.navigationPosition === 'top') {
+      return (
+        <div className="h-full flex flex-col overflow-hidden">
+          {/* Top Navigation */}
+          <TopNavigation 
+            config={config}
+            onPageSelect={setCurrentPage}
+            currentPage={currentPage}
+            title={currentPage === 0 ? "Dashboard Overview" : `Page ${currentPage + 1}`}
+          />
+          
+          {/* Dashboard Content */}
+          <div className="flex-1 overflow-auto">
+            {currentPage === 0 ? (
+              <MainDashboard config={config} onExport={onExport} />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+                {config.visuals.slice((currentPage - 1) * 4, currentPage * 4).map((visual: string, index: number) => (
+                  <Card key={index}>
+                    <CardHeader>
+                      <CardTitle className="text-base">
+                        {visual.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {renderChart(visual, index)}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="h-full flex overflow-hidden">
+        {/* Sidebar Navigation */}
+        <DashboardNavigation 
+          config={config}
+          onPageSelect={setCurrentPage}
+          currentPage={currentPage}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
+        
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Top Navigation */}
+          <DashboardTopNav 
+            onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+            title={currentPage === 0 ? "Dashboard Overview" : `Page ${currentPage + 1}`}
+          />
+          
+          {/* Dashboard Content */}
+          <div className="flex-1 overflow-auto">
+            {currentPage === 0 ? (
+              <MainDashboard config={config} onExport={onExport} />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+                {config.visuals.slice((currentPage - 1) * 4, currentPage * 4).map((visual: string, index: number) => (
+                  <Card key={index}>
+                    <CardHeader>
+                      <CardTitle className="text-base">
+                        {visual.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {renderChart(visual, index)}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -276,6 +357,8 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
             <Badge variant="outline">{config.pages} page{config.pages > 1 ? 's' : ''}</Badge>
             <Badge variant="outline">{config.visuals.length} components</Badge>
             <Badge variant="outline">{layoutDimension} layout</Badge>
+            <Badge variant="outline">{config.navigationPosition} navigation</Badge>
+            {config.tooltipsEnabled && <Badge variant="outline">Tooltips enabled</Badge>}
           </div>
         </CardHeader>
         <CardContent>
@@ -316,47 +399,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
               borderColor: `${themeColors.textSecondary}20`
             }}
           >
-            <div className="h-full flex overflow-hidden">
-              {/* Sidebar Navigation */}
-              <DashboardNavigation 
-                config={config}
-                onPageSelect={setCurrentPage}
-                currentPage={currentPage}
-                collapsed={sidebarCollapsed}
-                onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-              />
-              
-              {/* Main Content Area */}
-              <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Top Navigation */}
-                <DashboardTopNav 
-                  onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
-                  title={currentPage === 0 ? "Dashboard Overview" : `Page ${currentPage + 1}`}
-                />
-                
-                {/* Dashboard Content */}
-                <div className="flex-1 overflow-auto">
-                  {currentPage === 0 ? (
-                    <MainDashboard config={config} onExport={onExport} />
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
-                      {config.visuals.slice((currentPage - 1) * 4, currentPage * 4).map((visual: string, index: number) => (
-                        <Card key={index}>
-                          <CardHeader>
-                            <CardTitle className="text-base">
-                              {visual.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            {renderChart(visual, index)}
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            {renderDashboardLayout()}
           </div>
         </CardContent>
       </Card>

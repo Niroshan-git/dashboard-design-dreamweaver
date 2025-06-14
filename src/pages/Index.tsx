@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { FileDown, Eye, Palette, BarChart3, TrendingUp, Map, Grid3X3, Clock, Filter, Zap } from "lucide-react";
+import { FileDown, Eye, Palette, BarChart3, TrendingUp, Map, Grid3X3, Clock, Filter, Zap, Navigation } from "lucide-react";
 import DashboardPreview from "@/components/DashboardPreview";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import VisualSelector from "@/components/VisualSelector";
@@ -24,7 +23,9 @@ const Dashboard = () => {
     interactivity: "",
     themeStyle: "",
     colorPalette: ["#2563eb", "#7c3aed", "#059669"],
-    exportFormats: []
+    exportFormats: [],
+    navigationPosition: "left", // New navigation position setting
+    tooltipsEnabled: true // New tooltip setting
   });
 
   const [activeTab, setActiveTab] = useState("configure");
@@ -65,6 +66,11 @@ const Dashboard = () => {
     { value: "powerbi", label: "Power BI Template", icon: "📊" },
     { value: "json", label: "Theme JSON", icon: "🔧" },
     { value: "png", label: "PNG Preview", icon: "🖼️" }
+  ];
+
+  const navigationPositions = [
+    { value: "left", label: "Left Sidebar", icon: "📱", description: "Traditional sidebar navigation" },
+    { value: "top", label: "Top Navigation", icon: "🔝", description: "Horizontal navigation bar" }
   ];
 
   const handleGenerate = () => {
@@ -199,6 +205,34 @@ const Dashboard = () => {
 
                 <Separator />
 
+                {/* Navigation Position */}
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold">Navigation Position</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {navigationPositions.map((position) => (
+                      <Card 
+                        key={position.value}
+                        className={`cursor-pointer transition-all hover:shadow-md ${
+                          config.navigationPosition === position.value 
+                            ? 'ring-2 ring-blue-500 bg-blue-50' 
+                            : 'hover:bg-gray-50'
+                        }`}
+                        onClick={() => setConfig(prev => ({ ...prev, navigationPosition: position.value }))}
+                      >
+                        <CardContent className="p-4 flex items-center space-x-3">
+                          <div className="text-2xl">{position.icon}</div>
+                          <div>
+                            <div className="font-medium">{position.label}</div>
+                            <div className="text-sm text-gray-500">{position.description}</div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
                 {/* Interactivity */}
                 <div className="space-y-3">
                   <Label className="text-base font-semibold">Interactivity Level</Label>
@@ -219,6 +253,25 @@ const Dashboard = () => {
                         </CardContent>
                       </Card>
                     ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Additional Features */}
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold">Additional Features</Label>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="tooltips"
+                        checked={config.tooltipsEnabled}
+                        onCheckedChange={(checked) => setConfig(prev => ({ ...prev, tooltipsEnabled: checked }))}
+                      />
+                      <Label htmlFor="tooltips" className="cursor-pointer">
+                        Enable tooltips for KPI cards and visuals
+                      </Label>
+                    </div>
                   </div>
                 </div>
 
