@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,20 +18,23 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   const [visuals, setVisuals] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(0);
 
-  // Set up visuals based on complexity and user selection
+  // Set up visuals based on complexity and dashboard type
   useEffect(() => {
     let finalVisuals: string[] = [];
     
     if (config.visuals && config.visuals.length > 0) {
       finalVisuals = config.visuals;
-    } else if (config.complexity) {
-      finalVisuals = getVisualsForComplexity(config.complexity);
     } else {
-      finalVisuals = ['kpi-cards', 'line-charts', 'bar-charts'];
+      // Use dashboard-specific visuals
+      const { getVisualsForDashboardType } = require('@/utils/chartPlacementLogic');
+      finalVisuals = getVisualsForDashboardType(
+        config.dashboardType || 'custom', 
+        config.complexity || 'moderate'
+      );
     }
     
     setVisuals(finalVisuals);
-  }, [config.visuals, config.complexity]);
+  }, [config.visuals, config.complexity, config.dashboardType]);
 
   // Set layout based on complexity
   useEffect(() => {
@@ -45,33 +47,15 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
 
   const totalPages = config.pages || 1;
   
-  // Calculate visuals per page based on complexity and canvas size
-  const getVisualsPerPage = () => {
-    const complexity = config.complexity || 'moderate';
-    const canvasSize = config.layoutDimension || '16:9';
-    
-    let baseCount = 4;
-    if (complexity === 'simple') baseCount = 3;
-    else if (complexity === 'complex') baseCount = 6;
-    
-    // Adjust for canvas size
-    if (canvasSize === '21:9') baseCount += 2;
-    else if (canvasSize === '4:3' || canvasSize === '1:1') baseCount -= 1;
-    
-    return Math.max(1, baseCount);
-  };
-  
-  const visualsPerPage = getVisualsPerPage();
-  const startIndex = currentPage * visualsPerPage;
-  const endIndex = startIndex + visualsPerPage;
-  
+  // Get current page visuals using the new assignment logic
   const currentPageVisuals = assignChartsToLayout(
-    visuals.slice(startIndex, endIndex), 
+    visuals, 
     layout, 
     config.complexity || 'moderate',
     config.layoutDimension || '16:9',
     currentPage,
-    totalPages
+    totalPages,
+    config.dashboardType || 'custom'
   );
 
   const tableData = getTableDataForType('transaction-tables', config.dashboardType);
@@ -101,80 +85,130 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   const generateAdvancedKPIData = (dashboardType: string, complexity: string) => {
     const kpiCount = complexity === 'simple' ? 3 : complexity === 'moderate' ? 4 : 6;
     
-    const baseData = [
-      {
-        label: 'Revenue',
-        value: '$2.8M',
-        change: '+12.5%',
-        trend: 'up' as const,
-        progress: 75,
-        target: '$3.0M',
-        chartData: Array.from({ length: 7 }, (_, i) => ({ value: Math.random() * 100 + 50 })),
-        chartType: 'line' as const,
-        color: themeColors.positive
-      },
-      {
-        label: 'Users',
-        value: '45.2K',
-        change: '+8.3%',
-        trend: 'up' as const,
-        progress: 65,
-        target: '50K',
-        chartData: Array.from({ length: 7 }, (_, i) => ({ value: Math.random() * 80 + 40 })),
-        chartType: 'area' as const,
-        color: themeColors.info
-      },
-      {
-        label: 'Conversion',
-        value: '3.24%',
-        change: '-2.1%',
-        trend: 'down' as const,
-        progress: 45,
-        target: '4.0%',
-        chartData: Array.from({ length: 7 }, (_, i) => ({ value: Math.random() * 60 + 20 })),
-        chartType: 'bar' as const,
-        color: themeColors.negative
-      },
-      {
-        label: 'Satisfaction',
-        value: '94.2%',
-        change: '+5.7%',
-        trend: 'up' as const,
-        progress: 94,
-        target: '95%',
-        chartData: Array.from({ length: 7 }, (_, i) => ({ value: Math.random() * 20 + 80 })),
-        chartType: 'line' as const,
-        color: themeColors.warning
-      },
-      {
-        label: 'Growth Rate',
-        value: '18.4%',
-        change: '+3.2%',
-        trend: 'up' as const,
-        progress: 68,
-        target: '20%',
-        chartData: Array.from({ length: 7 }, (_, i) => ({ value: Math.random() * 40 + 30 })),
-        chartType: 'area' as const,
-        color: themeColors.chartColors[0]
-      },
-      {
-        label: 'ROI',
-        value: '24.8%',
-        change: '+6.1%',
-        trend: 'up' as const,
-        progress: 82,
-        target: '25%',
-        chartData: Array.from({ length: 7 }, (_, i) => ({ value: Math.random() * 30 + 60 })),
-        chartType: 'line' as const,
-        color: themeColors.chartColors[1]
-      }
-    ];
-
-    return baseData.slice(0, kpiCount);
+    // Dashboard-specific KPI data
+    const dashboardKPIs: { [key: string]: any[] } = {
+      finance: [
+        {
+          label: 'Total Revenue',
+          value: '$2.8M',
+          change: '+12.5%',
+          trend: 'up' as const,
+          progress: 75,
+          target: '$3.0M',
+          chartData: Array.from({ length: 7 }, (_, i) => ({ value: Math.random() * 100 + 50 })),
+          chartType: 'line' as const,
+          color: themeColors.positive
+        },
+        {
+          label: 'Net Profit',
+          value: '$890K',
+          change: '+18.2%',
+          trend: 'up' as const,
+          progress: 82,
+          target: '$1.0M',
+          chartData: Array.from({ length: 7 }, (_, i) => ({ value: Math.random() * 80 + 40 })),
+          chartType: 'area' as const,
+          color: themeColors.info
+        },
+        {
+          label: 'Cash Flow',
+          value: '$456K',
+          change: '+5.1%',
+          trend: 'up' as const,
+          progress: 62,
+          target: '$500K',
+          chartData: Array.from({ length: 7 }, (_, i) => ({ value: Math.random() * 60 + 30 })),
+          chartType: 'bar' as const,
+          color: themeColors.warning
+        },
+        {
+          label: 'ROI',
+          value: '24.8%',
+          change: '+6.1%',
+          trend: 'up' as const,
+          progress: 85,
+          target: '25%',
+          chartData: Array.from({ length: 7 }, (_, i) => ({ value: Math.random() * 30 + 60 })),
+          chartType: 'line' as const,
+          color: themeColors.chartColors[0]
+        },
+        {
+          label: 'Expenses',
+          value: '$1.2M',
+          change: '-3.2%',
+          trend: 'down' as const,
+          progress: 45,
+          target: '$1.1M',
+          chartData: Array.from({ length: 7 }, (_, i) => ({ value: Math.random() * 40 + 20 })),
+          chartType: 'area' as const,
+          color: themeColors.negative
+        },
+        {
+          label: 'Growth Rate',
+          value: '18.4%',
+          change: '+3.2%',
+          trend: 'up' as const,
+          progress: 78,
+          target: '20%',
+          chartData: Array.from({ length: 7 }, (_, i) => ({ value: Math.random() * 50 + 40 })),
+          chartType: 'line' as const,
+          color: themeColors.chartColors[1]
+        }
+      ],
+      ecommerce: [
+        {
+          label: 'Sales Revenue',
+          value: '$1.6M',
+          change: '+22.1%',
+          trend: 'up' as const,
+          progress: 88,
+          target: '$1.8M',
+          chartData: Array.from({ length: 7 }, (_, i) => ({ value: Math.random() * 100 + 60 })),
+          chartType: 'line' as const,
+          color: themeColors.positive
+        },
+        {
+          label: 'Orders',
+          value: '12.5K',
+          change: '+15.3%',
+          trend: 'up' as const,
+          progress: 76,
+          target: '15K',
+          chartData: Array.from({ length: 7 }, (_, i) => ({ value: Math.random() * 80 + 50 })),
+          chartType: 'bar' as const,
+          color: themeColors.info
+        },
+        {
+          label: 'Conversion Rate',
+          value: '4.2%',
+          change: '+0.8%',
+          trend: 'up' as const,
+          progress: 84,
+          target: '5%',
+          chartData: Array.from({ length: 7 }, (_, i) => ({ value: Math.random() * 30 + 70 })),
+          chartType: 'area' as const,
+          color: themeColors.warning
+        },
+        {
+          label: 'AOV',
+          value: '$127',
+          change: '+12%',
+          trend: 'up' as const,
+          progress: 72,
+          target: '$150',
+          chartData: Array.from({ length: 7 }, (_, i) => ({ value: Math.random() * 40 + 50 })),
+          chartType: 'line' as const,
+          color: themeColors.chartColors[0]
+        }
+      ]
+    };
+    
+    const kpis = dashboardKPIs[dashboardType] || dashboardKPIs.finance;
+    return kpis.slice(0, kpiCount);
   };
 
   const renderAdvancedKPISection = () => {
-    const kpiData = generateAdvancedKPIData(config.dashboardType, config.complexity || 'moderate');
+    const kpiData = generateAdvancedKPIData(config.dashboardType || 'finance', config.complexity || 'moderate');
     const complexity = config.complexity || 'moderate';
     const canvasSize = config.layoutDimension || '16:9';
     
@@ -215,7 +249,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     };
     
     const rowClasses = {
-      1: 'row-span-1', 2: 'row-span-2', 3: 'row-span-3', 4: 'row-span-4'
+      1: 'row-span-1', 2: 'row-span-2', 3: 'row-span-3', 4: 'row-span-4', 5: 'row-span-5'
     };
     
     return `${colClasses[colSpan as keyof typeof colClasses] || 'col-span-4'} ${rowClasses[rowSpan as keyof typeof rowClasses] || 'row-span-2'}`;
@@ -250,6 +284,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     };
 
     if (isTable) {
+      const tableData = getTableDataForType(visual, config.dashboardType);
       return (
         <div key={index} className={`${gridClasses} ${getChartHeight()}`}>
           <DataTable
@@ -342,7 +377,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
       case '4:3': return 'aspect-[4/3]';
       case '1:1': return 'aspect-square';
       case '21:9': return 'aspect-[21/9]';
-      default: return 'aspect-video'; // 16:9
+      default: return 'aspect-video'; //16:9
     }
   };
 
@@ -387,10 +422,10 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
                 <div className="space-y-4">
                   <div className="text-6xl">📊</div>
                   <div className="text-xl font-medium" style={{ color: themeColors.textPrimary }}>
-                    No visuals available for {config.complexity || 'moderate'} complexity
+                    No visuals available for this page
                   </div>
                   <p style={{ color: themeColors.textSecondary }}>
-                    Please select visuals that match your complexity level or adjust the complexity setting
+                    Page {currentPage + 1} of {totalPages} - Configure more visuals or reduce page count
                   </p>
                   <Button variant="outline" className="mt-4">
                     Add Visuals
