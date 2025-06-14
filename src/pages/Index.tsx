@@ -1,14 +1,294 @@
-// Update this page (the content is just a fallback if you fail to update the page)
 
-const Index = () => {
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { FileDown, Eye, Palette, BarChart3, TrendingUp, Map, Grid3X3, Clock, Filter, Zap } from "lucide-react";
+import DashboardPreview from "@/components/DashboardPreview";
+import ThemeCustomizer from "@/components/ThemeCustomizer";
+import VisualSelector from "@/components/VisualSelector";
+
+const Dashboard = () => {
+  const [config, setConfig] = useState({
+    dashboardType: "",
+    complexity: "",
+    pages: 1,
+    visuals: [],
+    interactivity: "",
+    themeStyle: "",
+    colorPalette: ["#2563eb", "#7c3aed", "#059669"],
+    exportFormats: []
+  });
+
+  const [activeTab, setActiveTab] = useState("configure");
+
+  const dashboardTypes = [
+    { value: "finance", label: "Finance & Analytics", icon: "📊" },
+    { value: "ecommerce", label: "E-commerce", icon: "🛒" },
+    { value: "logistics", label: "Logistics & Supply Chain", icon: "🚛" },
+    { value: "sales", label: "Sales Performance", icon: "💰" },
+    { value: "executive", label: "Executive Summary", icon: "🎯" },
+    { value: "healthcare", label: "Healthcare", icon: "🏥" },
+    { value: "custom", label: "Custom Dashboard", icon: "⚙️" }
+  ];
+
+  const complexityLevels = [
+    { value: "simple", label: "Simple", description: "2-4 key metrics, basic charts" },
+    { value: "moderate", label: "Moderate", description: "5-8 metrics, mixed visualizations" },
+    { value: "complex", label: "Complex", description: "10+ metrics, advanced interactions" }
+  ];
+
+  const interactivityLevels = [
+    { value: "basic", label: "Basic", description: "Static visuals with hover effects" },
+    { value: "advanced", label: "Advanced", description: "Filters, drill-downs, time controls" },
+    { value: "highly-interactive", label: "Highly Interactive", description: "Real-time updates, custom interactions" }
+  ];
+
+  const themeStyles = [
+    { value: "minimal", label: "Minimal", preview: "bg-gradient-to-r from-gray-50 to-white" },
+    { value: "corporate", label: "Corporate", preview: "bg-gradient-to-r from-blue-50 to-indigo-50" },
+    { value: "gradient", label: "Gradient", preview: "bg-gradient-to-r from-purple-400 via-pink-500 to-red-500" },
+    { value: "dark", label: "Dark Mode", preview: "bg-gradient-to-r from-gray-900 to-black" },
+    { value: "creative", label: "Creative", preview: "bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500" },
+    { value: "flat", label: "Flat Design", preview: "bg-gradient-to-r from-emerald-400 to-cyan-400" }
+  ];
+
+  const exportFormats = [
+    { value: "figma", label: "Figma Design", icon: "🎨" },
+    { value: "powerbi", label: "Power BI Template", icon: "📊" },
+    { value: "json", label: "Theme JSON", icon: "🔧" },
+    { value: "png", label: "PNG Preview", icon: "🖼️" }
+  ];
+
+  const handleGenerate = () => {
+    if (!config.dashboardType || !config.complexity || !config.themeStyle) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    toast.success("Dashboard generated successfully!", {
+      description: `Created ${config.pages} page(s) with ${config.visuals.length} visual components`
+    });
+    
+    setActiveTab("preview");
+  };
+
+  const handleExport = (format: string) => {
+    toast.success(`Exporting as ${format.toUpperCase()}...`, {
+      description: "Your dashboard template will be ready shortly"
+    });
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+              <BarChart3 className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Dashboard Generator
+            </h1>
+          </div>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Create beautiful, interactive dashboards with customizable themes and professional layouts. 
+            Export to Figma, Power BI, or download as templates.
+          </p>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4 mb-8">
+            <TabsTrigger value="configure" className="flex items-center gap-2">
+              <Grid3X3 className="w-4 h-4" />
+              Configure
+            </TabsTrigger>
+            <TabsTrigger value="theme" className="flex items-center gap-2">
+              <Palette className="w-4 h-4" />
+              Theme
+            </TabsTrigger>
+            <TabsTrigger value="visuals" className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Visuals
+            </TabsTrigger>
+            <TabsTrigger value="preview" className="flex items-center gap-2">
+              <Eye className="w-4 h-4" />
+              Preview
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="configure" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Grid3X3 className="w-5 h-5" />
+                  Dashboard Configuration
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Dashboard Type */}
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold">Dashboard Type</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {dashboardTypes.map((type) => (
+                      <Card 
+                        key={type.value}
+                        className={`cursor-pointer transition-all hover:shadow-md ${
+                          config.dashboardType === type.value 
+                            ? 'ring-2 ring-blue-500 bg-blue-50' 
+                            : 'hover:bg-gray-50'
+                        }`}
+                        onClick={() => setConfig(prev => ({ ...prev, dashboardType: type.value }))}
+                      >
+                        <CardContent className="p-4 text-center">
+                          <div className="text-2xl mb-2">{type.icon}</div>
+                          <div className="text-sm font-medium">{type.label}</div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Complexity & Pages */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <Label className="text-base font-semibold">Complexity Level</Label>
+                    <Select value={config.complexity} onValueChange={(value) => setConfig(prev => ({ ...prev, complexity: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select complexity" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {complexityLevels.map((level) => (
+                          <SelectItem key={level.value} value={level.value}>
+                            <div>
+                              <div className="font-medium">{level.label}</div>
+                              <div className="text-sm text-gray-500">{level.description}</div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-base font-semibold">Number of Pages</Label>
+                    <Select value={config.pages.toString()} onValueChange={(value) => setConfig(prev => ({ ...prev, pages: parseInt(value) }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select pages" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 10 }, (_, i) => (
+                          <SelectItem key={i + 1} value={(i + 1).toString()}>
+                            {i + 1} Page{i > 0 ? 's' : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Interactivity */}
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold">Interactivity Level</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {interactivityLevels.map((level) => (
+                      <Card 
+                        key={level.value}
+                        className={`cursor-pointer transition-all hover:shadow-md ${
+                          config.interactivity === level.value 
+                            ? 'ring-2 ring-blue-500 bg-blue-50' 
+                            : 'hover:bg-gray-50'
+                        }`}
+                        onClick={() => setConfig(prev => ({ ...prev, interactivity: level.value }))}
+                      >
+                        <CardContent className="p-4">
+                          <div className="font-medium mb-1">{level.label}</div>
+                          <div className="text-sm text-gray-500">{level.description}</div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Export Formats */}
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold">Export Formats</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {exportFormats.map((format) => (
+                      <div key={format.value} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={format.value}
+                          checked={config.exportFormats.includes(format.value)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setConfig(prev => ({ ...prev, exportFormats: [...prev.exportFormats, format.value] }));
+                            } else {
+                              setConfig(prev => ({ ...prev, exportFormats: prev.exportFormats.filter(f => f !== format.value) }));
+                            }
+                          }}
+                        />
+                        <Label htmlFor={format.value} className="flex items-center gap-2 cursor-pointer">
+                          <span>{format.icon}</span>
+                          {format.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="theme">
+            <ThemeCustomizer 
+              config={config} 
+              setConfig={setConfig} 
+              themeStyles={themeStyles}
+            />
+          </TabsContent>
+
+          <TabsContent value="visuals">
+            <VisualSelector 
+              config={config} 
+              setConfig={setConfig}
+            />
+          </TabsContent>
+
+          <TabsContent value="preview">
+            <DashboardPreview config={config} onExport={handleExport} />
+          </TabsContent>
+        </Tabs>
+
+        {/* Generate Button */}
+        {activeTab !== "preview" && (
+          <div className="mt-8 text-center">
+            <Button 
+              onClick={handleGenerate}
+              size="lg"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3"
+            >
+              <Zap className="w-5 h-5 mr-2" />
+              Generate Dashboard
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default Index;
+export default Dashboard;
