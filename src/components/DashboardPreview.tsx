@@ -7,12 +7,14 @@ import { toast } from "sonner";
 import { 
   BarChart3, PieChart, TrendingUp, Users, DollarSign, 
   Activity, Clock, Target, ArrowUpRight, ArrowDownRight,
-  Download, FileDown, Image, FileText, Settings
+  Download, FileDown, Image, FileText, Settings, Filter,
+  Calendar, MapPin, Zap, Eye, Shield, AlertTriangle
 } from "lucide-react";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell } from 'recharts';
 import DashboardNavigation from "./DashboardNavigation";
 import TopNavigation from "./TopNavigation";
 import DashboardTopNavigation from "./DashboardTopNavigation";
+import { assignChartsToLayout, getVisualsForDashboardType } from "@/utils/chartPlacementLogic";
 
 interface DashboardPreviewProps {
   config: any;
@@ -23,116 +25,318 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  const kpiData = [
-    { name: 'Revenue', value: 560000, change: 0.12 },
-    { name: 'Orders', value: 4500, change: -0.05 },
-    { name: 'Customers', value: 1200, change: 0.08 },
-    { name: 'Retention', value: 0.85, change: 0.03 },
-  ];
+  // Generate different data sets for different pages
+  const generatePageData = (pageIndex: number, dashboardType: string) => {
+    const baseData = {
+      finance: {
+        kpis: [
+          [
+            { name: 'Revenue', value: 560000, change: 0.12, icon: DollarSign },
+            { name: 'Profit', value: 125000, change: 0.08, icon: TrendingUp },
+            { name: 'Expenses', value: 435000, change: -0.05, icon: Activity },
+            { name: 'Cash Flow', value: 89000, change: 0.15, icon: Target },
+          ],
+          [
+            { name: 'ROI', value: 0.22, change: 0.03, icon: Target, format: 'percentage' },
+            { name: 'Customers', value: 1200, change: 0.18, icon: Users },
+            { name: 'Avg Order', value: 467, change: 0.07, icon: DollarSign },
+            { name: 'Retention', value: 0.85, change: 0.02, icon: Shield, format: 'percentage' },
+          ],
+          [
+            { name: 'Risk Score', value: 15, change: -0.12, icon: AlertTriangle },
+            { name: 'Compliance', value: 0.98, change: 0.01, icon: Shield, format: 'percentage' },
+            { name: 'Transactions', value: 2847, change: 0.25, icon: Activity },
+            { name: 'Market Cap', value: 2400000, change: 0.09, icon: TrendingUp },
+          ]
+        ],
+        charts: [
+          [
+            { name: 'Jan', value: 4000, secondary: 2400, tertiary: 1200 },
+            { name: 'Feb', value: 3000, secondary: 1398, tertiary: 1100 },
+            { name: 'Mar', value: 2000, secondary: 9800, tertiary: 1500 },
+            { name: 'Apr', value: 2780, secondary: 3908, tertiary: 1800 },
+            { name: 'May', value: 1890, secondary: 4800, tertiary: 2100 },
+            { name: 'Jun', value: 2390, secondary: 3800, tertiary: 1900 },
+          ],
+          [
+            { name: 'Q1', value: 12000, secondary: 8400, tertiary: 6200 },
+            { name: 'Q2', value: 15000, secondary: 9800, tertiary: 7100 },
+            { name: 'Q3', value: 18000, secondary: 12800, tertiary: 8500 },
+            { name: 'Q4', value: 22000, secondary: 15800, tertiary: 9900 },
+          ],
+          [
+            { name: 'North', value: 8000, secondary: 5400 },
+            { name: 'South', value: 6500, secondary: 4200 },
+            { name: 'East', value: 7200, secondary: 4800 },
+            { name: 'West', value: 9100, secondary: 6200 },
+            { name: 'Central', value: 5800, secondary: 3900 },
+          ]
+        ]
+      },
+      ecommerce: {
+        kpis: [
+          [
+            { name: 'Sales', value: 125000, change: 0.15, icon: DollarSign },
+            { name: 'Orders', value: 2847, change: 0.22, icon: Activity },
+            { name: 'Customers', value: 1520, change: 0.18, icon: Users },
+            { name: 'Conversion', value: 0.034, change: 0.05, icon: Target, format: 'percentage' },
+          ],
+          [
+            { name: 'Cart Value', value: 89, change: 0.12, icon: DollarSign },
+            { name: 'Page Views', value: 45200, change: 0.28, icon: Eye },
+            { name: 'Bounce Rate', value: 0.32, change: -0.08, icon: ArrowUpRight, format: 'percentage' },
+            { name: 'Return Rate', value: 0.05, change: -0.15, icon: ArrowDownRight, format: 'percentage' },
+          ],
+          [
+            { name: 'Inventory', value: 12847, change: 0.02, icon: Activity },
+            { name: 'Suppliers', value: 45, change: 0.08, icon: Users },
+            { name: 'Shipping', value: 98.5, change: 0.03, icon: MapPin, format: 'percentage' },
+            { name: 'Reviews', value: 4.7, change: 0.05, icon: Target },
+          ]
+        ],
+        charts: [
+          [
+            { name: 'Electronics', value: 15000, secondary: 12000 },
+            { name: 'Clothing', value: 12000, secondary: 9500 },
+            { name: 'Home', value: 8000, secondary: 6200 },
+            { name: 'Books', value: 5000, secondary: 3800 },
+            { name: 'Sports', value: 7000, secondary: 5500 },
+          ],
+          [
+            { name: 'Week 1', value: 8000, secondary: 6400 },
+            { name: 'Week 2', value: 12000, secondary: 9800 },
+            { name: 'Week 3', value: 15000, secondary: 12800 },
+            { name: 'Week 4', value: 18000, secondary: 15200 },
+          ],
+          [
+            { name: 'Mobile', value: 45 },
+            { name: 'Desktop', value: 35 },
+            { name: 'Tablet', value: 20 },
+          ]
+        ]
+      }
+    };
 
-  const lineChartData = [
-    { name: 'Jan', uv: 4000, pv: 2400, amt: 2400 },
-    { name: 'Feb', uv: 3000, pv: 1398, amt: 2210 },
-    { name: 'Mar', uv: 2000, pv: 9800, amt: 2290 },
-    { name: 'Apr', uv: 2780, pv: 3908, amt: 2000 },
-    { name: 'May', uv: 1890, pv: 4800, amt: 2181 },
-    { name: 'Jun', uv: 2390, pv: 3800, amt: 2500 },
-    { name: 'Jul', uv: 3490, pv: 4300, amt: 2100 },
-  ];
+    const defaultData = {
+      kpis: [
+        [
+          { name: 'Revenue', value: 560000, change: 0.12, icon: DollarSign },
+          { name: 'Users', value: 4500, change: 0.08, icon: Users },
+          { name: 'Orders', value: 1200, change: -0.05, icon: Activity },
+          { name: 'Growth', value: 0.15, change: 0.03, icon: TrendingUp, format: 'percentage' },
+        ],
+        [
+          { name: 'Engagement', value: 0.68, change: 0.12, icon: Eye, format: 'percentage' },
+          { name: 'Retention', value: 0.82, change: 0.05, icon: Shield, format: 'percentage' },
+          { name: 'Performance', value: 94, change: 0.08, icon: Zap },
+          { name: 'Satisfaction', value: 4.6, change: 0.15, icon: Target },
+        ],
+        [
+          { name: 'Tasks', value: 847, change: 0.22, icon: Activity },
+          { name: 'Projects', value: 28, change: 0.18, icon: Target },
+          { name: 'Teams', value: 12, change: 0.08, icon: Users },
+          { name: 'Efficiency', value: 0.89, change: 0.12, icon: TrendingUp, format: 'percentage' },
+        ]
+      ],
+      charts: [
+        [
+          { name: 'Jan', value: 4000, secondary: 2400 },
+          { name: 'Feb', value: 3000, secondary: 1398 },
+          { name: 'Mar', value: 2000, secondary: 9800 },
+          { name: 'Apr', value: 2780, secondary: 3908 },
+          { name: 'May', value: 1890, secondary: 4800 },
+          { name: 'Jun', value: 2390, secondary: 3800 },
+        ],
+        [
+          { name: 'A', value: 4000 },
+          { name: 'B', value: 3000 },
+          { name: 'C', value: 2000 },
+          { name: 'D', value: 2780 },
+        ],
+        [
+          { name: 'Group A', value: 400 },
+          { name: 'Group B', value: 300 },
+          { name: 'Group C', value: 300 },
+          { name: 'Group D', value: 200 },
+        ]
+      ]
+    };
 
-  const areaChartData = [
-    { name: 'Week 1', uv: 4000, pv: 2400, amt: 2400 },
-    { name: 'Week 2', uv: 3000, pv: 1398, amt: 2210 },
-    { name: 'Week 3', uv: 2000, pv: 9800, amt: 2290 },
-    { name: 'Week 4', uv: 2780, pv: 3908, amt: 2000 },
-  ];
+    const selectedData = baseData[dashboardType as keyof typeof baseData] || defaultData;
+    return {
+      kpis: selectedData.kpis[pageIndex] || selectedData.kpis[0],
+      chartData: selectedData.charts[pageIndex] || selectedData.charts[0]
+    };
+  };
 
-  const barChartData = [
-    { name: 'Category A', uv: 4000, pv: 2400, amt: 2400 },
-    { name: 'Category B', uv: 3000, pv: 1398, amt: 2210 },
-    { name: 'Category C', uv: 2000, pv: 9800, amt: 2290 },
-    { name: 'Category D', uv: 2780, pv: 3908, amt: 2000 },
-  ];
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
-  const pieChartData = [
-    { name: 'Group A', value: 400 },
-    { name: 'Group B', value: 300 },
-    { name: 'Group C', value: 300 },
-    { name: 'Group D', value: 200 },
-  ];
+  const formatValue = (value: number, format?: string) => {
+    if (format === 'percentage') {
+      return `${(value * 100).toFixed(1)}%`;
+    }
+    if (value >= 1000000) {
+      return `${(value / 1000000).toFixed(1)}M`;
+    }
+    if (value >= 1000) {
+      return `${(value / 1000).toFixed(1)}K`;
+    }
+    return value.toLocaleString();
+  };
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+  const KPICard = ({ kpi, index }: { kpi: any; index: number }) => {
+    const IconComponent = kpi.icon;
+    return (
+      <Card className="shadow-sm h-full hover:shadow-md transition-shadow">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-medium text-muted-foreground">{kpi.name}</CardTitle>
+            <IconComponent className="w-4 h-4 text-primary" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-semibold">
+            {formatValue(kpi.value, kpi.format)}
+          </div>
+          <div className="text-sm text-muted-foreground mt-1 flex items-center">
+            {kpi.change > 0 ? (
+              <ArrowUpRight className="w-4 h-4 mr-1 text-green-500" />
+            ) : (
+              <ArrowDownRight className="w-4 h-4 mr-1 text-red-500" />
+            )}
+            {Math.abs(kpi.change * 100).toFixed(1)}%
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
-  const KPICard = ({ title, value, change }: { title: string; value: number; change: number }) => (
-    <Card className="shadow-sm h-full">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-semibold">{value.toLocaleString()}</div>
-        <div className="text-sm text-muted-foreground mt-1 flex items-center">
-          {change > 0 ? (
-            <ArrowUpRight className="w-4 h-4 mr-1 text-green-500" />
-          ) : (
-            <ArrowDownRight className="w-4 h-4 mr-1 text-red-500" />
-          )}
-          {Math.abs(change * 100).toFixed(1)}%
-        </div>
-      </CardContent>
-    </Card>
-  );
+  const renderChart = (type: string, data: any[], height: string = "h-80") => {
+    switch (type) {
+      case 'line':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Line type="monotone" dataKey="value" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 6 }} />
+              {data[0]?.secondary && <Line type="monotone" dataKey="secondary" stroke="#82ca9d" strokeWidth={2} />}
+            </LineChart>
+          </ResponsiveContainer>
+        );
+      case 'area':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Area type="monotone" dataKey="value" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+              {data[0]?.secondary && <Area type="monotone" dataKey="secondary" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />}
+            </AreaChart>
+          </ResponsiveContainer>
+        );
+      case 'bar':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="value" fill="#8884d8" radius={4} />
+              {data[0]?.secondary && <Bar dataKey="secondary" fill="#82ca9d" radius={4} />}
+            </BarChart>
+          </ResponsiveContainer>
+        );
+      case 'pie':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <RechartsPieChart>
+              <RechartsPieChart data={data} cx="50%" cy="50%" outerRadius="80%" dataKey="value">
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </RechartsPieChart>
+              <Tooltip />
+            </RechartsPieChart>
+          </ResponsiveContainer>
+        );
+      default:
+        return <div className="flex items-center justify-center h-full text-muted-foreground">Chart placeholder</div>;
+    }
+  };
 
-  const SimpleLineChart = ({ data }: { data: any[] }) => (
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
-        <YAxis />
-        <Tooltip />
-        <Line type="monotone" dataKey="pv" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 6 }} />
-        <Line type="monotone" dataKey="uv" stroke="#82ca9d" strokeWidth={2} />
-      </LineChart>
-    </ResponsiveContainer>
-  );
+  const getLayoutForComplexity = () => {
+    switch (config.complexity) {
+      case 'simple':
+        return {
+          kpiCols: 'grid-cols-2',
+          chartCols: 'grid-cols-1 lg:grid-cols-2',
+          chartCount: 2,
+          showTable: false
+        };
+      case 'moderate':
+        return {
+          kpiCols: 'grid-cols-2 lg:grid-cols-3',
+          chartCols: 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3',
+          chartCount: 4,
+          showTable: true
+        };
+      case 'complex':
+        return {
+          kpiCols: 'grid-cols-2 lg:grid-cols-4',
+          chartCols: 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3',
+          chartCount: 6,
+          showTable: true
+        };
+      default:
+        return {
+          kpiCols: 'grid-cols-2 lg:grid-cols-3',
+          chartCols: 'grid-cols-1 lg:grid-cols-2',
+          chartCount: 3,
+          showTable: false
+        };
+    }
+  };
 
-  const SimpleAreaChart = ({ data }: { data: any[] }) => (
-    <ResponsiveContainer width="100%" height="100%">
-      <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
-        <YAxis />
-        <Tooltip />
-        <Area type="monotone" dataKey="pv" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
-        <Area type="monotone" dataKey="uv" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />
-      </AreaChart>
-    </ResponsiveContainer>
-  );
-
-  const SimpleBarChart = ({ data }: { data: any[] }) => (
-    <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
-        <YAxis />
-        <Tooltip />
-        <Bar dataKey="pv" fill="#8884d8" radius={4} />
-        <Bar dataKey="uv" fill="#82ca9d" radius={4} />
-      </BarChart>
-    </ResponsiveContainer>
-  );
-
-  const SimplePieChart = ({ data }: { data: any[] }) => (
-    <ResponsiveContainer width="100%" height="100%">
-      <RechartsPieChart>
-        <RechartsPieChart data={data} cx="50%" cy="50%" outerRadius="80%" dataKey="value">
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-          ))}
-        </RechartsPieChart>
-        <Tooltip />
-      </RechartsPieChart>
-    </ResponsiveContainer>
-  );
+  const getInteractiveElements = () => {
+    if (config.interactivity === 'basic') {
+      return null;
+    }
+    
+    return (
+      <div className="flex items-center gap-2 mb-6">
+        {(config.interactivity === 'advanced' || config.interactivity === 'highly-interactive') && (
+          <>
+            <Button variant="outline" size="sm">
+              <Filter className="w-4 h-4 mr-2" />
+              Filter Data
+            </Button>
+            <Button variant="outline" size="sm">
+              <Calendar className="w-4 h-4 mr-2" />
+              Date Range
+            </Button>
+          </>
+        )}
+        {config.interactivity === 'highly-interactive' && (
+          <>
+            <Button variant="outline" size="sm">
+              <Settings className="w-4 h-4 mr-2" />
+              Customize
+            </Button>
+            <Button variant="outline" size="sm">
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          </>
+        )}
+      </div>
+    );
+  };
 
   const handlePageSelect = (pageIndex: number) => {
     console.log('DashboardPreview - Changing to page:', pageIndex);
@@ -143,38 +347,12 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
-  const getChartHeight = () => {
-    switch (config.layoutDimension) {
-      case '4:3': return 'h-80';
-      case '1:1': return 'h-72';
-      case '21:9': return 'h-96';
-      default: return 'h-80'; // 16:9
-    }
-  };
-
-  const getGridLayout = () => {
-    const isComplex = config.complexity === 'complex';
-    const isModerate = config.complexity === 'moderate';
-    
-    switch (config.layoutDimension) {
-      case '4:3':
-        return isComplex ? 'grid-cols-3 gap-4' : 'grid-cols-2 gap-4';
-      case '1:1':
-        return 'grid-cols-2 gap-3';
-      case '21:9':
-        return isComplex ? 'grid-cols-4 gap-6' : 'grid-cols-3 gap-4';
-      default: // 16:9
-        return isComplex ? 'grid-cols-3 gap-4' : isModerate ? 'grid-cols-2 gap-4' : 'grid-cols-2 gap-4';
-    }
-  };
-
   const renderDashboard = () => {
     const isLeftNav = config.navigationPosition === "left";
     
     if (isLeftNav) {
       return (
         <div className="min-h-screen bg-background flex w-full">
-          {/* Left Sidebar Navigation */}
           <DashboardNavigation
             config={config}
             onPageSelect={handlePageSelect}
@@ -183,9 +361,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
             onToggleCollapse={toggleSidebar}
           />
           
-          {/* Main Content Area */}
           <div className="flex-1 flex flex-col min-w-0">
-            {/* Top Header for Left Nav */}
             <div className="h-16 bg-background border-b border-border flex items-center justify-between px-6">
               <div className="flex items-center space-x-4">
                 <h1 className="text-2xl font-bold">
@@ -206,7 +382,6 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
               </div>
             </div>
             
-            {/* Dashboard Content */}
             <div className="flex-1 p-6 overflow-auto">
               {renderPageContent()}
             </div>
@@ -214,7 +389,6 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
         </div>
       );
     } else {
-      // Top Navigation Layout
       return (
         <div className="min-h-screen bg-background flex flex-col w-full">
           <DashboardTopNavigation
@@ -232,107 +406,78 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   };
 
   const renderPageContent = () => {
-    const chartHeight = getChartHeight();
-    const gridLayout = getGridLayout();
+    const layout = getLayoutForComplexity();
+    const pageData = generatePageData(currentPage, config.dashboardType);
+    
+    const chartTypes = ['line', 'bar', 'area', 'pie'];
+    const pageChartTypes = chartTypes.slice(0, layout.chartCount);
 
     return (
       <div className="space-y-6">
-        {/* KPI Cards Row */}
-        <div className={`grid ${gridLayout}`}>
-          {kpiData.slice(0, config.complexity === 'simple' ? 2 : config.complexity === 'moderate' ? 3 : 4).map((kpi, index) => (
-            <KPICard key={index} title={kpi.name} value={kpi.value} change={kpi.change} />
+        {getInteractiveElements()}
+        
+        {/* KPI Cards */}
+        <div className={`grid ${layout.kpiCols} gap-4`}>
+          {pageData.kpis.map((kpi, index) => (
+            <KPICard key={`${currentPage}-kpi-${index}`} kpi={kpi} index={index} />
           ))}
         </div>
 
         {/* Charts Section */}
-        <div className={`grid ${gridLayout}`}>
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Revenue Trend</CardTitle>
-            </CardHeader>
-            <CardContent className={`p-4 ${chartHeight}`}>
-              <SimpleLineChart data={lineChartData} />
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Weekly Sales</CardTitle>
-            </CardHeader>
-            <CardContent className={`p-4 ${chartHeight}`}>
-              <SimpleAreaChart data={areaChartData} />
-            </CardContent>
-          </Card>
-
-          {(config.complexity === 'moderate' || config.complexity === 'complex') && (
-            <Card className="shadow-sm">
+        <div className={`grid ${layout.chartCols} gap-6`}>
+          {pageChartTypes.map((chartType, index) => (
+            <Card key={`${currentPage}-chart-${index}`} className="shadow-sm">
               <CardHeader>
-                <CardTitle className="text-sm font-medium">Category Performance</CardTitle>
+                <CardTitle className="text-lg font-medium">
+                  {chartType === 'line' && `${config.dashboardType === 'finance' ? 'Revenue' : 'Performance'} Trend`}
+                  {chartType === 'bar' && `${config.dashboardType === 'ecommerce' ? 'Category' : 'Department'} Analysis`}
+                  {chartType === 'area' && `${config.dashboardType === 'finance' ? 'Quarterly' : 'Weekly'} Overview`}
+                  {chartType === 'pie' && `${config.dashboardType === 'ecommerce' ? 'Traffic Sources' : 'Distribution'}`}
+                </CardTitle>
               </CardHeader>
-              <CardContent className={`p-4 ${chartHeight}`}>
-                <SimpleBarChart data={barChartData} />
+              <CardContent className="p-4 h-80">
+                {renderChart(chartType, pageData.chartData)}
               </CardContent>
             </Card>
-          )}
-
-          {config.complexity === 'complex' && (
-            <Card className="shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-sm font-medium">Market Share</CardTitle>
-              </CardHeader>
-              <CardContent className={`p-4 ${chartHeight}`}>
-                <SimplePieChart data={pieChartData} />
-              </CardContent>
-            </Card>
-          )}
+          ))}
         </div>
 
-        {/* Data Table for Complex dashboards */}
-        {config.complexity === 'complex' && (
+        {/* Data Table for Complex/Moderate dashboards */}
+        {layout.showTable && (
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle className="text-sm font-medium">Detailed Analytics</CardTitle>
+              <CardTitle className="text-lg font-medium">
+                Detailed Analytics - Page {currentPage + 1}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-2">Metric</th>
-                      <th className="text-left p-2">Current</th>
-                      <th className="text-left p-2">Previous</th>
-                      <th className="text-left p-2">Change</th>
-                      <th className="text-left p-2">Status</th>
+                      <th className="text-left p-3">Metric</th>
+                      <th className="text-left p-3">Current</th>
+                      <th className="text-left p-3">Previous</th>
+                      <th className="text-left p-3">Change</th>
+                      <th className="text-left p-3">Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="border-b">
-                      <td className="p-2">Revenue</td>
-                      <td className="p-2">$2.8M</td>
-                      <td className="p-2">$2.4M</td>
-                      <td className="p-2 text-green-600">+16.7%</td>
-                      <td className="p-2">
-                        <Badge variant="secondary">Good</Badge>
-                      </td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="p-2">Users</td>
-                      <td className="p-2">45.2K</td>
-                      <td className="p-2">42.1K</td>
-                      <td className="p-2 text-green-600">+7.4%</td>
-                      <td className="p-2">
-                        <Badge variant="default">Excellent</Badge>
-                      </td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="p-2">Conversion</td>
-                      <td className="p-2">3.24%</td>
-                      <td className="p-2">3.31%</td>
-                      <td className="p-2 text-red-600">-2.1%</td>
-                      <td className="p-2">
-                        <Badge variant="outline">Fair</Badge>
-                      </td>
-                    </tr>
+                    {pageData.kpis.slice(0, 3).map((kpi, index) => (
+                      <tr key={index} className="border-b hover:bg-muted/50">
+                        <td className="p-3 font-medium">{kpi.name}</td>
+                        <td className="p-3">{formatValue(kpi.value, kpi.format)}</td>
+                        <td className="p-3">{formatValue(kpi.value * (1 - kpi.change), kpi.format)}</td>
+                        <td className={`p-3 ${kpi.change > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {kpi.change > 0 ? '+' : ''}{(kpi.change * 100).toFixed(1)}%
+                        </td>
+                        <td className="p-3">
+                          <Badge variant={kpi.change > 0 ? "secondary" : "destructive"}>
+                            {kpi.change > 0.1 ? 'Excellent' : kpi.change > 0 ? 'Good' : 'Needs Attention'}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
