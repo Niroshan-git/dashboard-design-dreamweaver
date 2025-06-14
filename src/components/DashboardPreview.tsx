@@ -1,13 +1,16 @@
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { FileDown, Eye, BarChart3, TrendingUp, PieChart, Map, Grid3X3, Target, Users, DollarSign, Clock, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+import { FileDown, Eye, PieChart, Map, Grid3X3, Target, Users, DollarSign, Clock, Filter, ChevronLeft, ChevronRight, LayoutDashboard } from "lucide-react";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart as RechartsPieChart, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Pie } from 'recharts';
-import { useState } from 'react';
+import DashboardNavigation from './DashboardNavigation';
+import DashboardTopNav from './DashboardTopNav';
+import MainDashboard from './MainDashboard';
 
 interface DashboardPreviewProps {
   config: any;
@@ -15,27 +18,28 @@ interface DashboardPreviewProps {
 }
 
 const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0);
   const [layoutDimension, setLayoutDimension] = useState("16:9");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const getIconForVisual = (visual: string) => {
     const iconMap: { [key: string]: any } = {
       'kpi-cards': Target,
       'metric-tiles': Grid3X3,
-      'progress-bars': TrendingUp,
-      'line-charts': TrendingUp,
-      'bar-charts': BarChart3,
+      'progress-bars': LayoutDashboard,
+      'line-charts': LayoutDashboard,
+      'bar-charts': LayoutDashboard,
       'pie-charts': PieChart,
-      'area-charts': TrendingUp,
+      'area-charts': LayoutDashboard,
       'filters': Filter,
       'time-controls': Clock,
       'drill-down': Grid3X3,
       'heatmaps': Grid3X3,
       'geo-maps': Map,
-      'funnel-charts': TrendingUp,
+      'funnel-charts': LayoutDashboard,
       'scatter-plots': Target
     };
-    return iconMap[visual] || BarChart3;
+    return iconMap[visual] || LayoutDashboard;
   };
 
   const getFinanceData = () => {
@@ -248,17 +252,17 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                    disabled={currentPage === 0}
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <span className="text-sm">Page {currentPage} of {config.pages}</span>
+                  <span className="text-sm">Page {currentPage + 1} of {config.pages}</span>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(Math.min(config.pages, currentPage + 1))}
-                    disabled={currentPage === config.pages}
+                    onClick={() => setCurrentPage(Math.min(config.pages - 1, currentPage + 1))}
+                    disabled={currentPage === config.pages - 1}
                   >
                     <ChevronRight className="w-4 h-4" />
                   </Button>
@@ -300,90 +304,58 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
       <Card>
         <CardHeader>
           <CardTitle>
-            {config.pages > 1 ? `Page ${currentPage} Preview` : 'Dashboard Preview'}
+            {config.pages > 1 ? `Page ${currentPage + 1} Preview` : 'Dashboard Preview'}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div 
-            className={`p-6 rounded-lg ${getDimensionClasses()}`}
+            className={`p-0 rounded-lg border ${getDimensionClasses()}`}
             style={{ 
               backgroundColor: themeColors.background,
               color: themeColors.textPrimary,
-              border: `1px solid ${themeColors.textSecondary}20`
+              borderColor: `${themeColors.textSecondary}20`
             }}
           >
-            <div className="h-full flex flex-col">
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold mb-2" style={{ color: config.colorPalette[0] }}>
-                  {config.dashboardType.charAt(0).toUpperCase() + config.dashboardType.slice(1)} Dashboard
-                  {config.pages > 1 && ` - Page ${currentPage}`}
-                </h2>
-                <div className="flex gap-2 mb-4">
-                  <div className="text-sm text-gray-500">Background Colors:</div>
-                  <div className="flex gap-1">
-                    <div className="w-4 h-4 rounded border" style={{ backgroundColor: themeColors.background }} />
-                    <div className="w-4 h-4 rounded border" style={{ backgroundColor: themeColors.cardBackground }} />
-                  </div>
-                  <div className="text-sm text-gray-500 ml-4">Chart Colors:</div>
-                  <div className="flex gap-1">
-                    {themeColors.chartColors.map((color: string, index: number) => (
-                      <div
-                        key={index}
-                        className="w-4 h-4 rounded border"
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                  </div>
+            <div className="h-full flex overflow-hidden">
+              {/* Sidebar Navigation */}
+              <DashboardNavigation 
+                config={config}
+                onPageSelect={setCurrentPage}
+                currentPage={currentPage}
+                collapsed={sidebarCollapsed}
+                onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+              />
+              
+              {/* Main Content Area */}
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Top Navigation */}
+                <DashboardTopNav 
+                  onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+                  title={currentPage === 0 ? "Dashboard Overview" : `Page ${currentPage + 1}`}
+                />
+                
+                {/* Dashboard Content */}
+                <div className="flex-1 overflow-auto">
+                  {currentPage === 0 ? (
+                    <MainDashboard config={config} onExport={onExport} />
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+                      {config.visuals.slice((currentPage - 1) * 4, currentPage * 4).map((visual: string, index: number) => (
+                        <Card key={index}>
+                          <CardHeader>
+                            <CardTitle className="text-base">
+                              {visual.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            {renderChart(visual, index)}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {/* KPI Cards with Hover Details */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                {mockData.kpis.slice(0, config.complexity === 'simple' ? 2 : config.complexity === 'moderate' ? 3 : 4).map((kpi, index) => (
-                  <div
-                    key={index}
-                    className="group relative p-4 rounded-lg border transition-all duration-200 hover:shadow-lg cursor-pointer"
-                    style={{ 
-                      backgroundColor: themeColors.cardBackground,
-                      borderColor: `${themeColors.chartColors[index % themeColors.chartColors.length]}30`
-                    }}
-                    title={kpi.detail}
-                  >
-                    <div className="text-sm opacity-75 mb-1" style={{ color: themeColors.textSecondary }}>{kpi.label}</div>
-                    <div className="text-2xl font-bold mb-1" style={{ color: themeColors.chartColors[index % themeColors.chartColors.length] }}>
-                      {kpi.value}
-                    </div>
-                    <div className={`text-sm ${kpi.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-                      {kpi.change}
-                    </div>
-                    {/* Hover Tooltip */}
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap">
-                      {kpi.detail}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Charts Grid */}
-              {config.visuals.length > 0 && (
-                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {config.visuals.slice((currentPage - 1) * 4, currentPage * 4).map((visual: string, index: number) => (
-                    <div
-                      key={index}
-                      className="p-4 rounded-lg border hover:shadow-lg transition-shadow"
-                      style={{ 
-                        backgroundColor: themeColors.cardBackground,
-                        borderColor: `${themeColors.chartColors[index % themeColors.chartColors.length]}30`
-                      }}
-                    >
-                      <div className="text-sm font-medium mb-3" style={{ color: themeColors.textPrimary }}>
-                        {visual.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                      </div>
-                      {renderChart(visual, index)}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         </CardContent>
