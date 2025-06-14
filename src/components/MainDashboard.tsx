@@ -1,9 +1,8 @@
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, AreaChart } from "recharts";
-import { CircleDot, TrendingUp, TrendingDown, MoreHorizontal, User, Calendar, DollarSign, Activity, ChevronRight, Filter, Download, Users, ShoppingCart, Package, Clock } from "lucide-react";
+import { CircleDot, TrendingUp, TrendingDown, MoreHorizontal, User, Calendar, DollarSign, Activity, ChevronRight, ChevronDown, Filter, Download, Users, ShoppingCart, Package, Clock } from "lucide-react";
 
 interface MainDashboardProps {
   config: any;
@@ -399,7 +398,7 @@ const MainDashboard = ({ config, onExport }: MainDashboardProps) => {
                   <span className="text-sm">{metric.name}</span>
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{metric.value}</span>
-                    <Badge variant={metric.status === 'positive' ? "success" : "destructive"} className="text-xs">
+                    <Badge variant={metric.status === 'positive' ? "secondary" : "destructive"} className="text-xs">
                       {metric.change}
                     </Badge>
                   </div>
