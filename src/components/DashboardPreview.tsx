@@ -1,10 +1,11 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { FileDown, Eye, PieChart, Map, Grid3X3, Target, Users, DollarSign, Clock, Filter, ChevronLeft, ChevronRight, LayoutDashboard } from "lucide-react";
+import { FileDown, Eye, PieChart, Map, Grid3X3, Target, Users, DollarSign, Clock, Filter, ChevronLeft, ChevronRight, LayoutDashboard, TrendingUp, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart as RechartsPieChart, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Pie } from 'recharts';
 import DashboardNavigation from './DashboardNavigation';
 import DashboardTopNav from './DashboardTopNav';
@@ -121,29 +122,29 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
         };
       case 'corporate':
         return {
-          background: '#f8fafc',
+          background: '#f1f5f9',
           cardBackground: '#ffffff',
-          textPrimary: '#1e293b',
-          textSecondary: '#64748b',
-          borderColor: '#e2e8f0',
+          textPrimary: '#0f172a',
+          textSecondary: '#475569',
+          borderColor: '#cbd5e1',
           chartColors: palette
         };
       case 'gradient':
         return {
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          cardBackground: 'rgba(255, 255, 255, 0.9)',
+          cardBackground: 'rgba(255, 255, 255, 0.95)',
           textPrimary: '#1f2937',
-          textSecondary: '#6b7280',
-          borderColor: 'rgba(255, 255, 255, 0.2)',
+          textSecondary: '#4b5563',
+          borderColor: 'rgba(255, 255, 255, 0.3)',
           chartColors: palette
         };
       case 'creative':
         return {
           background: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%)',
-          cardBackground: 'rgba(255, 255, 255, 0.95)',
+          cardBackground: 'rgba(255, 255, 255, 0.98)',
           textPrimary: '#1f2937',
-          textSecondary: '#6b7280',
-          borderColor: 'rgba(255, 255, 255, 0.3)',
+          textSecondary: '#4b5563',
+          borderColor: 'rgba(255, 255, 255, 0.4)',
           chartColors: palette
         };
       case 'flat':
@@ -158,11 +159,11 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
       case 'minimal':
       default:
         return {
-          background: '#ffffff',
-          cardBackground: '#f9fafb',
-          textPrimary: '#111827',
-          textSecondary: '#6b7280',
-          borderColor: '#e5e7eb',
+          background: '#fafafa',
+          cardBackground: '#ffffff',
+          textPrimary: '#09090b',
+          textSecondary: '#71717a',
+          borderColor: '#e4e4e7',
           chartColors: palette
         };
     }
@@ -200,6 +201,46 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     return null;
   };
 
+  const renderKPICard = (kpi: any, index: number) => {
+    const isPositive = kpi.trend === 'up';
+    const TrendIcon = isPositive ? ArrowUpRight : ArrowDownRight;
+    const trendColor = isPositive ? 'text-green-600' : 'text-red-600';
+    
+    return (
+      <Card 
+        key={index}
+        className="hover:shadow-lg transition-shadow duration-200"
+        style={{ 
+          backgroundColor: themeColors.cardBackground,
+          borderColor: themeColors.borderColor,
+          color: themeColors.textPrimary
+        }}
+      >
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium" style={{ color: themeColors.textSecondary }}>
+                {kpi.label}
+              </p>
+              <p className="text-2xl font-bold mt-1" style={{ color: themeColors.textPrimary }}>
+                {kpi.value}
+              </p>
+            </div>
+            <div className={`flex items-center ${trendColor}`}>
+              <TrendIcon className="w-4 h-4" />
+              <span className="text-sm font-medium ml-1">{kpi.change}</span>
+            </div>
+          </div>
+          {config.tooltipsEnabled && (
+            <p className="text-xs mt-2" style={{ color: themeColors.textSecondary }}>
+              {kpi.detail}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
   const renderChart = (visual: string, index: number) => {
     const chartColor = themeColors.chartColors[index % themeColors.chartColors.length];
     
@@ -208,9 +249,9 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
         return (
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={mockData.chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
+              <CartesianGrid strokeDasharray="3 3" stroke={themeColors.borderColor} />
+              <XAxis dataKey="month" stroke={themeColors.textSecondary} />
+              <YAxis stroke={themeColors.textSecondary} />
               <Tooltip content={<CustomTooltip />} />
               <Line type="monotone" dataKey={config.dashboardType === 'finance' ? 'revenue' : 'value'} stroke={chartColor} strokeWidth={2} />
             </LineChart>
@@ -220,9 +261,9 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
         return (
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={mockData.chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
+              <CartesianGrid strokeDasharray="3 3" stroke={themeColors.borderColor} />
+              <XAxis dataKey="month" stroke={themeColors.textSecondary} />
+              <YAxis stroke={themeColors.textSecondary} />
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey={config.dashboardType === 'finance' ? 'profit' : 'users'} fill={chartColor} />
             </BarChart>
@@ -232,9 +273,9 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
         return (
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={mockData.chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
+              <CartesianGrid strokeDasharray="3 3" stroke={themeColors.borderColor} />
+              <XAxis dataKey="month" stroke={themeColors.textSecondary} />
+              <YAxis stroke={themeColors.textSecondary} />
               <Tooltip content={<CustomTooltip />} />
               <Area type="monotone" dataKey={config.dashboardType === 'finance' ? 'expenses' : 'value'} stroke={chartColor} fill={chartColor} fillOpacity={0.3} />
             </AreaChart>
@@ -272,6 +313,144 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     }
   };
 
+  const renderMainDashboard = () => {
+    return (
+      <div className="p-6 space-y-6">
+        {/* Header Section */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold mb-2" style={{ color: themeColors.textPrimary }}>
+            {config.dashboardType.charAt(0).toUpperCase() + config.dashboardType.slice(1)} Dashboard
+          </h1>
+          <p className="text-lg" style={{ color: themeColors.textSecondary }}>
+            Comprehensive overview of your key metrics and insights
+          </p>
+        </div>
+
+        {/* KPI Cards Section */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {mockData.kpis.map((kpi, index) => renderKPICard(kpi, index))}
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {config.visuals.slice(0, 4).map((visual: string, index: number) => (
+            <Card 
+              key={index}
+              className="hover:shadow-lg transition-shadow duration-200"
+              style={{ 
+                backgroundColor: themeColors.cardBackground,
+                borderColor: themeColors.borderColor,
+                color: themeColors.textPrimary
+              }}
+            >
+              <CardHeader>
+                <CardTitle className="text-lg" style={{ color: themeColors.textPrimary }}>
+                  {visual.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {renderChart(visual, index)}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Summary Section */}
+        <Card 
+          className="mt-8"
+          style={{ 
+            backgroundColor: themeColors.cardBackground,
+            borderColor: themeColors.borderColor,
+            color: themeColors.textPrimary
+          }}
+        >
+          <CardHeader>
+            <CardTitle style={{ color: themeColors.textPrimary }}>
+              Dashboard Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="text-2xl font-bold text-blue-600">{config.pages}</div>
+                <div className="text-sm" style={{ color: themeColors.textSecondary }}>Total Pages</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-green-600">{config.visuals.length}</div>
+                <div className="text-sm" style={{ color: themeColors.textSecondary }}>Visual Components</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-purple-600">{config.complexity}</div>
+                <div className="text-sm" style={{ color: themeColors.textSecondary }}>Complexity Level</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  const renderPageContent = (pageIndex: number) => {
+    if (pageIndex === 0) {
+      return renderMainDashboard();
+    }
+
+    // For other pages, show a mix of KPI cards and charts
+    const startIndex = (pageIndex - 1) * 4;
+    const pageVisuals = config.visuals.slice(startIndex, startIndex + 4);
+    
+    // If no visuals for this page, use default charts
+    const defaultVisuals = ['line-charts', 'bar-charts', 'pie-charts', 'area-charts'];
+    const visualsToShow = pageVisuals.length > 0 ? pageVisuals : defaultVisuals.slice(0, 4);
+
+    return (
+      <div className="p-6 space-y-6">
+        {/* Page Header */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold mb-2" style={{ color: themeColors.textPrimary }}>
+            Page {pageIndex} - Analytics Details
+          </h2>
+          <p style={{ color: themeColors.textSecondary }}>
+            Detailed metrics and insights for advanced analysis
+          </p>
+        </div>
+
+        {/* KPI Cards for each page */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          {mockData.kpis.slice(0, 4).map((kpi, index) => renderKPICard({
+            ...kpi,
+            label: `${kpi.label} (P${pageIndex})`,
+            value: `${kpi.value}${pageIndex > 1 ? ` +${pageIndex * 5}%` : ''}`
+          }, index))}
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {visualsToShow.map((visual: string, index: number) => (
+            <Card 
+              key={index}
+              className="hover:shadow-lg transition-shadow duration-200"
+              style={{ 
+                backgroundColor: themeColors.cardBackground,
+                borderColor: themeColors.borderColor,
+                color: themeColors.textPrimary
+              }}
+            >
+              <CardHeader>
+                <CardTitle className="text-lg" style={{ color: themeColors.textPrimary }}>
+                  {visual.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} - Page {pageIndex}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {renderChart(visual, index + pageIndex)}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const renderDashboardLayout = () => {
     const layoutStyle = {
       background: themeColors.background,
@@ -281,7 +460,6 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     if (config.navigationPosition === 'top') {
       return (
         <div className="h-full flex flex-col overflow-hidden" style={layoutStyle}>
-          {/* Top Navigation */}
           <TopNavigation 
             config={config}
             onPageSelect={setCurrentPage}
@@ -289,33 +467,8 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
             title={currentPage === 0 ? "Dashboard Overview" : `Page ${currentPage + 1}`}
           />
           
-          {/* Dashboard Content */}
           <div className="flex-1 overflow-auto">
-            {currentPage === 0 ? (
-              <MainDashboard config={config} onExport={onExport} />
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
-                {config.visuals.slice((currentPage - 1) * 4, currentPage * 4).map((visual: string, index: number) => (
-                  <Card 
-                    key={index}
-                    style={{ 
-                      backgroundColor: themeColors.cardBackground,
-                      borderColor: themeColors.borderColor,
-                      color: themeColors.textPrimary
-                    }}
-                  >
-                    <CardHeader>
-                      <CardTitle className="text-base" style={{ color: themeColors.textPrimary }}>
-                        {visual.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {renderChart(visual, index)}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+            {renderPageContent(currentPage)}
           </div>
         </div>
       );
@@ -323,7 +476,6 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
 
     return (
       <div className="h-full flex overflow-hidden" style={layoutStyle}>
-        {/* Sidebar Navigation */}
         <DashboardNavigation 
           config={config}
           onPageSelect={setCurrentPage}
@@ -332,41 +484,14 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
         
-        {/* Main Content Area */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Top Navigation */}
           <DashboardTopNav 
             onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
             title={currentPage === 0 ? "Dashboard Overview" : `Page ${currentPage + 1}`}
           />
           
-          {/* Dashboard Content */}
           <div className="flex-1 overflow-auto">
-            {currentPage === 0 ? (
-              <MainDashboard config={config} onExport={onExport} />
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
-                {config.visuals.slice((currentPage - 1) * 4, currentPage * 4).map((visual: string, index: number) => (
-                  <Card 
-                    key={index}
-                    style={{ 
-                      backgroundColor: themeColors.cardBackground,
-                      borderColor: themeColors.borderColor,
-                      color: themeColors.textPrimary
-                    }}
-                  >
-                    <CardHeader>
-                      <CardTitle className="text-base" style={{ color: themeColors.textPrimary }}>
-                        {visual.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {renderChart(visual, index)}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+            {renderPageContent(currentPage)}
           </div>
         </div>
       </div>
