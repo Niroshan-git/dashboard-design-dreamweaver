@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import DataTable from "@/components/DataTable";
 import { assignChartsToLayout, getTableDataForType, getVisualsForComplexity } from "@/utils/chartPlacementLogic";
-import { layoutTemplates, LayoutTemplate, getLayoutForComplexity } from "@/utils/layoutTemplates";
+import { layoutTemplates, LayoutTemplate, getLayoutForComplexity, getLayoutForPage } from "@/utils/layoutTemplates";
 import AdvancedKPICard from './AdvancedKPICard';
 import DashboardTopNavigation from './DashboardTopNavigation';
 import { advancedThemes } from '@/utils/advancedThemeSystem';
@@ -26,37 +26,44 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     if (config.visuals && config.visuals.length > 0) {
       finalVisuals = config.visuals;
     } else if (config.complexity) {
-      // Use complexity-based default visuals
       finalVisuals = getVisualsForComplexity(config.complexity);
     } else {
-      // Fallback default visuals
       finalVisuals = ['kpi-cards', 'line-charts', 'bar-charts'];
     }
     
     setVisuals(finalVisuals);
   }, [config.visuals, config.complexity]);
 
-  // Set layout based on complexity and visual count
+  // Set layout based on complexity, page, and canvas size
   useEffect(() => {
+    const totalPages = config.pages || 1;
+    let selectedLayout: LayoutTemplate;
+    
     if (config.complexity) {
-      const selectedLayout = getLayoutForComplexity(config.complexity, visuals.length);
-      setLayout(selectedLayout);
+      // Use page-specific layout that considers complexity
+      selectedLayout = getLayoutForPage(currentPage, totalPages, visuals.length, config.complexity);
     } else if (config.layoutType) {
-      const selectedLayout = layoutTemplates.find(l => l.name === config.layoutType);
-      if (selectedLayout) {
-        setLayout(selectedLayout);
-      }
+      const foundLayout = layoutTemplates.find(l => l.name === config.layoutType);
+      selectedLayout = foundLayout || layoutTemplates[0];
+    } else {
+      selectedLayout = getLayoutForComplexity('moderate', visuals.length);
     }
-  }, [config.complexity, config.layoutType, visuals.length]);
+    
+    setLayout(selectedLayout);
+  }, [config.complexity, config.layoutType, config.pages, currentPage, visuals.length]);
 
+  const totalPages = config.pages || 1;
   const visualsPerPage = layout.maxVisuals;
-  const totalPages = Math.max(1, Math.ceil(visuals.length / visualsPerPage));
   const startIndex = currentPage * visualsPerPage;
   const endIndex = startIndex + visualsPerPage;
+  
   const currentPageVisuals = assignChartsToLayout(
     visuals.slice(startIndex, endIndex), 
     layout, 
-    config.complexity || 'moderate'
+    config.complexity || 'moderate',
+    config.layoutDimension || '16:9',
+    currentPage,
+    totalPages
   );
 
   const tableData = getTableDataForType('transaction-tables', config.dashboardType);
@@ -160,19 +167,32 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
 
   const renderAdvancedKPISection = () => {
     const kpiData = generateAdvancedKPIData(config.dashboardType, config.complexity || 'moderate');
-    const gridCols = config.complexity === 'simple' ? 'grid-cols-3' : 
-                    config.complexity === 'moderate' ? 'grid-cols-4' : 'grid-cols-6';
+    const complexity = config.complexity || 'moderate';
+    const gridCols = complexity === 'simple' ? 'grid-cols-3' : 
+                    complexity === 'moderate' ? 'grid-cols-4' : 'grid-cols-6';
+
+    // Adjust grid for canvas size
+    const canvasSize = config.layoutDimension || '16:9';
+    let adjustedGridCols = gridCols;
+    
+    if (canvasSize === '4:3' && complexity === 'complex') {
+      adjustedGridCols = 'grid-cols-4'; // Reduce columns for taller aspect ratio
+    } else if (canvasSize === '1:1' && complexity !== 'simple') {
+      adjustedGridCols = 'grid-cols-3'; // Square format works better with 3 columns
+    } else if (canvasSize === '21:9' && complexity === 'complex') {
+      adjustedGridCols = 'grid-cols-8'; // Ultra-wide can handle more columns
+    }
 
     return (
-      <div className={`grid ${gridCols} gap-4 mb-6`}>
+      <div className={`grid ${adjustedGridCols} gap-4 mb-6`}>
         {kpiData.map((kpi, index) => (
           <AdvancedKPICard
             key={index}
             data={kpi}
             themeColors={themeColors}
-            size={config.complexity === 'simple' ? 'small' : config.complexity === 'complex' ? 'large' : 'medium'}
-            showChart={config.complexity !== 'simple'}
-            showProgress={config.complexity === 'complex'}
+            size={complexity === 'simple' ? 'small' : complexity === 'complex' ? 'large' : 'medium'}
+            showChart={complexity !== 'simple'}
+            showProgress={complexity === 'complex'}
           />
         ))}
       </div>
@@ -182,30 +202,28 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   const getGridClasses = (placement: any) => {
     const { colSpan, rowSpan } = placement.position;
     
-    // Map colSpan to grid classes
+    // Ensure proper grid classes based on canvas size
+    const canvasSize = config.layoutDimension || '16:9';
+    let adjustedColSpan = colSpan;
+    
+    // Adjust column spans for different canvas sizes
+    if (canvasSize === '4:3' && colSpan > 8) {
+      adjustedColSpan = 8; // Limit width for 4:3 ratio
+    } else if (canvasSize === '1:1' && colSpan > 6) {
+      adjustedColSpan = 6; // Square format constraint
+    }
+    
     const colClasses = {
-      1: 'col-span-1',
-      2: 'col-span-2', 
-      3: 'col-span-3',
-      4: 'col-span-4',
-      5: 'col-span-5',
-      6: 'col-span-6',
-      7: 'col-span-7',
-      8: 'col-span-8',
-      9: 'col-span-9',
-      10: 'col-span-10',
-      11: 'col-span-11',
-      12: 'col-span-12'
+      1: 'col-span-1', 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4',
+      5: 'col-span-5', 6: 'col-span-6', 7: 'col-span-7', 8: 'col-span-8',
+      9: 'col-span-9', 10: 'col-span-10', 11: 'col-span-11', 12: 'col-span-12'
     };
     
     const rowClasses = {
-      1: 'row-span-1',
-      2: 'row-span-2',
-      3: 'row-span-3',
-      4: 'row-span-4'
+      1: 'row-span-1', 2: 'row-span-2', 3: 'row-span-3', 4: 'row-span-4'
     };
     
-    return `${colClasses[colSpan as keyof typeof colClasses] || 'col-span-4'} ${rowClasses[rowSpan as keyof typeof rowClasses] || 'row-span-1'}`;
+    return `${colClasses[adjustedColSpan as keyof typeof colClasses] || 'col-span-4'} ${rowClasses[rowSpan as keyof typeof rowClasses] || 'row-span-1'}`;
   };
 
   const renderChart = (visual: string, placement: any, index: number) => {
@@ -225,6 +243,8 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     const gridClasses = getGridClasses(placement);
     const isTable = visual.includes('table');
     const isFullWidth = placement.position.colSpan >= 12;
+    const complexity = config.complexity || 'moderate';
+    const canvasSize = config.layoutDimension || '16:9';
 
     if (isTable) {
       return (
@@ -234,19 +254,35 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
             headers={tableData.headers}
             rows={tableData.rows}
             themeColors={themeColors}
-            showBadges={config.complexity !== 'simple'}
+            showBadges={complexity !== 'simple'}
           />
         </div>
       );
     }
 
-    // Dynamic height based on complexity and placement
+    // Dynamic height based on complexity, canvas size, and placement
     const getChartHeight = () => {
-      if (config.complexity === 'simple') return 'h-64';
-      if (config.complexity === 'complex') {
-        return isFullWidth ? 'h-96' : placement.position.colSpan >= 8 ? 'h-80' : 'h-72';
+      const baseHeight = complexity === 'simple' ? 48 : complexity === 'complex' ? 72 : 64;
+      
+      // Adjust for canvas size
+      let heightMultiplier = 1;
+      if (canvasSize === '4:3') {
+        heightMultiplier = 1.2; // Taller for 4:3 ratio
+      } else if (canvasSize === '1:1') {
+        heightMultiplier = 1.1; // Slightly taller for square
+      } else if (canvasSize === '21:9') {
+        heightMultiplier = 0.9; // Shorter for ultra-wide
       }
-      return isFullWidth ? 'h-80' : placement.position.colSpan >= 6 ? 'h-72' : 'h-64';
+      
+      // Adjust for placement size
+      if (isFullWidth) {
+        heightMultiplier *= 1.3;
+      } else if (placement.position.colSpan >= 8) {
+        heightMultiplier *= 1.2;
+      }
+      
+      const finalHeight = Math.round(baseHeight * heightMultiplier);
+      return `h-${finalHeight}`;
     };
 
     const heightClass = getChartHeight();
@@ -309,8 +345,8 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
                 color: themeColors.textSecondary,
                 fontSize: '12px'
               }}>
-                {config.complexity === 'simple' ? 'Basic visualization' : 
-                 config.complexity === 'complex' ? 'Advanced interactive chart' : 'Interactive chart placeholder'}
+                {complexity === 'simple' ? 'Basic visualization' : 
+                 complexity === 'complex' ? 'Advanced interactive chart' : 'Interactive chart placeholder'}
               </div>
             </div>
           </CardContent>
@@ -321,6 +357,17 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
+  };
+
+  // Get aspect ratio class for the dashboard container
+  const getAspectRatioClass = () => {
+    const canvasSize = config.layoutDimension || '16:9';
+    switch (canvasSize) {
+      case '4:3': return 'aspect-[4/3]';
+      case '1:1': return 'aspect-square';
+      case '21:9': return 'aspect-[21/9]';
+      default: return 'aspect-video'; // 16:9
+    }
   };
 
   return (
@@ -336,12 +383,12 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
       />
 
       <div className="flex-1 overflow-auto">
-        <div className="p-6">
+        <div className={`p-6 ${getAspectRatioClass()}`}>
           {renderAdvancedKPISection()}
 
-          <div className="space-y-6">
+          <div className="space-y-6 h-full">
             {currentPageVisuals.length > 0 ? (
-              <div className="grid grid-cols-12 gap-4 auto-rows-min">
+              <div className="grid grid-cols-12 gap-4 auto-rows-min h-full">
                 {currentPageVisuals
                   .filter(assignment => assignment && assignment.visual)
                   .map((assignment, index) => 
@@ -353,10 +400,10 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
                 <div className="space-y-4">
                   <div className="text-6xl">📊</div>
                   <div className="text-xl font-medium" style={{ color: themeColors.textPrimary }}>
-                    No visuals available
+                    No visuals available for {config.complexity || 'moderate'} complexity
                   </div>
                   <p style={{ color: themeColors.textSecondary }}>
-                    Please select some visuals to see your dashboard preview
+                    Please select visuals that match your complexity level or adjust the complexity setting
                   </p>
                   <Button variant="outline" className="mt-4">
                     Add Visuals

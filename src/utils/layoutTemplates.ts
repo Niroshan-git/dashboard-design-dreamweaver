@@ -206,21 +206,32 @@ export const getRandomLayoutTemplate = (): LayoutTemplate => {
 };
 
 export const getLayoutForPage = (pageIndex: number, totalPages: number, visualCount: number, complexity: string = 'moderate'): LayoutTemplate => {
-  if (pageIndex === 0) {
-    // Main page should use complexity-appropriate layout
-    return getLayoutForComplexity(complexity, visualCount);
-  }
-  
-  // For other pages, vary the layouts based on complexity
+  // Always use complexity-appropriate layout for all pages
   const complexityLayouts = layoutTemplates.filter(t => t.complexity === complexity);
   
   if (complexityLayouts.length === 0) {
-    return layoutTemplates[0];
+    return getLayoutForComplexity(complexity, visualCount);
   }
   
-  // Rotate through layouts of the same complexity for variety
-  const layoutIndex = (pageIndex - 1) % complexityLayouts.length;
-  return complexityLayouts[layoutIndex];
+  if (pageIndex === 0) {
+    // Main page should use the best layout for the complexity and visual count
+    return getLayoutForComplexity(complexity, visualCount);
+  }
+  
+  // For multi-page dashboards, distribute visuals more evenly
+  const adjustedVisualCount = Math.ceil(visualCount / totalPages);
+  
+  // Find suitable layouts for the adjusted visual count
+  const suitableLayouts = complexityLayouts.filter(t => t.maxVisuals >= adjustedVisualCount);
+  
+  if (suitableLayouts.length > 0) {
+    // Rotate through suitable layouts for variety while maintaining consistency
+    const layoutIndex = (pageIndex - 1) % suitableLayouts.length;
+    return suitableLayouts[layoutIndex];
+  }
+  
+  // Fallback to the most appropriate layout for the complexity
+  return getLayoutForComplexity(complexity, adjustedVisualCount);
 };
 
 export const getLayoutsByComplexity = (complexity: string): LayoutTemplate[] => {

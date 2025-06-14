@@ -1,3 +1,4 @@
+
 import { LayoutTemplate, ChartPlacement } from './layoutTemplates';
 
 export interface ChartTypeRule {
@@ -117,7 +118,7 @@ export const getVisualsForComplexity = (complexity: string): string[] => {
     case 'simple':
       return ['kpi-cards', 'line-charts', 'bar-charts'].slice(0, 3);
     case 'moderate':
-      return ['kpi-cards', 'line-charts', 'bar-charts', 'pie-charts', 'area-charts', 'filters'].slice(0, 6);
+      return ['kpi-cards', 'line-charts', 'bar-charts', 'pie-charts', 'area-charts', 'data-tables'].slice(0, 6);
     case 'complex':
       return filteredRules.slice(0, 8).map(rule => rule.type);
     default:
@@ -128,7 +129,10 @@ export const getVisualsForComplexity = (complexity: string): string[] => {
 export const assignChartsToLayout = (
   visuals: string[], 
   layout: LayoutTemplate,
-  complexity: string = 'moderate'
+  complexity: string = 'moderate',
+  canvasSize: string = '16:9',
+  pageIndex: number = 0,
+  totalPages: number = 1
 ): { visual: string; placement: ChartPlacement }[] => {
   const assignments: { visual: string; placement: ChartPlacement }[] = [];
   const availablePlacements = [...layout.chartLayout].sort((a, b) => a.priority - b.priority);
@@ -146,8 +150,60 @@ export const assignChartsToLayout = (
     return (ruleA?.priority || 10) - (ruleB?.priority || 10);
   });
 
-  // Limit visuals based on layout capacity
-  const maxVisuals = Math.min(sortedVisuals.length, layout.maxVisuals);
+  // Adjust chart placement based on canvas size and page distribution
+  const adjustPlacementForCanvas = (placement: ChartPlacement): ChartPlacement => {
+    const adjustedPlacement = { ...placement };
+    
+    // Adjust for canvas size
+    switch (canvasSize) {
+      case '16:9':
+        // Standard widescreen - no adjustment needed
+        break;
+      case '4:3':
+        // Reduce horizontal span for taller aspect ratio
+        if (adjustedPlacement.position.colSpan > 8) {
+          adjustedPlacement.position.colSpan = Math.max(6, adjustedPlacement.position.colSpan - 2);
+        }
+        break;
+      case '1:1':
+        // Square format - balance width and height
+        if (adjustedPlacement.position.colSpan > 6) {
+          adjustedPlacement.position.colSpan = 6;
+          adjustedPlacement.position.rowSpan = Math.max(2, adjustedPlacement.position.rowSpan);
+        }
+        break;
+      case '21:9':
+        // Ultra-wide - can use more horizontal space
+        if (adjustedPlacement.position.colSpan >= 6) {
+          adjustedPlacement.position.colSpan = Math.min(12, adjustedPlacement.position.colSpan + 2);
+        }
+        break;
+    }
+    
+    // Adjust for multiple pages - distribute content more evenly
+    if (totalPages > 1) {
+      // For multi-page dashboards, make charts slightly smaller to fit more per page
+      if (adjustedPlacement.position.colSpan > 8) {
+        adjustedPlacement.position.colSpan = 8;
+      }
+      if (adjustedPlacement.position.rowSpan > 3) {
+        adjustedPlacement.position.rowSpan = 3;
+      }
+    }
+    
+    return adjustedPlacement;
+  };
+
+  // Limit visuals based on layout capacity and complexity
+  let maxVisuals = layout.maxVisuals;
+  
+  // Adjust max visuals based on complexity and canvas
+  if (complexity === 'simple') {
+    maxVisuals = Math.min(maxVisuals, 3);
+  } else if (complexity === 'complex') {
+    maxVisuals = Math.min(maxVisuals, canvasSize === '21:9' ? 10 : 8);
+  }
+  
   const visualsToAssign = sortedVisuals.slice(0, maxVisuals);
 
   visualsToAssign.forEach((visual) => {
@@ -169,9 +225,10 @@ export const assignChartsToLayout = (
       }
       
       if (bestPlacement) {
+        const adjustedPlacement = adjustPlacementForCanvas(bestPlacement);
         assignments.push({
           visual,
-          placement: bestPlacement
+          placement: adjustedPlacement
         });
         
         const usedIndex = availablePlacements.indexOf(bestPlacement);
