@@ -100,7 +100,7 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                     <div key={key} className="flex items-center gap-2">
                       <div 
                         className="w-8 h-8 rounded border"
-                        style={{ background: currentTheme[key as keyof typeof currentTheme] }}
+                        style={{ backgroundColor: currentTheme[key as keyof typeof currentTheme] as string }}
                       />
                       <Label className="text-xs capitalize">{key}</Label>
                       <Input
@@ -120,7 +120,7 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                     <div key={key} className="flex items-center gap-2">
                       <div 
                         className="w-8 h-8 rounded border"
-                        style={{ backgroundColor: currentTheme[key as keyof typeof currentTheme] }}
+                        style={{ backgroundColor: currentTheme[key as keyof typeof currentTheme] as string }}
                       />
                       <Label className="text-xs capitalize">{key}</Label>
                       <Input

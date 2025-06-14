@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DataTable } from "@/components/DataTable";
-import { assignChartsToLayout, LayoutTemplate, getTableDataForType } from "@/utils/chartPlacementLogic";
-import { mockLayouts } from "@/utils/layoutTemplates";
+import DataTable from "@/components/DataTable";
+import { assignChartsToLayout, getTableDataForType } from "@/utils/chartPlacementLogic";
+import { layoutTemplates, LayoutTemplate, ChartPlacement } from "@/utils/layoutTemplates";
 import AdvancedKPICard from './AdvancedKPICard';
 import { advancedThemes } from '@/utils/advancedThemeSystem';
 
@@ -12,27 +13,15 @@ interface DashboardPreviewProps {
   onExport: (format: string) => void;
 }
 
-interface ChartPlacement {
-  component: string;
-  position: {
-    rowStart: number;
-    rowEnd: number;
-    colStart: number;
-    colEnd: number;
-    colSpan: number;
-    className: string;
-  };
-}
-
 const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
-  const [layout, setLayout] = useState<LayoutTemplate>(mockLayouts[0]);
+  const [layout, setLayout] = useState<LayoutTemplate>(layoutTemplates[0]);
   const [visuals, setVisuals] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const visualsPerPage = layout.maxVisuals;
 
   useEffect(() => {
     if (config.layoutType) {
-      const selectedLayout = mockLayouts.find(l => l.name === config.layoutType);
+      const selectedLayout = layoutTemplates.find(l => l.name === config.layoutType);
       if (selectedLayout) {
         setLayout(selectedLayout);
       }
@@ -57,8 +46,6 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     if (visual.includes('summary')) return 'Account Summary';
     return 'Data Table';
   };
-
-  const layoutClass = `grid gap-4 ${layout.gridTemplate}`;
 
   const getAdvancedThemeColors = () => {
     const baseTheme = advancedThemes[config.themeStyle] || advancedThemes.minimal;
@@ -181,7 +168,20 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     );
   };
 
+  const convertToGridPosition = (placement: ChartPlacement) => {
+    const { row, col, rowSpan, colSpan } = placement.position;
+    return {
+      rowStart: row,
+      rowEnd: row + rowSpan,
+      colStart: col,
+      colEnd: col + colSpan,
+      colSpan: colSpan,
+      className: `col-span-${colSpan} row-span-${rowSpan}`
+    };
+  };
+
   const renderChart = (visual: string, placement: ChartPlacement, index: number) => {
+    const gridPosition = convertToGridPosition(placement);
     const commonProps = {
       style: {
         backgroundColor: themeColors.cardBackground,
@@ -192,7 +192,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
 
     if (visual.includes('table')) {
       return (
-        <div key={index} className={`${placement.position.className}`}>
+        <div key={index} className={gridPosition.className}>
           <DataTable
             title={getTableTitle(visual)}
             headers={tableData.headers}
@@ -205,7 +205,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     }
 
     return (
-      <Card key={index} className={`${placement.position.className}`} {...commonProps}>
+      <Card key={index} className={gridPosition.className} {...commonProps}>
         <CardHeader>
           <CardTitle style={{ color: themeColors.textPrimary }}>{visual}</CardTitle>
           <CardDescription style={{ color: themeColors.textSecondary }}>Description of {visual}</CardDescription>
@@ -219,12 +219,6 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
       </Card>
     );
   };
-
-  const renderVisual = (visual: string, index: number) => (
-    <div key={index} className="p-4 border rounded-md">
-      {visual}
-    </div>
-  );
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
@@ -263,7 +257,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
         {/* Dashboard Content */}
         <div className="space-y-6">
           {currentPageVisuals.length > 0 ? (
-            <div className={layoutClass}>
+            <div className="grid grid-cols-12 gap-4">
               {currentPageVisuals.map((assignment, index) => 
                 renderChart(assignment.visual, assignment.placement, index)
               )}
