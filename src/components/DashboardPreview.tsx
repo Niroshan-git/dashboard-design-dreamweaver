@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -5,7 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { FileDown, Eye, BarChart3, TrendingUp, PieChart, Map, Grid3X3, Target, Users, DollarSign, Clock, Filter, ChevronLeft, ChevronRight } from "lucide-react";
-import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart as RechartsPieChart, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart as RechartsPieChart, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Pie } from 'recharts';
 import { useState } from 'react';
 
 interface DashboardPreviewProps {
@@ -189,11 +190,18 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
           <ResponsiveContainer width="100%" height={200}>
             <RechartsPieChart>
               <Tooltip content={<CustomTooltip />} />
-              <RechartsPieChart data={mockData.pieData} cx="50%" cy="50%" outerRadius={60} fill="#8884d8" dataKey="value">
+              <Pie
+                data={mockData.pieData}
+                cx="50%"
+                cy="50%"
+                outerRadius={60}
+                fill="#8884d8"
+                dataKey="value"
+              >
                 {mockData.pieData.map((entry: any, index: number) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
-              </RechartsPieChart>
+              </Pie>
             </RechartsPieChart>
           </ResponsiveContainer>
         );
