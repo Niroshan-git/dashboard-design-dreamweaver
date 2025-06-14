@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,8 +64,8 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
   const KPICard = ({ title, value, change }: { title: string; value: number; change: number }) => (
-    <Card className="shadow-sm">
-      <CardHeader>
+    <Card className="shadow-sm h-full">
+      <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
       </CardHeader>
       <CardContent>
@@ -82,53 +83,51 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   );
 
   const SimpleLineChart = ({ data }: { data: any[] }) => (
-    <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={data}>
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="name" />
         <YAxis />
         <Tooltip />
-        <Line type="monotone" dataKey="pv" stroke="#8884d8" activeDot={{ r: 8 }} />
-        <Line type="monotone" dataKey="uv" stroke="#82ca9d" />
+        <Line type="monotone" dataKey="pv" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 6 }} />
+        <Line type="monotone" dataKey="uv" stroke="#82ca9d" strokeWidth={2} />
       </LineChart>
     </ResponsiveContainer>
   );
 
   const SimpleAreaChart = ({ data }: { data: any[] }) => (
-    <ResponsiveContainer width="100%" height={300}>
-      <AreaChart data={data}>
+    <ResponsiveContainer width="100%" height="100%">
+      <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="name" />
         <YAxis />
         <Tooltip />
-        <Area type="monotone" dataKey="pv" stroke="#8884d8" fill="#8884d8" />
-        <Area type="monotone" dataKey="uv" stroke="#82ca9d" fill="#82ca9d" />
+        <Area type="monotone" dataKey="pv" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+        <Area type="monotone" dataKey="uv" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />
       </AreaChart>
     </ResponsiveContainer>
   );
 
   const SimpleBarChart = ({ data }: { data: any[] }) => (
-    <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data}>
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="name" />
         <YAxis />
         <Tooltip />
-        <Bar dataKey="pv" fill="#8884d8" />
-        <Bar dataKey="uv" fill="#82ca9d" />
+        <Bar dataKey="pv" fill="#8884d8" radius={4} />
+        <Bar dataKey="uv" fill="#82ca9d" radius={4} />
       </BarChart>
     </ResponsiveContainer>
   );
 
   const SimplePieChart = ({ data }: { data: any[] }) => (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height="100%">
       <RechartsPieChart>
-        <RechartsPieChart data={data} cx="50%" cy="50%" outerRadius={80} fill="#8884d8" dataKey="value">
-          {
-            data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-            ))
-          }
+        <RechartsPieChart data={data} cx="50%" cy="50%" outerRadius="80%" dataKey="value">
+          {data.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+          ))}
         </RechartsPieChart>
         <Tooltip />
       </RechartsPieChart>
@@ -142,6 +141,31 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
+  };
+
+  const getChartHeight = () => {
+    switch (config.layoutDimension) {
+      case '4:3': return 'h-80';
+      case '1:1': return 'h-72';
+      case '21:9': return 'h-96';
+      default: return 'h-80'; // 16:9
+    }
+  };
+
+  const getGridLayout = () => {
+    const isComplex = config.complexity === 'complex';
+    const isModerate = config.complexity === 'moderate';
+    
+    switch (config.layoutDimension) {
+      case '4:3':
+        return isComplex ? 'grid-cols-3 gap-4' : 'grid-cols-2 gap-4';
+      case '1:1':
+        return 'grid-cols-2 gap-3';
+      case '21:9':
+        return isComplex ? 'grid-cols-4 gap-6' : 'grid-cols-3 gap-4';
+      default: // 16:9
+        return isComplex ? 'grid-cols-3 gap-4' : isModerate ? 'grid-cols-2 gap-4' : 'grid-cols-2 gap-4';
+    }
   };
 
   const renderDashboard = () => {
@@ -208,84 +232,115 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   };
 
   const renderPageContent = () => {
-    const layout = getLayoutForPage(currentPage);
+    const chartHeight = getChartHeight();
+    const gridLayout = getGridLayout();
 
     return (
-      <div className="grid gap-6" style={{ gridTemplateColumns: layout }}>
-        {layout.split(' ').map((colWidth, index) => (
-          <div key={index} className={`col-span-${colWidth}`}>
-            {index % 2 === 0 ? renderKPICards() : renderCharts()}
-          </div>
-        ))}
+      <div className="space-y-6">
+        {/* KPI Cards Row */}
+        <div className={`grid ${gridLayout}`}>
+          {kpiData.slice(0, config.complexity === 'simple' ? 2 : config.complexity === 'moderate' ? 3 : 4).map((kpi, index) => (
+            <KPICard key={index} title={kpi.name} value={kpi.value} change={kpi.change} />
+          ))}
+        </div>
+
+        {/* Charts Section */}
+        <div className={`grid ${gridLayout}`}>
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Revenue Trend</CardTitle>
+            </CardHeader>
+            <CardContent className={`p-4 ${chartHeight}`}>
+              <SimpleLineChart data={lineChartData} />
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Weekly Sales</CardTitle>
+            </CardHeader>
+            <CardContent className={`p-4 ${chartHeight}`}>
+              <SimpleAreaChart data={areaChartData} />
+            </CardContent>
+          </Card>
+
+          {(config.complexity === 'moderate' || config.complexity === 'complex') && (
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Category Performance</CardTitle>
+              </CardHeader>
+              <CardContent className={`p-4 ${chartHeight}`}>
+                <SimpleBarChart data={barChartData} />
+              </CardContent>
+            </Card>
+          )}
+
+          {config.complexity === 'complex' && (
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Market Share</CardTitle>
+              </CardHeader>
+              <CardContent className={`p-4 ${chartHeight}`}>
+                <SimplePieChart data={pieChartData} />
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Data Table for Complex dashboards */}
+        {config.complexity === 'complex' && (
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Detailed Analytics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2">Metric</th>
+                      <th className="text-left p-2">Current</th>
+                      <th className="text-left p-2">Previous</th>
+                      <th className="text-left p-2">Change</th>
+                      <th className="text-left p-2">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b">
+                      <td className="p-2">Revenue</td>
+                      <td className="p-2">$2.8M</td>
+                      <td className="p-2">$2.4M</td>
+                      <td className="p-2 text-green-600">+16.7%</td>
+                      <td className="p-2">
+                        <Badge variant="secondary">Good</Badge>
+                      </td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="p-2">Users</td>
+                      <td className="p-2">45.2K</td>
+                      <td className="p-2">42.1K</td>
+                      <td className="p-2 text-green-600">+7.4%</td>
+                      <td className="p-2">
+                        <Badge variant="default">Excellent</Badge>
+                      </td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="p-2">Conversion</td>
+                      <td className="p-2">3.24%</td>
+                      <td className="p-2">3.31%</td>
+                      <td className="p-2 text-red-600">-2.1%</td>
+                      <td className="p-2">
+                        <Badge variant="outline">Fair</Badge>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
-  };
-
-  const getLayoutForPage = (pageIndex: number) => {
-    switch (pageIndex) {
-      case 0: return '1fr 1fr 1fr';
-      case 1: return '2fr 1fr';
-      case 2: return '1fr 2fr';
-      default: return '1fr 1fr';
-    }
-  };
-
-  const renderKPICards = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {kpiData.map((kpi, index) => (
-        <KPICard key={index} title={kpi.name} value={kpi.value} change={kpi.change} />
-      ))}
-    </div>
-  );
-
-  const renderCharts = () => (
-    <div className="space-y-6">
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Revenue Trend</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SimpleLineChart data={lineChartData} />
-        </CardContent>
-      </Card>
-
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Weekly Sales</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SimpleAreaChart data={areaChartData} />
-        </CardContent>
-      </Card>
-
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Category Performance</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SimpleBarChart data={barChartData} />
-        </CardContent>
-      </Card>
-
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Market Share</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SimplePieChart data={pieChartData} />
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  const generateChartData = (type: string) => {
-    switch (type) {
-      case 'line': return lineChartData;
-      case 'area': return areaChartData;
-      case 'bar': return barChartData;
-      case 'pie': return pieChartData;
-      default: return lineChartData;
-    }
   };
 
   return (
