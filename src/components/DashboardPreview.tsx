@@ -4,15 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { FileDown, Eye, PieChart, Map, Grid3X3, Target, Users, DollarSign, Clock, Filter, ChevronLeft, ChevronRight, LayoutDashboard, TrendingUp, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { FileDown, Eye, PieChart, Map, Grid3X3, Target, Users, DollarSign, Clock, Filter, ChevronLeft, ChevronRight, LayoutDashboard, TrendingUp, ArrowUpRight, ArrowDownRight, Table } from "lucide-react";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart as RechartsPieChart, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Pie } from 'recharts';
 import DashboardNavigation from './DashboardNavigation';
 import DashboardTopNav from './DashboardTopNav';
 import MainDashboard from './MainDashboard';
 import TopNavigation from './TopNavigation';
 import SmartPageNavigation from './SmartPageNavigation';
-import { layoutTemplates, getLayoutForPage, getRandomLayoutTemplate } from '../utils/layoutTemplates';
-import { assignChartsToLayout } from '../utils/chartPlacementLogic';
+import DataTable from './DataTable';
+import { layoutTemplates, getLayoutForPage, getLayoutForComplexity } from '../utils/layoutTemplates';
+import { assignChartsToLayout, getTableDataForType } from '../utils/chartPlacementLogic';
 
 interface DashboardPreviewProps {
   config: any;
@@ -32,6 +33,9 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
       'bar-charts': LayoutDashboard,
       'pie-charts': PieChart,
       'area-charts': LayoutDashboard,
+      'data-tables': Table,
+      'transaction-tables': Table,
+      'summary-tables': Table,
       'filters': Filter,
       'time-controls': Clock,
       'drill-down': Grid3X3,
@@ -246,6 +250,20 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   const renderChart = (visual: string, index: number) => {
     const chartColor = themeColors.chartColors[index % themeColors.chartColors.length];
     
+    // Handle table components
+    if (visual.includes('table')) {
+      const tableData = getTableDataForType(visual, config.dashboardType);
+      return (
+        <DataTable
+          title={visual.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+          headers={tableData.headers}
+          rows={tableData.rows}
+          themeColors={themeColors}
+          showBadges={true}
+        />
+      );
+    }
+
     switch (visual) {
       case 'line-charts':
         return (
@@ -316,8 +334,11 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   };
 
   const renderGridBasedLayout = (pageIndex: number) => {
-    const layout = getLayoutForPage(pageIndex, config.pages, config.visuals.length);
+    // Use complexity-based layout selection
+    const layout = getLayoutForPage(pageIndex, config.pages, config.visuals.length, config.complexity);
     const chartAssignments = assignChartsToLayout(config.visuals, layout);
+    
+    console.log(`Page ${pageIndex}: Using layout "${layout.name}" (${layout.complexity}) for ${config.complexity} complexity`);
     
     return (
       <div className="p-6 space-y-6">
@@ -327,8 +348,11 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
             {pageIndex === 0 ? 'Dashboard Overview' : `${layout.name} - Page ${pageIndex + 1}`}
           </h1>
           <p className="text-lg" style={{ color: themeColors.textSecondary }}>
-            {pageIndex === 0 ? 'Comprehensive overview of your key metrics' : layout.description}
+            {pageIndex === 0 ? `Comprehensive ${config.complexity} complexity overview` : layout.description}
           </p>
+          <Badge variant="outline" className="mt-2">
+            {layout.complexity.charAt(0).toUpperCase() + layout.complexity.slice(1)} Layout
+          </Badge>
         </div>
 
         {/* Grid Container */}
@@ -349,7 +373,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
             </div>
           ))}
 
-          {/* Charts */}
+          {/* Charts and Tables */}
           {chartAssignments.map((assignment, index) => (
             <div 
               key={`chart-${index}`}
@@ -359,28 +383,32 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
                 gridRow: `${assignment.placement.position.row} / span ${assignment.placement.position.rowSpan}`
               }}
             >
-              <Card 
-                className="hover:shadow-lg transition-shadow duration-200 h-full"
-                style={{ 
-                  backgroundColor: themeColors.cardBackground,
-                  borderColor: themeColors.borderColor,
-                  color: themeColors.textPrimary
-                }}
-              >
-                <CardHeader>
-                  <CardTitle className="text-lg" style={{ color: themeColors.textPrimary }}>
-                    {assignment.visual.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {renderChart(assignment.visual, index)}
-                </CardContent>
-              </Card>
+              {assignment.visual.includes('table') ? (
+                renderChart(assignment.visual, index)
+              ) : (
+                <Card 
+                  className="hover:shadow-lg transition-shadow duration-200 h-full"
+                  style={{ 
+                    backgroundColor: themeColors.cardBackground,
+                    borderColor: themeColors.borderColor,
+                    color: themeColors.textPrimary
+                  }}
+                >
+                  <CardHeader>
+                    <CardTitle className="text-lg" style={{ color: themeColors.textPrimary }}>
+                      {assignment.visual.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {renderChart(assignment.visual, index)}
+                  </CardContent>
+                </Card>
+              )}
             </div>
           ))}
         </div>
 
-        {/* Page-specific Summary */}
+        {/* Complexity Summary */}
         {pageIndex === 0 && (
           <Card 
             className="mt-8"
@@ -392,7 +420,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
           >
             <CardHeader>
               <CardTitle style={{ color: themeColors.textPrimary }}>
-                Dashboard Summary
+                Dashboard Summary - {config.complexity.charAt(0).toUpperCase() + config.complexity.slice(1)} Complexity
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -407,7 +435,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-purple-600">{layout.name}</div>
-                  <div className="text-sm" style={{ color: themeColors.textSecondary }}>Layout Pattern</div>
+                  <div className="text-sm" style={{ color: themeColors.textSecondary }}>Active Layout</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-orange-600">{config.complexity}</div>
@@ -647,8 +675,8 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
               <div className="text-sm text-gray-500">Components</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{layoutTemplates.length}</div>
-              <div className="text-sm text-gray-500">Layout Templates</div>
+              <div className="text-2xl font-bold text-purple-600">{layoutTemplates.filter(t => t.complexity === config.complexity).length}</div>
+              <div className="text-sm text-gray-500">{config.complexity.charAt(0).toUpperCase() + config.complexity.slice(1)} Layouts</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-orange-600">{config.exportFormats.length}</div>
