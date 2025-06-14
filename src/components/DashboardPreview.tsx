@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { FileDown, Eye, PieChart, Map, Grid3X3, Target, Users, DollarSign, Clock, Filter, ChevronLeft, ChevronRight, LayoutDashboard } from "lucide-react";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart as RechartsPieChart, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Pie } from 'recharts';
@@ -19,7 +18,6 @@ interface DashboardPreviewProps {
 
 const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   const [currentPage, setCurrentPage] = useState(0);
-  const [layoutDimension, setLayoutDimension] = useState("16:9");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const getIconForVisual = (visual: string) => {
@@ -93,7 +91,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   const mockData = getFinanceData();
 
   const getDimensionClasses = () => {
-    switch (layoutDimension) {
+    switch (config.layoutDimension) {
       case "16:9":
         return "aspect-video";
       case "4:3":
@@ -377,7 +375,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
 
   return (
     <div className="space-y-6">
-      {/* Dashboard Info with Layout Controls */}
+      {/* Dashboard Info */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
@@ -385,50 +383,34 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
               <Eye className="w-5 h-5" />
               Dashboard Preview
             </div>
-            <div className="flex items-center gap-4">
+            {config.pages > 1 && (
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Layout:</span>
-                <Select value={layoutDimension} onValueChange={setLayoutDimension}>
-                  <SelectTrigger className="w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="16:9">16:9</SelectItem>
-                    <SelectItem value="4:3">4:3</SelectItem>
-                    <SelectItem value="1:1">1:1</SelectItem>
-                    <SelectItem value="21:9">21:9</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                  disabled={currentPage === 0}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="text-sm">Page {currentPage + 1} of {config.pages}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.min(config.pages - 1, currentPage + 1))}
+                  disabled={currentPage === config.pages - 1}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
               </div>
-              {config.pages > 1 && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-                    disabled={currentPage === 0}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <span className="text-sm">Page {currentPage + 1} of {config.pages}</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.min(config.pages - 1, currentPage + 1))}
-                    disabled={currentPage === config.pages - 1}
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
+            )}
           </CardTitle>
           <div className="flex flex-wrap gap-2">
             <Badge variant="outline">{config.dashboardType}</Badge>
             <Badge variant="outline">{config.complexity} complexity</Badge>
             <Badge variant="outline">{config.pages} page{config.pages > 1 ? 's' : ''}</Badge>
             <Badge variant="outline">{config.visuals.length} components</Badge>
-            <Badge variant="outline">{layoutDimension} layout</Badge>
+            <Badge variant="outline">{config.layoutDimension} layout</Badge>
             <Badge variant="outline">{config.navigationPosition} navigation</Badge>
             {config.tooltipsEnabled && <Badge variant="outline">Tooltips enabled</Badge>}
           </div>
