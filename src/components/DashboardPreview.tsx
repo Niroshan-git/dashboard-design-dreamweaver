@@ -181,6 +181,12 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   };
 
   const renderChart = (visual: string, placement: ChartPlacement, index: number) => {
+    // Add safety check for undefined visual
+    if (!visual || typeof visual !== 'string') {
+      console.warn('Visual is undefined or not a string:', visual);
+      return null;
+    }
+
     const gridPosition = convertToGridPosition(placement);
     const commonProps = {
       style: {
@@ -258,9 +264,11 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
         <div className="space-y-6">
           {currentPageVisuals.length > 0 ? (
             <div className="grid grid-cols-12 gap-4">
-              {currentPageVisuals.map((assignment, index) => 
-                renderChart(assignment.visual, assignment.placement, index)
-              )}
+              {currentPageVisuals
+                .filter(assignment => assignment && assignment.visual) // Filter out invalid assignments
+                .map((assignment, index) => 
+                  renderChart(assignment.visual, assignment.placement, index)
+                )}
             </div>
           ) : (
             <Card className="p-8 text-center" style={{ backgroundColor: themeColors.cardBackground }}>
