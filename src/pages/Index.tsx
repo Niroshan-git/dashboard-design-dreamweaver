@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -266,7 +267,7 @@ const Dashboard = () => {
                       <Checkbox 
                         id="tooltips"
                         checked={config.tooltipsEnabled}
-                        onCheckedChange={(checked) => setConfig(prev => ({ ...prev, tooltipsEnabled: checked }))}
+                        onCheckedChange={(checked) => setConfig(prev => ({ ...prev, tooltipsEnabled: !!checked }))}
                       />
                       <Label htmlFor="tooltips" className="cursor-pointer">
                         Enable tooltips for KPI cards and visuals
