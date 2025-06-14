@@ -152,13 +152,66 @@ const MainDashboard = ({ config, onExport }: MainDashboardProps) => {
   const mockData = getFinanceData();
 
   const getThemeColors = () => {
-    return {
-      background: config.themeStyle === 'dark' ? '#1f2937' : '#ffffff',
-      cardBackground: config.themeStyle === 'dark' ? '#374151' : '#f8fafc',
-      textPrimary: config.themeStyle === 'dark' ? '#ffffff' : '#1f2937',
-      textSecondary: config.themeStyle === 'dark' ? '#d1d5db' : '#6b7280',
-      chartColors: config.colorPalette || ['#2563eb', '#7c3aed', '#059669', '#dc2626']
-    };
+    const themeStyle = config.themeStyle;
+    const palette = config.colorPalette || ['#2563eb', '#7c3aed', '#059669', '#dc2626'];
+    
+    switch (themeStyle) {
+      case 'dark':
+        return {
+          background: '#1f2937',
+          cardBackground: '#374151',
+          textPrimary: '#ffffff',
+          textSecondary: '#d1d5db',
+          borderColor: '#4b5563',
+          chartColors: palette
+        };
+      case 'corporate':
+        return {
+          background: '#f8fafc',
+          cardBackground: '#ffffff',
+          textPrimary: '#1e293b',
+          textSecondary: '#64748b',
+          borderColor: '#e2e8f0',
+          chartColors: palette
+        };
+      case 'gradient':
+        return {
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          cardBackground: 'rgba(255, 255, 255, 0.9)',
+          textPrimary: '#1f2937',
+          textSecondary: '#6b7280',
+          borderColor: 'rgba(255, 255, 255, 0.2)',
+          chartColors: palette
+        };
+      case 'creative':
+        return {
+          background: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%)',
+          cardBackground: 'rgba(255, 255, 255, 0.95)',
+          textPrimary: '#1f2937',
+          textSecondary: '#6b7280',
+          borderColor: 'rgba(255, 255, 255, 0.3)',
+          chartColors: palette
+        };
+      case 'flat':
+        return {
+          background: '#ecf0f1',
+          cardBackground: '#ffffff',
+          textPrimary: '#2c3e50',
+          textSecondary: '#7f8c8d',
+          borderColor: '#bdc3c7',
+          chartColors: palette
+        };
+      case 'minimal':
+      default:
+        return {
+          background: '#ffffff',
+          cardBackground: '#f9fafb',
+          textPrimary: '#111827',
+          textSecondary: '#6b7280',
+          borderColor: '#e5e7eb',
+          chartColors: palette
+        };
+    }
   };
 
   const themeColors = getThemeColors();
@@ -183,20 +236,28 @@ const MainDashboard = ({ config, onExport }: MainDashboardProps) => {
     const IconComponent = kpi.icon;
     
     const cardContent = (
-      <Card key={index} className="hover:shadow-lg transition-shadow cursor-pointer">
+      <Card 
+        key={index} 
+        className="hover:shadow-lg transition-shadow cursor-pointer"
+        style={{ 
+          backgroundColor: themeColors.cardBackground,
+          borderColor: themeColors.borderColor,
+          color: themeColors.textPrimary
+        }}
+      >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardTitle className="text-sm font-medium" style={{ color: themeColors.textSecondary }}>
             {kpi.label}
           </CardTitle>
           <IconComponent className={`h-4 w-4 ${kpi.color}`} />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{kpi.value}</div>
+          <div className="text-2xl font-bold" style={{ color: themeColors.textPrimary }}>{kpi.value}</div>
           <div className="flex items-center pt-1">
             <Badge variant={kpi.trend === 'up' ? "secondary" : "destructive"} className="text-xs">
               {kpi.change}
             </Badge>
-            <span className="text-xs text-muted-foreground ml-2">vs last period</span>
+            <span className="text-xs ml-2" style={{ color: themeColors.textSecondary }}>vs last period</span>
           </div>
         </CardContent>
       </Card>
@@ -221,12 +282,12 @@ const MainDashboard = ({ config, onExport }: MainDashboardProps) => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" style={{ background: themeColors.background, color: themeColors.textPrimary }}>
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold tracking-tight" style={{ color: themeColors.textPrimary }}>Dashboard Overview</h1>
+          <p style={{ color: themeColors.textSecondary }}>
             Welcome to your {config.dashboardType} dashboard. Here's what's happening with your business today.
           </p>
         </div>
@@ -250,15 +311,15 @@ const MainDashboard = ({ config, onExport }: MainDashboardProps) => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Trend Chart */}
-        <Card>
+        <Card style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+            <CardTitle className="flex items-center justify-between" style={{ color: themeColors.textPrimary }}>
               <span>{config.dashboardType === 'finance' ? 'Revenue Trend' : 'Performance Trend'}</span>
               <Button variant="ghost" size="icon">
                 <MoreHorizontal className="w-4 h-4" />
               </Button>
             </CardTitle>
-            <CardDescription>
+            <CardDescription style={{ color: themeColors.textSecondary }}>
               {config.dashboardType === 'finance' 
                 ? 'Monthly revenue performance over the last 6 months' 
                 : 'Key metrics performance over time'}
@@ -294,12 +355,12 @@ const MainDashboard = ({ config, onExport }: MainDashboardProps) => {
         </Card>
 
         {/* Distribution Chart */}
-        <Card>
+        <Card style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
           <CardHeader>
-            <CardTitle>
+            <CardTitle style={{ color: themeColors.textPrimary }}>
               {config.dashboardType === 'finance' ? 'Revenue Distribution' : 'Traffic Sources'}
             </CardTitle>
-            <CardDescription>
+            <CardDescription style={{ color: themeColors.textSecondary }}>
               Breakdown by category
             </CardDescription>
           </CardHeader>
@@ -330,22 +391,22 @@ const MainDashboard = ({ config, onExport }: MainDashboardProps) => {
       {/* Additional Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Activity */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
           <CardHeader>
-            <CardTitle>Recent {config.dashboardType === 'finance' ? 'Transactions' : 'Activity'}</CardTitle>
-            <CardDescription>
+            <CardTitle style={{ color: themeColors.textPrimary }}>Recent {config.dashboardType === 'finance' ? 'Transactions' : 'Activity'}</CardTitle>
+            <CardDescription style={{ color: themeColors.textSecondary }}>
               Latest {config.dashboardType === 'finance' ? 'financial transactions' : 'system activity'}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {mockData.recentTransactions.map((transaction: any) => (
-                <div key={transaction.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div key={transaction.id} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: `${themeColors.textSecondary}10` }}>
                   <div className="flex items-center space-x-3">
                     <div className={`w-2 h-2 rounded-full ${transaction.type === 'income' ? 'bg-green-500' : 'bg-red-500'}`}></div>
                     <div>
-                      <p className="text-sm font-medium">{transaction.description}</p>
-                      <p className="text-xs text-muted-foreground">{transaction.date}</p>
+                      <p className="text-sm font-medium" style={{ color: themeColors.textPrimary }}>{transaction.description}</p>
+                      <p className="text-xs" style={{ color: themeColors.textSecondary }}>{transaction.date}</p>
                     </div>
                   </div>
                   <div className={`text-sm font-medium ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
@@ -364,10 +425,10 @@ const MainDashboard = ({ config, onExport }: MainDashboardProps) => {
         </Card>
 
         {/* Performance Metrics */}
-        <Card>
+        <Card style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
           <CardHeader>
-            <CardTitle>Performance Metrics</CardTitle>
-            <CardDescription>
+            <CardTitle style={{ color: themeColors.textPrimary }}>Performance Metrics</CardTitle>
+            <CardDescription style={{ color: themeColors.textSecondary }}>
               Key performance indicators
             </CardDescription>
           </CardHeader>
@@ -375,9 +436,9 @@ const MainDashboard = ({ config, onExport }: MainDashboardProps) => {
             <div className="space-y-4">
               {mockData.performanceMetrics.map((metric: any, index: number) => (
                 <div key={index} className="flex items-center justify-between">
-                  <span className="text-sm">{metric.name}</span>
+                  <span className="text-sm" style={{ color: themeColors.textPrimary }}>{metric.name}</span>
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">{metric.value}</span>
+                    <span className="font-medium" style={{ color: themeColors.textPrimary }}>{metric.value}</span>
                     <Badge variant={metric.status === 'positive' ? "secondary" : "destructive"} className="text-xs">
                       {metric.change}
                     </Badge>

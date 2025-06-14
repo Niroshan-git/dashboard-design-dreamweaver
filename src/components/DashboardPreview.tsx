@@ -108,13 +108,66 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   };
 
   const getThemeColors = () => {
-    return {
-      background: config.themeStyle === 'dark' ? '#1f2937' : '#ffffff',
-      cardBackground: config.themeStyle === 'dark' ? '#374151' : '#f8fafc',
-      textPrimary: config.themeStyle === 'dark' ? '#ffffff' : '#1f2937',
-      textSecondary: config.themeStyle === 'dark' ? '#d1d5db' : '#6b7280',
-      chartColors: config.colorPalette || ['#2563eb', '#7c3aed', '#059669', '#dc2626']
-    };
+    const themeStyle = config.themeStyle;
+    const palette = config.colorPalette || ['#2563eb', '#7c3aed', '#059669', '#dc2626'];
+    
+    switch (themeStyle) {
+      case 'dark':
+        return {
+          background: '#1f2937',
+          cardBackground: '#374151',
+          textPrimary: '#ffffff',
+          textSecondary: '#d1d5db',
+          borderColor: '#4b5563',
+          chartColors: palette
+        };
+      case 'corporate':
+        return {
+          background: '#f8fafc',
+          cardBackground: '#ffffff',
+          textPrimary: '#1e293b',
+          textSecondary: '#64748b',
+          borderColor: '#e2e8f0',
+          chartColors: palette
+        };
+      case 'gradient':
+        return {
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          cardBackground: 'rgba(255, 255, 255, 0.9)',
+          textPrimary: '#1f2937',
+          textSecondary: '#6b7280',
+          borderColor: 'rgba(255, 255, 255, 0.2)',
+          chartColors: palette
+        };
+      case 'creative':
+        return {
+          background: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%)',
+          cardBackground: 'rgba(255, 255, 255, 0.95)',
+          textPrimary: '#1f2937',
+          textSecondary: '#6b7280',
+          borderColor: 'rgba(255, 255, 255, 0.3)',
+          chartColors: palette
+        };
+      case 'flat':
+        return {
+          background: '#ecf0f1',
+          cardBackground: '#ffffff',
+          textPrimary: '#2c3e50',
+          textSecondary: '#7f8c8d',
+          borderColor: '#bdc3c7',
+          chartColors: palette
+        };
+      case 'minimal':
+      default:
+        return {
+          background: '#ffffff',
+          cardBackground: '#f9fafb',
+          textPrimary: '#111827',
+          textSecondary: '#6b7280',
+          borderColor: '#e5e7eb',
+          chartColors: palette
+        };
+    }
   };
 
   const themeColors = getThemeColors();
@@ -222,9 +275,14 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   };
 
   const renderDashboardLayout = () => {
+    const layoutStyle = {
+      background: themeColors.background,
+      color: themeColors.textPrimary
+    };
+
     if (config.navigationPosition === 'top') {
       return (
-        <div className="h-full flex flex-col overflow-hidden">
+        <div className="h-full flex flex-col overflow-hidden" style={layoutStyle}>
           {/* Top Navigation */}
           <TopNavigation 
             config={config}
@@ -240,9 +298,16 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
                 {config.visuals.slice((currentPage - 1) * 4, currentPage * 4).map((visual: string, index: number) => (
-                  <Card key={index}>
+                  <Card 
+                    key={index}
+                    style={{ 
+                      backgroundColor: themeColors.cardBackground,
+                      borderColor: themeColors.borderColor,
+                      color: themeColors.textPrimary
+                    }}
+                  >
                     <CardHeader>
-                      <CardTitle className="text-base">
+                      <CardTitle className="text-base" style={{ color: themeColors.textPrimary }}>
                         {visual.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                       </CardTitle>
                     </CardHeader>
@@ -259,7 +324,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     }
 
     return (
-      <div className="h-full flex overflow-hidden">
+      <div className="h-full flex overflow-hidden" style={layoutStyle}>
         {/* Sidebar Navigation */}
         <DashboardNavigation 
           config={config}
@@ -284,9 +349,16 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
                 {config.visuals.slice((currentPage - 1) * 4, currentPage * 4).map((visual: string, index: number) => (
-                  <Card key={index}>
+                  <Card 
+                    key={index}
+                    style={{ 
+                      backgroundColor: themeColors.cardBackground,
+                      borderColor: themeColors.borderColor,
+                      color: themeColors.textPrimary
+                    }}
+                  >
                     <CardHeader>
-                      <CardTitle className="text-base">
+                      <CardTitle className="text-base" style={{ color: themeColors.textPrimary }}>
                         {visual.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                       </CardTitle>
                     </CardHeader>
@@ -394,9 +466,9 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
           <div 
             className={`p-0 rounded-lg border ${getDimensionClasses()}`}
             style={{ 
-              backgroundColor: themeColors.background,
+              background: themeColors.background,
               color: themeColors.textPrimary,
-              borderColor: `${themeColors.textSecondary}20`
+              borderColor: themeColors.borderColor
             }}
           >
             {renderDashboardLayout()}
