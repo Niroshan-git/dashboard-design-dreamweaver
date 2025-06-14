@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import DataTable from "@/components/DataTable";
-import { assignChartsToLayout, getTableDataForType } from "@/utils/chartPlacementLogic";
-import { layoutTemplates, LayoutTemplate } from "@/utils/layoutTemplates";
+import { assignChartsToLayout, getTableDataForType, getVisualsForComplexity } from "@/utils/chartPlacementLogic";
+import { layoutTemplates, LayoutTemplate, getLayoutForComplexity } from "@/utils/layoutTemplates";
 import AdvancedKPICard from './AdvancedKPICard';
 import DashboardTopNavigation from './DashboardTopNavigation';
 import { advancedThemes } from '@/utils/advancedThemeSystem';
@@ -18,37 +19,45 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   const [visuals, setVisuals] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(0);
 
-  // Set up default visuals if none are provided
+  // Set up visuals based on complexity and user selection
   useEffect(() => {
-    if (config.selectedVisuals && config.selectedVisuals.length > 0) {
-      setVisuals(config.selectedVisuals);
+    let finalVisuals: string[] = [];
+    
+    if (config.visuals && config.visuals.length > 0) {
+      finalVisuals = config.visuals;
+    } else if (config.complexity) {
+      // Use complexity-based default visuals
+      finalVisuals = getVisualsForComplexity(config.complexity);
     } else {
-      // Default visuals for demo purposes
-      const defaultVisuals = [
-        'line-charts',
-        'bar-charts', 
-        'pie-charts',
-        'area-charts',
-        'data-tables'
-      ];
-      setVisuals(defaultVisuals);
+      // Fallback default visuals
+      finalVisuals = ['kpi-cards', 'line-charts', 'bar-charts'];
     }
-  }, [config.selectedVisuals]);
+    
+    setVisuals(finalVisuals);
+  }, [config.visuals, config.complexity]);
 
+  // Set layout based on complexity and visual count
   useEffect(() => {
-    if (config.layoutType) {
+    if (config.complexity) {
+      const selectedLayout = getLayoutForComplexity(config.complexity, visuals.length);
+      setLayout(selectedLayout);
+    } else if (config.layoutType) {
       const selectedLayout = layoutTemplates.find(l => l.name === config.layoutType);
       if (selectedLayout) {
         setLayout(selectedLayout);
       }
     }
-  }, [config.layoutType]);
+  }, [config.complexity, config.layoutType, visuals.length]);
 
   const visualsPerPage = layout.maxVisuals;
   const totalPages = Math.max(1, Math.ceil(visuals.length / visualsPerPage));
   const startIndex = currentPage * visualsPerPage;
   const endIndex = startIndex + visualsPerPage;
-  const currentPageVisuals = assignChartsToLayout(visuals.slice(startIndex, endIndex), layout);
+  const currentPageVisuals = assignChartsToLayout(
+    visuals.slice(startIndex, endIndex), 
+    layout, 
+    config.complexity || 'moderate'
+  );
 
   const tableData = getTableDataForType('transaction-tables', config.dashboardType);
 
@@ -74,7 +83,9 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
 
   const themeColors = getAdvancedThemeColors();
 
-  const generateAdvancedKPIData = (dashboardType: string) => {
+  const generateAdvancedKPIData = (dashboardType: string, complexity: string) => {
+    const kpiCount = complexity === 'simple' ? 3 : complexity === 'moderate' ? 4 : 6;
+    
     const baseData = [
       {
         label: 'Revenue',
@@ -119,51 +130,42 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
         chartData: Array.from({ length: 7 }, (_, i) => ({ value: Math.random() * 20 + 80 })),
         chartType: 'line' as const,
         color: themeColors.warning
+      },
+      {
+        label: 'Growth Rate',
+        value: '18.4%',
+        change: '+3.2%',
+        trend: 'up' as const,
+        progress: 68,
+        target: '20%',
+        chartData: Array.from({ length: 7 }, (_, i) => ({ value: Math.random() * 40 + 30 })),
+        chartType: 'area' as const,
+        color: themeColors.chartColors[0]
+      },
+      {
+        label: 'ROI',
+        value: '24.8%',
+        change: '+6.1%',
+        trend: 'up' as const,
+        progress: 82,
+        target: '25%',
+        chartData: Array.from({ length: 7 }, (_, i) => ({ value: Math.random() * 30 + 60 })),
+        chartType: 'line' as const,
+        color: themeColors.chartColors[1]
       }
     ];
 
-    if (dashboardType === 'finance') {
-      return [
-        {
-          ...baseData[0],
-          label: 'Total Revenue',
-          value: '$2.8M',
-          chartData: Array.from({ length: 12 }, (_, i) => ({ value: Math.random() * 1000000 + 2000000 }))
-        },
-        {
-          ...baseData[1],
-          label: 'Net Profit',
-          value: '$892K',
-          change: '+18.4%',
-          chartData: Array.from({ length: 12 }, (_, i) => ({ value: Math.random() * 500000 + 600000 }))
-        },
-        {
-          ...baseData[2],
-          label: 'Cash Flow',
-          value: '$1.2M',
-          change: '+15.2%',
-          trend: 'up' as const,
-          color: themeColors.positive
-        },
-        {
-          ...baseData[3],
-          label: 'ROI',
-          value: '24.8%',
-          change: '+3.2%'
-        }
-      ];
-    }
-
-    return baseData;
+    return baseData.slice(0, kpiCount);
   };
 
   const renderAdvancedKPISection = () => {
-    const kpiData = generateAdvancedKPIData(config.dashboardType);
-    const kpiCount = Math.min(kpiData.length, 4);
+    const kpiData = generateAdvancedKPIData(config.dashboardType, config.complexity || 'moderate');
+    const gridCols = config.complexity === 'simple' ? 'grid-cols-3' : 
+                    config.complexity === 'moderate' ? 'grid-cols-4' : 'grid-cols-6';
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {kpiData.slice(0, kpiCount).map((kpi, index) => (
+      <div className={`grid ${gridCols} gap-4 mb-6`}>
+        {kpiData.map((kpi, index) => (
           <AdvancedKPICard
             key={index}
             data={kpi}
@@ -238,8 +240,16 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
       );
     }
 
-    // Determine appropriate height based on placement size
-    const heightClass = isFullWidth ? 'h-96' : placement.position.colSpan >= 8 ? 'h-80' : 'h-72';
+    // Dynamic height based on complexity and placement
+    const getChartHeight = () => {
+      if (config.complexity === 'simple') return 'h-64';
+      if (config.complexity === 'complex') {
+        return isFullWidth ? 'h-96' : placement.position.colSpan >= 8 ? 'h-80' : 'h-72';
+      }
+      return isFullWidth ? 'h-80' : placement.position.colSpan >= 6 ? 'h-72' : 'h-64';
+    };
+
+    const heightClass = getChartHeight();
 
     return (
       <div key={index} className={`${gridClasses}`}>
@@ -253,6 +263,8 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
               {visual.includes('bar') && 'Comparative data visualization'}
               {visual.includes('pie') && 'Distribution breakdown'}
               {visual.includes('area') && 'Volume and trend analysis'}
+              {visual.includes('heatmap') && 'Data density visualization'}
+              {visual.includes('geo') && 'Geographic data mapping'}
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0 flex-1 flex items-center justify-center">
@@ -278,6 +290,8 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
                 {visual.includes('bar') && '📊'}
                 {visual.includes('pie') && '🥧'}
                 {visual.includes('area') && '📈'}
+                {visual.includes('heatmap') && '🔥'}
+                {visual.includes('geo') && '🗺️'}
               </div>
               <div style={{
                 color: themeColors.textPrimary,
@@ -288,12 +302,15 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
                 {visual.includes('bar') && 'Bar Chart'}
                 {visual.includes('pie') && 'Pie Chart'}
                 {visual.includes('area') && 'Area Chart'}
+                {visual.includes('heatmap') && 'Heatmap'}
+                {visual.includes('geo') && 'Geographic Map'}
               </div>
               <div style={{
                 color: themeColors.textSecondary,
                 fontSize: '12px'
               }}>
-                Interactive chart placeholder
+                {config.complexity === 'simple' ? 'Basic visualization' : 
+                 config.complexity === 'complex' ? 'Advanced interactive chart' : 'Interactive chart placeholder'}
               </div>
             </div>
           </CardContent>

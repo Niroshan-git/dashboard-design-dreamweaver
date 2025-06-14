@@ -7,6 +7,7 @@ export interface ChartTypeRule {
   allowedLayouts: string[];
   isTable?: boolean;
   minCols?: number;
+  complexity?: string[];
 }
 
 export const chartTypeRules: ChartTypeRule[] = [
@@ -14,35 +15,40 @@ export const chartTypeRules: ChartTypeRule[] = [
     type: 'kpi-cards',
     priority: 1,
     preferredPosition: 'top',
-    allowedLayouts: ['all']
+    allowedLayouts: ['all'],
+    complexity: ['simple', 'moderate', 'complex']
   },
   {
     type: 'line-charts',
     priority: 2,
     preferredPosition: 'center',
     allowedLayouts: ['primary-chart', 'hero-chart', 'main-focus', 'primary-trend', 'transaction-trend'],
-    minCols: 6
+    minCols: 6,
+    complexity: ['simple', 'moderate', 'complex']
   },
   {
     type: 'bar-charts',
     priority: 3,
     preferredPosition: 'center',
     allowedLayouts: ['secondary-chart', 'left-primary', 'secondary-analysis', 'breakdown-chart-1'],
-    minCols: 6
+    minCols: 6,
+    complexity: ['simple', 'moderate', 'complex']
   },
   {
     type: 'pie-charts',
     priority: 4,
     preferredPosition: 'side',
     allowedLayouts: ['tertiary-chart', 'right-primary', 'trend-chart', 'risk-metrics'],
-    minCols: 4
+    minCols: 4,
+    complexity: ['moderate', 'complex']
   },
   {
     type: 'area-charts',
     priority: 5,
     preferredPosition: 'center',
     allowedLayouts: ['quaternary-chart', 'chart-1', 'chart-2', 'account-breakdown'],
-    minCols: 6
+    minCols: 6,
+    complexity: ['moderate', 'complex']
   },
   {
     type: 'data-tables',
@@ -50,7 +56,8 @@ export const chartTypeRules: ChartTypeRule[] = [
     preferredPosition: 'full-width',
     allowedLayouts: ['data-table', 'detail-table', 'transaction-table'],
     isTable: true,
-    minCols: 12
+    minCols: 12,
+    complexity: ['moderate', 'complex']
   },
   {
     type: 'transaction-tables',
@@ -58,7 +65,8 @@ export const chartTypeRules: ChartTypeRule[] = [
     preferredPosition: 'full-width',
     allowedLayouts: ['transaction-table', 'detail-table', 'data-table'],
     isTable: true,
-    minCols: 12
+    minCols: 12,
+    complexity: ['complex']
   },
   {
     type: 'summary-tables',
@@ -72,45 +80,87 @@ export const chartTypeRules: ChartTypeRule[] = [
     type: 'filters',
     priority: 9,
     preferredPosition: 'top',
-    allowedLayouts: ['kpi-detail', 'summary-chart']
+    allowedLayouts: ['kpi-detail', 'summary-chart'],
+    complexity: ['moderate', 'complex']
   },
   {
     type: 'time-controls',
     priority: 10,
     preferredPosition: 'top',
-    allowedLayouts: ['kpi-detail', 'compliance-chart']
+    allowedLayouts: ['kpi-detail', 'compliance-chart'],
+    complexity: ['moderate', 'complex']
+  },
+  {
+    type: 'heatmaps',
+    priority: 11,
+    preferredPosition: 'center',
+    allowedLayouts: ['chart-1', 'chart-2', 'breakdown-chart-2'],
+    minCols: 6,
+    complexity: ['complex']
+  },
+  {
+    type: 'geo-maps',
+    priority: 12,
+    preferredPosition: 'center',
+    allowedLayouts: ['chart-1', 'chart-2', 'breakdown-chart-3'],
+    minCols: 8,
+    complexity: ['complex']
   }
 ];
 
+export const getVisualsForComplexity = (complexity: string): string[] => {
+  const filteredRules = chartTypeRules.filter(rule => 
+    rule.complexity && rule.complexity.includes(complexity)
+  );
+  
+  switch (complexity) {
+    case 'simple':
+      return ['kpi-cards', 'line-charts', 'bar-charts'].slice(0, 3);
+    case 'moderate':
+      return ['kpi-cards', 'line-charts', 'bar-charts', 'pie-charts', 'area-charts', 'filters'].slice(0, 6);
+    case 'complex':
+      return filteredRules.slice(0, 8).map(rule => rule.type);
+    default:
+      return ['kpi-cards', 'line-charts', 'bar-charts'];
+  }
+};
+
 export const assignChartsToLayout = (
   visuals: string[], 
-  layout: LayoutTemplate
+  layout: LayoutTemplate,
+  complexity: string = 'moderate'
 ): { visual: string; placement: ChartPlacement }[] => {
   const assignments: { visual: string; placement: ChartPlacement }[] = [];
   const availablePlacements = [...layout.chartLayout].sort((a, b) => a.priority - b.priority);
   
-  // Sort visuals by priority based on rules
-  const sortedVisuals = visuals.sort((a, b) => {
+  // Filter visuals based on complexity
+  const complexityFilteredVisuals = visuals.filter(visual => {
+    const rule = chartTypeRules.find(r => r.type === visual);
+    return rule && rule.complexity && rule.complexity.includes(complexity);
+  });
+  
+  // Sort visuals by priority
+  const sortedVisuals = complexityFilteredVisuals.sort((a, b) => {
     const ruleA = chartTypeRules.find(r => r.type === a);
     const ruleB = chartTypeRules.find(r => r.type === b);
     return (ruleA?.priority || 10) - (ruleB?.priority || 10);
   });
 
-  // Assign visuals to appropriate placements
-  sortedVisuals.forEach((visual) => {
+  // Limit visuals based on layout capacity
+  const maxVisuals = Math.min(sortedVisuals.length, layout.maxVisuals);
+  const visualsToAssign = sortedVisuals.slice(0, maxVisuals);
+
+  visualsToAssign.forEach((visual) => {
     const rule = chartTypeRules.find(r => r.type === visual);
     
     if (rule && availablePlacements.length > 0) {
       let bestPlacement: ChartPlacement | null = null;
       
-      // Find the best placement based on visual type
       if (rule.isTable) {
-        // Tables need full width
         bestPlacement = availablePlacements.find(p => p.position.colSpan >= 12) || 
                       availablePlacements.find(p => p.position.colSpan >= 8) ||
                       availablePlacements[0];
       } else {
-        // Charts can use various sizes based on their requirements
         const minCols = rule.minCols || 4;
         bestPlacement = availablePlacements.find(p => 
           p.position.colSpan >= minCols && 
@@ -124,7 +174,6 @@ export const assignChartsToLayout = (
           placement: bestPlacement
         });
         
-        // Remove used placement
         const usedIndex = availablePlacements.indexOf(bestPlacement);
         availablePlacements.splice(usedIndex, 1);
       }

@@ -173,16 +173,26 @@ export const getLayoutForComplexity = (complexity: string, visualCount: number):
   const complexityLayouts = layoutTemplates.filter(t => t.complexity === complexity);
   
   if (complexityLayouts.length === 0) {
-    // Fallback to any layout if no match found
-    return layoutTemplates[0];
+    // Fallback based on complexity string
+    if (complexity === 'simple') {
+      return layoutTemplates.find(t => t.complexity === 'simple') || layoutTemplates[0];
+    } else if (complexity === 'complex') {
+      return layoutTemplates.find(t => t.complexity === 'complex') || layoutTemplates[layoutTemplates.length - 1];
+    }
+    return layoutTemplates.find(t => t.complexity === 'moderate') || layoutTemplates[1];
   }
 
   // Find layout that can accommodate the visual count
   const suitableLayouts = complexityLayouts.filter(t => t.maxVisuals >= visualCount);
   
   if (suitableLayouts.length > 0) {
-    // Return a random suitable layout for variety
-    return suitableLayouts[Math.floor(Math.random() * suitableLayouts.length)];
+    // Prefer layouts that match visual count closely
+    suitableLayouts.sort((a, b) => {
+      const diffA = Math.abs(a.maxVisuals - visualCount);
+      const diffB = Math.abs(b.maxVisuals - visualCount);
+      return diffA - diffB;
+    });
+    return suitableLayouts[0];
   }
   
   // Return the largest layout for the complexity if visual count exceeds all
