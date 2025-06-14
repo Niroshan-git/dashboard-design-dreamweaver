@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import DataTable from "@/components/DataTable";
 import { assignChartsToLayout, getTableDataForType, getVisualsForComplexity } from "@/utils/chartPlacementLogic";
-import { layoutTemplates, LayoutTemplate, getLayoutForComplexity, getLayoutForPage } from "@/utils/layoutTemplates";
+import { layoutTemplates, LayoutTemplate, getLayoutForComplexity } from "@/utils/layoutTemplates";
 import AdvancedKPICard from './AdvancedKPICard';
 import DashboardTopNavigation from './DashboardTopNavigation';
 import { advancedThemes } from '@/utils/advancedThemeSystem';
@@ -34,26 +34,34 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     setVisuals(finalVisuals);
   }, [config.visuals, config.complexity]);
 
-  // Set layout based on complexity, page, and canvas size
+  // Set layout based on complexity
   useEffect(() => {
-    const totalPages = config.pages || 1;
-    let selectedLayout: LayoutTemplate;
-    
-    if (config.complexity) {
-      // Use page-specific layout that considers complexity
-      selectedLayout = getLayoutForPage(currentPage, totalPages, visuals.length, config.complexity);
-    } else if (config.layoutType) {
-      const foundLayout = layoutTemplates.find(l => l.name === config.layoutType);
-      selectedLayout = foundLayout || layoutTemplates[0];
-    } else {
-      selectedLayout = getLayoutForComplexity('moderate', visuals.length);
-    }
-    
+    const selectedLayout = getLayoutForComplexity(
+      config.complexity || 'moderate', 
+      visuals.length
+    );
     setLayout(selectedLayout);
-  }, [config.complexity, config.layoutType, config.pages, currentPage, visuals.length]);
+  }, [config.complexity, visuals.length]);
 
   const totalPages = config.pages || 1;
-  const visualsPerPage = layout.maxVisuals;
+  
+  // Calculate visuals per page based on complexity and canvas size
+  const getVisualsPerPage = () => {
+    const complexity = config.complexity || 'moderate';
+    const canvasSize = config.layoutDimension || '16:9';
+    
+    let baseCount = 4;
+    if (complexity === 'simple') baseCount = 3;
+    else if (complexity === 'complex') baseCount = 6;
+    
+    // Adjust for canvas size
+    if (canvasSize === '21:9') baseCount += 2;
+    else if (canvasSize === '4:3' || canvasSize === '1:1') baseCount -= 1;
+    
+    return Math.max(1, baseCount);
+  };
+  
+  const visualsPerPage = getVisualsPerPage();
   const startIndex = currentPage * visualsPerPage;
   const endIndex = startIndex + visualsPerPage;
   
@@ -168,23 +176,20 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   const renderAdvancedKPISection = () => {
     const kpiData = generateAdvancedKPIData(config.dashboardType, config.complexity || 'moderate');
     const complexity = config.complexity || 'moderate';
-    const gridCols = complexity === 'simple' ? 'grid-cols-3' : 
-                    complexity === 'moderate' ? 'grid-cols-4' : 'grid-cols-6';
-
-    // Adjust grid for canvas size
     const canvasSize = config.layoutDimension || '16:9';
-    let adjustedGridCols = gridCols;
     
-    if (canvasSize === '4:3' && complexity === 'complex') {
-      adjustedGridCols = 'grid-cols-4'; // Reduce columns for taller aspect ratio
-    } else if (canvasSize === '1:1' && complexity !== 'simple') {
-      adjustedGridCols = 'grid-cols-3'; // Square format works better with 3 columns
-    } else if (canvasSize === '21:9' && complexity === 'complex') {
-      adjustedGridCols = 'grid-cols-8'; // Ultra-wide can handle more columns
+    // Dynamic grid based on complexity and canvas size
+    let gridCols = 'grid-cols-4';
+    if (complexity === 'simple') {
+      gridCols = 'grid-cols-3';
+    } else if (complexity === 'complex') {
+      if (canvasSize === '21:9') gridCols = 'grid-cols-6';
+      else if (canvasSize === '4:3' || canvasSize === '1:1') gridCols = 'grid-cols-3';
+      else gridCols = 'grid-cols-6';
     }
 
     return (
-      <div className={`grid ${adjustedGridCols} gap-4 mb-6`}>
+      <div className={`grid ${gridCols} gap-4 mb-6`}>
         {kpiData.map((kpi, index) => (
           <AdvancedKPICard
             key={index}
@@ -202,28 +207,18 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   const getGridClasses = (placement: any) => {
     const { colSpan, rowSpan } = placement.position;
     
-    // Ensure proper grid classes based on canvas size
-    const canvasSize = config.layoutDimension || '16:9';
-    let adjustedColSpan = colSpan;
-    
-    // Adjust column spans for different canvas sizes
-    if (canvasSize === '4:3' && colSpan > 8) {
-      adjustedColSpan = 8; // Limit width for 4:3 ratio
-    } else if (canvasSize === '1:1' && colSpan > 6) {
-      adjustedColSpan = 6; // Square format constraint
-    }
-    
     const colClasses = {
       1: 'col-span-1', 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4',
       5: 'col-span-5', 6: 'col-span-6', 7: 'col-span-7', 8: 'col-span-8',
-      9: 'col-span-9', 10: 'col-span-10', 11: 'col-span-11', 12: 'col-span-12'
+      9: 'col-span-9', 10: 'col-span-10', 11: 'col-span-11', 12: 'col-span-12',
+      13: 'col-span-12', 14: 'col-span-12', 15: 'col-span-12', 16: 'col-span-12'
     };
     
     const rowClasses = {
       1: 'row-span-1', 2: 'row-span-2', 3: 'row-span-3', 4: 'row-span-4'
     };
     
-    return `${colClasses[adjustedColSpan as keyof typeof colClasses] || 'col-span-4'} ${rowClasses[rowSpan as keyof typeof rowClasses] || 'row-span-1'}`;
+    return `${colClasses[colSpan as keyof typeof colClasses] || 'col-span-4'} ${rowClasses[rowSpan as keyof typeof rowClasses] || 'row-span-2'}`;
   };
 
   const renderChart = (visual: string, placement: any, index: number) => {
@@ -242,13 +237,21 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
 
     const gridClasses = getGridClasses(placement);
     const isTable = visual.includes('table');
-    const isFullWidth = placement.position.colSpan >= 12;
     const complexity = config.complexity || 'moderate';
-    const canvasSize = config.layoutDimension || '16:9';
+    
+    // Dynamic height based on chart type and complexity
+    const getChartHeight = () => {
+      if (isTable) return 'h-96';
+      
+      const baseHeight = complexity === 'simple' ? 'h-64' : 
+                        complexity === 'complex' ? 'h-80' : 'h-72';
+      
+      return baseHeight;
+    };
 
     if (isTable) {
       return (
-        <div key={index} className={`${gridClasses} min-h-fit`}>
+        <div key={index} className={`${gridClasses} ${getChartHeight()}`}>
           <DataTable
             title={getTableTitle(visual)}
             headers={tableData.headers}
@@ -260,36 +263,9 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
       );
     }
 
-    // Dynamic height based on complexity, canvas size, and placement
-    const getChartHeight = () => {
-      const baseHeight = complexity === 'simple' ? 48 : complexity === 'complex' ? 72 : 64;
-      
-      // Adjust for canvas size
-      let heightMultiplier = 1;
-      if (canvasSize === '4:3') {
-        heightMultiplier = 1.2; // Taller for 4:3 ratio
-      } else if (canvasSize === '1:1') {
-        heightMultiplier = 1.1; // Slightly taller for square
-      } else if (canvasSize === '21:9') {
-        heightMultiplier = 0.9; // Shorter for ultra-wide
-      }
-      
-      // Adjust for placement size
-      if (isFullWidth) {
-        heightMultiplier *= 1.3;
-      } else if (placement.position.colSpan >= 8) {
-        heightMultiplier *= 1.2;
-      }
-      
-      const finalHeight = Math.round(baseHeight * heightMultiplier);
-      return `h-${finalHeight}`;
-    };
-
-    const heightClass = getChartHeight();
-
     return (
-      <div key={index} className={`${gridClasses}`}>
-        <Card className={`${heightClass} flex flex-col`} {...commonProps}>
+      <div key={index} className={`${gridClasses} ${getChartHeight()}`}>
+        <Card className="h-full flex flex-col" {...commonProps}>
           <CardHeader className="pb-3 flex-shrink-0">
             <CardTitle style={{ color: themeColors.textPrimary }} className="text-lg">
               {visual.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
@@ -370,6 +346,17 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     }
   };
 
+  // Get grid container columns based on canvas size
+  const getGridContainerCols = () => {
+    const canvasSize = config.layoutDimension || '16:9';
+    switch (canvasSize) {
+      case '4:3': return 'grid-cols-10';
+      case '1:1': return 'grid-cols-8';
+      case '21:9': return 'grid-cols-16';
+      default: return 'grid-cols-12';
+    }
+  };
+
   return (
     <div className="h-full flex flex-col" style={{ 
       background: themeColors.background,
@@ -383,12 +370,12 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
       />
 
       <div className="flex-1 overflow-auto">
-        <div className={`p-6 ${getAspectRatioClass()}`}>
+        <div className={`p-6 w-full ${getAspectRatioClass()}`}>
           {renderAdvancedKPISection()}
 
           <div className="space-y-6 h-full">
             {currentPageVisuals.length > 0 ? (
-              <div className="grid grid-cols-12 gap-4 auto-rows-min h-full">
+              <div className={`grid ${getGridContainerCols()} gap-4 auto-rows-min h-full`}>
                 {currentPageVisuals
                   .filter(assignment => assignment && assignment.visual)
                   .map((assignment, index) => 

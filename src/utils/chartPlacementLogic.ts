@@ -1,4 +1,3 @@
-
 import { LayoutTemplate, ChartPlacement } from './layoutTemplates';
 
 export interface ChartTypeRule {
@@ -8,7 +7,9 @@ export interface ChartTypeRule {
   allowedLayouts: string[];
   isTable?: boolean;
   minCols?: number;
+  maxCols?: number;
   complexity?: string[];
+  flexibleSize?: boolean;
 }
 
 export const chartTypeRules: ChartTypeRule[] = [
@@ -17,39 +18,48 @@ export const chartTypeRules: ChartTypeRule[] = [
     priority: 1,
     preferredPosition: 'top',
     allowedLayouts: ['all'],
-    complexity: ['simple', 'moderate', 'complex']
+    complexity: ['simple', 'moderate', 'complex'],
+    flexibleSize: true
   },
   {
     type: 'line-charts',
     priority: 2,
     preferredPosition: 'center',
     allowedLayouts: ['primary-chart', 'hero-chart', 'main-focus', 'primary-trend', 'transaction-trend'],
-    minCols: 6,
-    complexity: ['simple', 'moderate', 'complex']
+    minCols: 4,
+    maxCols: 8,
+    complexity: ['simple', 'moderate', 'complex'],
+    flexibleSize: true
   },
   {
     type: 'bar-charts',
     priority: 3,
     preferredPosition: 'center',
     allowedLayouts: ['secondary-chart', 'left-primary', 'secondary-analysis', 'breakdown-chart-1'],
-    minCols: 6,
-    complexity: ['simple', 'moderate', 'complex']
+    minCols: 4,
+    maxCols: 8,
+    complexity: ['simple', 'moderate', 'complex'],
+    flexibleSize: true
   },
   {
     type: 'pie-charts',
     priority: 4,
     preferredPosition: 'side',
     allowedLayouts: ['tertiary-chart', 'right-primary', 'trend-chart', 'risk-metrics'],
-    minCols: 4,
-    complexity: ['moderate', 'complex']
+    minCols: 3,
+    maxCols: 6,
+    complexity: ['moderate', 'complex'],
+    flexibleSize: true
   },
   {
     type: 'area-charts',
     priority: 5,
     preferredPosition: 'center',
     allowedLayouts: ['quaternary-chart', 'chart-1', 'chart-2', 'account-breakdown'],
-    minCols: 6,
-    complexity: ['moderate', 'complex']
+    minCols: 4,
+    maxCols: 8,
+    complexity: ['moderate', 'complex'],
+    flexibleSize: true
   },
   {
     type: 'data-tables',
@@ -58,6 +68,7 @@ export const chartTypeRules: ChartTypeRule[] = [
     allowedLayouts: ['data-table', 'detail-table', 'transaction-table'],
     isTable: true,
     minCols: 12,
+    maxCols: 12,
     complexity: ['moderate', 'complex']
   },
   {
@@ -67,6 +78,7 @@ export const chartTypeRules: ChartTypeRule[] = [
     allowedLayouts: ['transaction-table', 'detail-table', 'data-table'],
     isTable: true,
     minCols: 12,
+    maxCols: 12,
     complexity: ['complex']
   },
   {
@@ -75,37 +87,28 @@ export const chartTypeRules: ChartTypeRule[] = [
     preferredPosition: 'full-width',
     allowedLayouts: ['detail-table', 'data-table'],
     isTable: true,
-    minCols: 12
-  },
-  {
-    type: 'filters',
-    priority: 9,
-    preferredPosition: 'top',
-    allowedLayouts: ['kpi-detail', 'summary-chart'],
-    complexity: ['moderate', 'complex']
-  },
-  {
-    type: 'time-controls',
-    priority: 10,
-    preferredPosition: 'top',
-    allowedLayouts: ['kpi-detail', 'compliance-chart'],
-    complexity: ['moderate', 'complex']
+    minCols: 12,
+    maxCols: 12
   },
   {
     type: 'heatmaps',
-    priority: 11,
+    priority: 9,
     preferredPosition: 'center',
     allowedLayouts: ['chart-1', 'chart-2', 'breakdown-chart-2'],
     minCols: 6,
-    complexity: ['complex']
+    maxCols: 12,
+    complexity: ['complex'],
+    flexibleSize: true
   },
   {
     type: 'geo-maps',
-    priority: 12,
+    priority: 10,
     preferredPosition: 'center',
     allowedLayouts: ['chart-1', 'chart-2', 'breakdown-chart-3'],
     minCols: 8,
-    complexity: ['complex']
+    maxCols: 12,
+    complexity: ['complex'],
+    flexibleSize: true
   }
 ];
 
@@ -116,14 +119,76 @@ export const getVisualsForComplexity = (complexity: string): string[] => {
   
   switch (complexity) {
     case 'simple':
-      return ['kpi-cards', 'line-charts', 'bar-charts'].slice(0, 3);
+      return filteredRules.slice(0, 3).map(rule => rule.type);
     case 'moderate':
-      return ['kpi-cards', 'line-charts', 'bar-charts', 'pie-charts', 'area-charts', 'data-tables'].slice(0, 6);
+      return filteredRules.slice(0, 6).map(rule => rule.type);
     case 'complex':
-      return filteredRules.slice(0, 8).map(rule => rule.type);
+      return filteredRules.map(rule => rule.type);
     default:
       return ['kpi-cards', 'line-charts', 'bar-charts'];
   }
+};
+
+const calculateOptimalLayout = (
+  visuals: string[], 
+  containerWidth: number = 12, 
+  complexity: string = 'moderate'
+): { visual: string; colSpan: number; rowSpan: number }[] => {
+  const layouts: { visual: string; colSpan: number; rowSpan: number }[] = [];
+  let remainingWidth = containerWidth;
+  let currentRow = 1;
+  
+  const getOptimalSize = (visual: string, availableWidth: number) => {
+    const rule = chartTypeRules.find(r => r.type === visual);
+    if (!rule) return { colSpan: 4, rowSpan: 2 };
+    
+    if (rule.isTable) {
+      return { colSpan: 12, rowSpan: 3 };
+    }
+    
+    // Calculate optimal column span based on complexity and available width
+    let optimalCols = rule.minCols || 4;
+    
+    if (complexity === 'simple') {
+      optimalCols = Math.min(6, availableWidth);
+    } else if (complexity === 'moderate') {
+      optimalCols = Math.min(6, availableWidth);
+    } else if (complexity === 'complex') {
+      optimalCols = Math.min(rule.maxCols || 8, availableWidth);
+    }
+    
+    // Ensure we don't exceed available width
+    optimalCols = Math.min(optimalCols, availableWidth);
+    
+    // Dynamic row span based on chart type and complexity
+    let rowSpan = 2;
+    if (visual.includes('table')) rowSpan = 4;
+    else if (complexity === 'complex') rowSpan = 3;
+    else if (complexity === 'simple') rowSpan = 2;
+    
+    return { colSpan: optimalCols, rowSpan };
+  };
+  
+  visuals.forEach((visual) => {
+    const { colSpan, rowSpan } = getOptimalSize(visual, remainingWidth);
+    
+    // If chart doesn't fit in current row, start new row
+    if (colSpan > remainingWidth) {
+      currentRow++;
+      remainingWidth = containerWidth;
+    }
+    
+    layouts.push({ visual, colSpan, rowSpan });
+    remainingWidth -= colSpan;
+    
+    // If no space left in row, start new row
+    if (remainingWidth <= 0) {
+      currentRow++;
+      remainingWidth = containerWidth;
+    }
+  });
+  
+  return layouts;
 };
 
 export const assignChartsToLayout = (
@@ -134,9 +199,6 @@ export const assignChartsToLayout = (
   pageIndex: number = 0,
   totalPages: number = 1
 ): { visual: string; placement: ChartPlacement }[] => {
-  const assignments: { visual: string; placement: ChartPlacement }[] = [];
-  const availablePlacements = [...layout.chartLayout].sort((a, b) => a.priority - b.priority);
-  
   // Filter visuals based on complexity
   const complexityFilteredVisuals = visuals.filter(visual => {
     const rule = chartTypeRules.find(r => r.type === visual);
@@ -150,90 +212,55 @@ export const assignChartsToLayout = (
     return (ruleA?.priority || 10) - (ruleB?.priority || 10);
   });
 
-  // Adjust chart placement based on canvas size and page distribution
-  const adjustPlacementForCanvas = (placement: ChartPlacement): ChartPlacement => {
-    const adjustedPlacement = { ...placement };
-    
-    // Adjust for canvas size
+  // Calculate container width based on canvas size
+  const getContainerWidth = () => {
     switch (canvasSize) {
-      case '16:9':
-        // Standard widescreen - no adjustment needed
-        break;
-      case '4:3':
-        // Reduce horizontal span for taller aspect ratio
-        if (adjustedPlacement.position.colSpan > 8) {
-          adjustedPlacement.position.colSpan = Math.max(6, adjustedPlacement.position.colSpan - 2);
-        }
-        break;
-      case '1:1':
-        // Square format - balance width and height
-        if (adjustedPlacement.position.colSpan > 6) {
-          adjustedPlacement.position.colSpan = 6;
-          adjustedPlacement.position.rowSpan = Math.max(2, adjustedPlacement.position.rowSpan);
-        }
-        break;
-      case '21:9':
-        // Ultra-wide - can use more horizontal space
-        if (adjustedPlacement.position.colSpan >= 6) {
-          adjustedPlacement.position.colSpan = Math.min(12, adjustedPlacement.position.colSpan + 2);
-        }
-        break;
+      case '4:3': return 10; // Narrower for 4:3
+      case '1:1': return 8;  // Square format
+      case '21:9': return 16; // Ultra-wide
+      default: return 12; // Standard 16:9
     }
-    
-    // Adjust for multiple pages - distribute content more evenly
-    if (totalPages > 1) {
-      // For multi-page dashboards, make charts slightly smaller to fit more per page
-      if (adjustedPlacement.position.colSpan > 8) {
-        adjustedPlacement.position.colSpan = 8;
-      }
-      if (adjustedPlacement.position.rowSpan > 3) {
-        adjustedPlacement.position.rowSpan = 3;
-      }
-    }
-    
-    return adjustedPlacement;
   };
 
-  // Limit visuals based on layout capacity and complexity
-  let maxVisuals = layout.maxVisuals;
+  const containerWidth = getContainerWidth();
   
-  // Adjust max visuals based on complexity and canvas
-  if (complexity === 'simple') {
-    maxVisuals = Math.min(maxVisuals, 3);
-  } else if (complexity === 'complex') {
-    maxVisuals = Math.min(maxVisuals, canvasSize === '21:9' ? 10 : 8);
-  }
+  // Calculate optimal layouts for all visuals
+  const optimalLayouts = calculateOptimalLayout(sortedVisuals, containerWidth, complexity);
   
-  const visualsToAssign = sortedVisuals.slice(0, maxVisuals);
-
-  visualsToAssign.forEach((visual) => {
-    const rule = chartTypeRules.find(r => r.type === visual);
+  // Convert to chart placements
+  const assignments: { visual: string; placement: ChartPlacement }[] = [];
+  let currentRow = 1;
+  let currentCol = 1;
+  
+  optimalLayouts.forEach((layout, index) => {
+    // Check if we need to start a new row
+    if (currentCol + layout.colSpan - 1 > containerWidth) {
+      currentRow += 2; // Add some spacing between rows
+      currentCol = 1;
+    }
     
-    if (rule && availablePlacements.length > 0) {
-      let bestPlacement: ChartPlacement | null = null;
-      
-      if (rule.isTable) {
-        bestPlacement = availablePlacements.find(p => p.position.colSpan >= 12) || 
-                      availablePlacements.find(p => p.position.colSpan >= 8) ||
-                      availablePlacements[0];
-      } else {
-        const minCols = rule.minCols || 4;
-        bestPlacement = availablePlacements.find(p => 
-          p.position.colSpan >= minCols && 
-          (rule.allowedLayouts.includes('all') || rule.allowedLayouts.includes(p.component))
-        ) || availablePlacements[0];
-      }
-      
-      if (bestPlacement) {
-        const adjustedPlacement = adjustPlacementForCanvas(bestPlacement);
-        assignments.push({
-          visual,
-          placement: adjustedPlacement
-        });
-        
-        const usedIndex = availablePlacements.indexOf(bestPlacement);
-        availablePlacements.splice(usedIndex, 1);
-      }
+    const placement: ChartPlacement = {
+      component: `chart-${index}`,
+      position: {
+        row: currentRow,
+        col: currentCol,
+        rowSpan: layout.rowSpan,
+        colSpan: layout.colSpan
+      },
+      priority: index + 1
+    };
+    
+    assignments.push({
+      visual: layout.visual,
+      placement
+    });
+    
+    currentCol += layout.colSpan;
+    
+    // If table or full-width component, move to next row
+    if (layout.colSpan >= containerWidth * 0.8) {
+      currentRow += layout.rowSpan + 1;
+      currentCol = 1;
     }
   });
 
