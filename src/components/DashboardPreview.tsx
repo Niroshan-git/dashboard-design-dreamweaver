@@ -6,7 +6,7 @@ import DataTable from "@/components/DataTable";
 import { assignChartsToLayout, getTableDataForType } from "@/utils/chartPlacementLogic";
 import { layoutTemplates, LayoutTemplate, ChartPlacement } from "@/utils/layoutTemplates";
 import AdvancedKPICard from './AdvancedKPICard';
-import SmartPageNavigation from './SmartPageNavigation';
+import DashboardTopNavigation from './DashboardTopNavigation';
 import { advancedThemes } from '@/utils/advancedThemeSystem';
 
 interface DashboardPreviewProps {
@@ -50,15 +50,6 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   const startIndex = currentPage * visualsPerPage;
   const endIndex = startIndex + visualsPerPage;
   const currentPageVisuals = assignChartsToLayout(visuals.slice(startIndex, endIndex), layout);
-
-  console.log('Dashboard Preview Debug:', {
-    visuals,
-    currentPage,
-    totalPages,
-    visualsPerPage,
-    currentPageVisuals,
-    layout: layout.name
-  });
 
   const tableData = getTableDataForType('transaction-tables', config.dashboardType);
 
@@ -172,7 +163,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     const kpiCount = Math.min(kpiData.length, 4);
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {kpiData.slice(0, kpiCount).map((kpi, index) => (
           <AdvancedKPICard
             key={index}
@@ -187,38 +178,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     );
   };
 
-  const getGridClasses = (placement: ChartPlacement) => {
-    const { colSpan, rowSpan } = placement.position;
-    
-    // Map colSpan to proper Tailwind classes
-    const colClasses = {
-      1: 'col-span-1',
-      2: 'col-span-2',
-      3: 'col-span-3',
-      4: 'col-span-4',
-      5: 'col-span-5',
-      6: 'col-span-6',
-      7: 'col-span-7',
-      8: 'col-span-8',
-      9: 'col-span-9',
-      10: 'col-span-10',
-      11: 'col-span-11',
-      12: 'col-span-12'
-    };
-
-    const rowClasses = {
-      1: 'row-span-1',
-      2: 'row-span-2',
-      3: 'row-span-3',
-      4: 'row-span-4',
-      5: 'row-span-5',
-      6: 'row-span-6'
-    };
-
-    return `${colClasses[colSpan] || 'col-span-6'} ${rowClasses[rowSpan] || 'row-span-2'}`;
-  };
-
-  const renderChart = (visual: string, placement: ChartPlacement, index: number) => {
+  const renderChart = (visual: string, index: number) => {
     if (!visual || typeof visual !== 'string') {
       console.warn('Visual is undefined or not a string:', visual);
       return null;
@@ -232,11 +192,9 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
       }
     };
 
-    const gridClasses = getGridClasses(placement);
-
     if (visual.includes('table')) {
       return (
-        <div key={index} className={gridClasses}>
+        <Card key={index} className="h-fit" {...commonProps}>
           <DataTable
             title={getTableTitle(visual)}
             headers={tableData.headers}
@@ -244,37 +202,61 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
             themeColors={themeColors}
             showBadges={config.complexity !== 'simple'}
           />
-        </div>
+        </Card>
       );
     }
 
     return (
-      <Card key={index} className={gridClasses} {...commonProps}>
-        <CardHeader>
-          <CardTitle style={{ color: themeColors.textPrimary }}>
+      <Card key={index} className="h-80" {...commonProps}>
+        <CardHeader className="pb-3">
+          <CardTitle style={{ color: themeColors.textPrimary }} className="text-lg">
             {visual.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
           </CardTitle>
           <CardDescription style={{ color: themeColors.textSecondary }}>
-            Description of {visual.replace('-', ' ')}
+            {visual.includes('line') && 'Trend analysis over time'}
+            {visual.includes('bar') && 'Comparative data visualization'}
+            {visual.includes('pie') && 'Distribution breakdown'}
+            {visual.includes('area') && 'Volume and trend analysis'}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <div style={{ 
             height: '200px', 
-            background: `linear-gradient(135deg, ${themeColors.chartColors[index % themeColors.chartColors.length]}, ${themeColors.chartColors[(index + 1) % themeColors.chartColors.length]})`,
+            background: `linear-gradient(135deg, ${themeColors.chartColors[index % themeColors.chartColors.length]}20, ${themeColors.chartColors[(index + 1) % themeColors.chartColors.length]}20)`,
+            border: `2px dashed ${themeColors.chartColors[index % themeColors.chartColors.length]}40`,
             borderRadius: '8px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'white',
-            fontSize: '18px',
-            fontWeight: 'bold'
+            flexDirection: 'column',
+            gap: '8px'
           }}>
-            {visual.includes('line') && 'Line Chart'}
-            {visual.includes('bar') && 'Bar Chart'}
-            {visual.includes('pie') && 'Pie Chart'}
-            {visual.includes('area') && 'Area Chart'}
-            {!visual.includes('line') && !visual.includes('bar') && !visual.includes('pie') && !visual.includes('area') && 'Chart'}
+            <div style={{ 
+              color: themeColors.chartColors[index % themeColors.chartColors.length],
+              fontSize: '24px',
+              fontWeight: 'bold'
+            }}>
+              {visual.includes('line') && '📈'}
+              {visual.includes('bar') && '📊'}
+              {visual.includes('pie') && '🥧'}
+              {visual.includes('area') && '📈'}
+            </div>
+            <div style={{
+              color: themeColors.textPrimary,
+              fontSize: '16px',
+              fontWeight: '600'
+            }}>
+              {visual.includes('line') && 'Line Chart'}
+              {visual.includes('bar') && 'Bar Chart'}
+              {visual.includes('pie') && 'Pie Chart'}
+              {visual.includes('area') && 'Area Chart'}
+            </div>
+            <div style={{
+              color: themeColors.textSecondary,
+              fontSize: '12px'
+            }}>
+              Interactive chart placeholder
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -286,70 +268,52 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   };
 
   return (
-    <div 
-      className="h-full overflow-auto"
-      style={{ 
-        background: themeColors.background,
-        color: themeColors.textPrimary
-      }}
-    >
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight" style={{ color: themeColors.textPrimary }}>
-              Dashboard Preview
-            </h1>
-            <p style={{ color: themeColors.textSecondary }}>
-              Customize your dashboard layout and visuals.
-            </p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
-              Add Visual
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => onExport('pdf')}>
-              Export
-            </Button>
-          </div>
-        </div>
+    <div className="h-full flex flex-col" style={{ 
+      background: themeColors.background,
+      color: themeColors.textPrimary
+    }}>
+      {/* Top Navigation */}
+      <DashboardTopNavigation
+        config={config}
+        onPageSelect={handlePageChange}
+        currentPage={currentPage}
+        onExport={onExport}
+      />
 
-        {/* Advanced KPI Section - Always at top */}
-        {renderAdvancedKPISection()}
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto">
+        <div className="p-6">
+          {/* Advanced KPI Section */}
+          {renderAdvancedKPISection()}
 
-        {/* Dashboard Content */}
-        <div className="space-y-6">
-          {currentPageVisuals.length > 0 ? (
-            <div className="grid grid-cols-12 gap-4 auto-rows-min">
-              {currentPageVisuals
-                .filter(assignment => assignment && assignment.visual)
-                .map((assignment, index) => 
-                  renderChart(assignment.visual, assignment.placement, index)
-                )}
-            </div>
-          ) : (
-            <Card className="p-8 text-center" style={{ backgroundColor: themeColors.cardBackground }}>
-              <div className="text-lg font-medium mb-2" style={{ color: themeColors.textPrimary }}>
-                No visuals available
+          {/* Dashboard Content */}
+          <div className="space-y-6">
+            {currentPageVisuals.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {currentPageVisuals
+                  .filter(assignment => assignment && assignment.visual)
+                  .map((assignment, index) => 
+                    renderChart(assignment.visual, index)
+                  )}
               </div>
-              <p style={{ color: themeColors.textSecondary }}>
-                Please select some visuals to see your dashboard preview
-              </p>
-            </Card>
-          )}
-        </div>
-
-        {/* Smart Page Navigation */}
-        {totalPages > 1 && (
-          <div className="flex justify-center">
-            <SmartPageNavigation
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageSelect={handlePageChange}
-              config={config}
-            />
+            ) : (
+              <Card className="p-12 text-center" style={{ backgroundColor: themeColors.cardBackground }}>
+                <div className="space-y-4">
+                  <div className="text-6xl">📊</div>
+                  <div className="text-xl font-medium" style={{ color: themeColors.textPrimary }}>
+                    No visuals available
+                  </div>
+                  <p style={{ color: themeColors.textSecondary }}>
+                    Please select some visuals to see your dashboard preview
+                  </p>
+                  <Button variant="outline" className="mt-4">
+                    Add Visuals
+                  </Button>
+                </div>
+              </Card>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
