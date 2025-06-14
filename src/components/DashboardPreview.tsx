@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,9 @@ import DashboardNavigation from './DashboardNavigation';
 import DashboardTopNav from './DashboardTopNav';
 import MainDashboard from './MainDashboard';
 import TopNavigation from './TopNavigation';
+import SmartPageNavigation from './SmartPageNavigation';
+import { layoutTemplates, getLayoutForPage, getRandomLayoutTemplate } from '../utils/layoutTemplates';
+import { assignChartsToLayout } from '../utils/chartPlacementLogic';
 
 interface DashboardPreviewProps {
   config: any;
@@ -113,16 +115,16 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     switch (themeStyle) {
       case 'dark':
         return {
-          background: '#1f2937',
-          cardBackground: '#374151',
-          textPrimary: '#ffffff',
-          textSecondary: '#d1d5db',
-          borderColor: '#4b5563',
+          background: '#0f172a',
+          cardBackground: '#1e293b',
+          textPrimary: '#f8fafc',
+          textSecondary: '#cbd5e1',
+          borderColor: '#334155',
           chartColors: palette
         };
       case 'corporate':
         return {
-          background: '#f1f5f9',
+          background: '#f8fafc',
           cardBackground: '#ffffff',
           textPrimary: '#0f172a',
           textSecondary: '#475569',
@@ -159,11 +161,11 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
       case 'minimal':
       default:
         return {
-          background: '#fafafa',
-          cardBackground: '#ffffff',
-          textPrimary: '#09090b',
-          textSecondary: '#71717a',
-          borderColor: '#e4e4e7',
+          background: '#ffffff',
+          cardBackground: '#f9fafb',
+          textPrimary: '#111827',
+          textSecondary: '#6b7280',
+          borderColor: '#e5e7eb',
           chartColors: palette
         };
     }
@@ -313,6 +315,112 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     }
   };
 
+  const renderGridBasedLayout = (pageIndex: number) => {
+    const layout = getLayoutForPage(pageIndex, config.pages, config.visuals.length);
+    const chartAssignments = assignChartsToLayout(config.visuals, layout);
+    
+    return (
+      <div className="p-6 space-y-6">
+        {/* Header Section */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold mb-2" style={{ color: themeColors.textPrimary }}>
+            {pageIndex === 0 ? 'Dashboard Overview' : `${layout.name} - Page ${pageIndex + 1}`}
+          </h1>
+          <p className="text-lg" style={{ color: themeColors.textSecondary }}>
+            {pageIndex === 0 ? 'Comprehensive overview of your key metrics' : layout.description}
+          </p>
+        </div>
+
+        {/* Grid Container */}
+        <div className="grid grid-cols-12 gap-4 auto-rows-min">
+          {/* KPI Cards */}
+          {layout.kpiLayout.map((kpiPos, index) => (
+            <div 
+              key={`kpi-${index}`}
+              className={`col-span-${kpiPos.colSpan} row-span-${kpiPos.rowSpan}`}
+              style={{ 
+                gridColumn: `${kpiPos.col} / span ${kpiPos.colSpan}`,
+                gridRow: `${kpiPos.row} / span ${kpiPos.rowSpan}`
+              }}
+            >
+              {mockData.kpis[index % mockData.kpis.length] && 
+                renderKPICard(mockData.kpis[index % mockData.kpis.length], index)
+              }
+            </div>
+          ))}
+
+          {/* Charts */}
+          {chartAssignments.map((assignment, index) => (
+            <div 
+              key={`chart-${index}`}
+              className="col-span-full"
+              style={{ 
+                gridColumn: `${assignment.placement.position.col} / span ${assignment.placement.position.colSpan}`,
+                gridRow: `${assignment.placement.position.row} / span ${assignment.placement.position.rowSpan}`
+              }}
+            >
+              <Card 
+                className="hover:shadow-lg transition-shadow duration-200 h-full"
+                style={{ 
+                  backgroundColor: themeColors.cardBackground,
+                  borderColor: themeColors.borderColor,
+                  color: themeColors.textPrimary
+                }}
+              >
+                <CardHeader>
+                  <CardTitle className="text-lg" style={{ color: themeColors.textPrimary }}>
+                    {assignment.visual.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {renderChart(assignment.visual, index)}
+                </CardContent>
+              </Card>
+            </div>
+          ))}
+        </div>
+
+        {/* Page-specific Summary */}
+        {pageIndex === 0 && (
+          <Card 
+            className="mt-8"
+            style={{ 
+              backgroundColor: themeColors.cardBackground,
+              borderColor: themeColors.borderColor,
+              color: themeColors.textPrimary
+            }}
+          >
+            <CardHeader>
+              <CardTitle style={{ color: themeColors.textPrimary }}>
+                Dashboard Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">{config.pages}</div>
+                  <div className="text-sm" style={{ color: themeColors.textSecondary }}>Total Pages</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-green-600">{config.visuals.length}</div>
+                  <div className="text-sm" style={{ color: themeColors.textSecondary }}>Visual Components</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-purple-600">{layout.name}</div>
+                  <div className="text-sm" style={{ color: themeColors.textSecondary }}>Layout Pattern</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-orange-600">{config.complexity}</div>
+                  <div className="text-sm" style={{ color: themeColors.textSecondary }}>Complexity Level</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  };
+
   const renderMainDashboard = () => {
     return (
       <div className="p-6 space-y-6">
@@ -454,7 +562,8 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   const renderDashboardLayout = () => {
     const layoutStyle = {
       background: themeColors.background,
-      color: themeColors.textPrimary
+      color: themeColors.textPrimary,
+      minHeight: '100vh'
     };
 
     if (config.navigationPosition === 'top') {
@@ -468,7 +577,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
           />
           
           <div className="flex-1 overflow-auto">
-            {renderPageContent(currentPage)}
+            {renderGridBasedLayout(currentPage)}
           </div>
         </div>
       );
@@ -491,7 +600,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
           />
           
           <div className="flex-1 overflow-auto">
-            {renderPageContent(currentPage)}
+            {renderGridBasedLayout(currentPage)}
           </div>
         </div>
       </div>
@@ -509,25 +618,12 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
               Dashboard Preview
             </div>
             {config.pages > 1 && (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-                  disabled={currentPage === 0}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <span className="text-sm">Page {currentPage + 1} of {config.pages}</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.min(config.pages - 1, currentPage + 1))}
-                  disabled={currentPage === config.pages - 1}
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
+              <SmartPageNavigation
+                currentPage={currentPage}
+                totalPages={config.pages}
+                onPageSelect={setCurrentPage}
+                config={config}
+              />
             )}
           </CardTitle>
           <div className="flex flex-wrap gap-2">
@@ -551,8 +647,8 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
               <div className="text-sm text-gray-500">Components</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{config.colorPalette.length}</div>
-              <div className="text-sm text-gray-500">Colors</div>
+              <div className="text-2xl font-bold text-purple-600">{layoutTemplates.length}</div>
+              <div className="text-sm text-gray-500">Layout Templates</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-orange-600">{config.exportFormats.length}</div>
