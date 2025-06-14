@@ -6,6 +6,7 @@ import DataTable from "@/components/DataTable";
 import { assignChartsToLayout, getTableDataForType } from "@/utils/chartPlacementLogic";
 import { layoutTemplates, LayoutTemplate, ChartPlacement } from "@/utils/layoutTemplates";
 import AdvancedKPICard from './AdvancedKPICard';
+import SmartPageNavigation from './SmartPageNavigation';
 import { advancedThemes } from '@/utils/advancedThemeSystem';
 
 interface DashboardPreviewProps {
@@ -16,8 +17,24 @@ interface DashboardPreviewProps {
 const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   const [layout, setLayout] = useState<LayoutTemplate>(layoutTemplates[0]);
   const [visuals, setVisuals] = useState<string[]>([]);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const visualsPerPage = layout.maxVisuals;
+  const [currentPage, setCurrentPage] = useState<number>(0);
+
+  // Set up default visuals if none are provided
+  useEffect(() => {
+    if (config.selectedVisuals && config.selectedVisuals.length > 0) {
+      setVisuals(config.selectedVisuals);
+    } else {
+      // Default visuals for demo purposes
+      const defaultVisuals = [
+        'line-charts',
+        'bar-charts', 
+        'pie-charts',
+        'area-charts',
+        'data-tables'
+      ];
+      setVisuals(defaultVisuals);
+    }
+  }, [config.selectedVisuals]);
 
   useEffect(() => {
     if (config.layoutType) {
@@ -28,16 +45,20 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     }
   }, [config.layoutType]);
 
-  useEffect(() => {
-    if (config.selectedVisuals) {
-      setVisuals(config.selectedVisuals);
-    }
-  }, [config.selectedVisuals]);
-
-  const totalPages = Math.ceil(visuals.length / visualsPerPage);
-  const startIndex = (currentPage - 1) * visualsPerPage;
+  const visualsPerPage = layout.maxVisuals;
+  const totalPages = Math.max(1, Math.ceil(visuals.length / visualsPerPage));
+  const startIndex = currentPage * visualsPerPage;
   const endIndex = startIndex + visualsPerPage;
   const currentPageVisuals = assignChartsToLayout(visuals.slice(startIndex, endIndex), layout);
+
+  console.log('Dashboard Preview Debug:', {
+    visuals,
+    currentPage,
+    totalPages,
+    visualsPerPage,
+    currentPageVisuals,
+    layout: layout.name
+  });
 
   const tableData = getTableDataForType('transaction-tables', config.dashboardType);
 
@@ -50,12 +71,10 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   const getAdvancedThemeColors = () => {
     const baseTheme = advancedThemes[config.themeStyle] || advancedThemes.minimal;
     
-    // Merge with custom theme overrides if any
     if (config.customTheme) {
       return { ...baseTheme, ...config.customTheme };
     }
     
-    // Apply custom color palette to chart colors
     if (config.colorPalette) {
       return { ...baseTheme, chartColors: config.colorPalette };
     }
@@ -168,26 +187,12 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     );
   };
 
-  const convertToGridPosition = (placement: ChartPlacement) => {
-    const { row, col, rowSpan, colSpan } = placement.position;
-    return {
-      rowStart: row,
-      rowEnd: row + rowSpan,
-      colStart: col,
-      colEnd: col + colSpan,
-      colSpan: colSpan,
-      className: `col-span-${colSpan} row-span-${rowSpan}`
-    };
-  };
-
   const renderChart = (visual: string, placement: ChartPlacement, index: number) => {
-    // Add safety check for undefined visual
     if (!visual || typeof visual !== 'string') {
       console.warn('Visual is undefined or not a string:', visual);
       return null;
     }
 
-    const gridPosition = convertToGridPosition(placement);
     const commonProps = {
       style: {
         backgroundColor: themeColors.cardBackground,
@@ -196,9 +201,12 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
       }
     };
 
+    // Calculate grid classes based on placement
+    const gridClasses = `col-span-${placement.position.colSpan} row-span-${placement.position.rowSpan}`;
+
     if (visual.includes('table')) {
       return (
-        <div key={index} className={gridPosition.className}>
+        <div key={index} className={gridClasses}>
           <DataTable
             title={getTableTitle(visual)}
             headers={tableData.headers}
@@ -211,16 +219,33 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     }
 
     return (
-      <Card key={index} className={gridPosition.className} {...commonProps}>
+      <Card key={index} className={gridClasses} {...commonProps}>
         <CardHeader>
-          <CardTitle style={{ color: themeColors.textPrimary }}>{visual}</CardTitle>
-          <CardDescription style={{ color: themeColors.textSecondary }}>Description of {visual}</CardDescription>
+          <CardTitle style={{ color: themeColors.textPrimary }}>
+            {visual.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+          </CardTitle>
+          <CardDescription style={{ color: themeColors.textSecondary }}>
+            Description of {visual.replace('-', ' ')}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {visual.includes('line') && <div style={{ height: '200px', background: themeColors.chartColors[0] }}>Line Chart</div>}
-          {visual.includes('bar') && <div style={{ height: '200px', background: themeColors.chartColors[1] }}>Bar Chart</div>}
-          {visual.includes('pie') && <div style={{ height: '200px', background: themeColors.chartColors[2] }}>Pie Chart</div>}
-          {visual.includes('area') && <div style={{ height: '200px', background: themeColors.chartColors[3] }}>Area Chart</div>}
+          <div style={{ 
+            height: '200px', 
+            background: `linear-gradient(135deg, ${themeColors.chartColors[index % themeColors.chartColors.length]}, ${themeColors.chartColors[(index + 1) % themeColors.chartColors.length]})`,
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontSize: '18px',
+            fontWeight: 'bold'
+          }}>
+            {visual.includes('line') && 'Line Chart'}
+            {visual.includes('bar') && 'Bar Chart'}
+            {visual.includes('pie') && 'Pie Chart'}
+            {visual.includes('area') && 'Area Chart'}
+            {!visual.includes('line') && !visual.includes('bar') && !visual.includes('pie') && !visual.includes('area') && 'Chart'}
+          </div>
         </CardContent>
       </Card>
     );
@@ -242,7 +267,9 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight" style={{ color: themeColors.textPrimary }}>Dashboard Preview</h1>
+            <h1 className="text-3xl font-bold tracking-tight" style={{ color: themeColors.textPrimary }}>
+              Dashboard Preview
+            </h1>
             <p style={{ color: themeColors.textSecondary }}>
               Customize your dashboard layout and visuals.
             </p>
@@ -263,9 +290,9 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
         {/* Dashboard Content */}
         <div className="space-y-6">
           {currentPageVisuals.length > 0 ? (
-            <div className="grid grid-cols-12 gap-4">
+            <div className="grid grid-cols-12 gap-4 auto-rows-min">
               {currentPageVisuals
-                .filter(assignment => assignment && assignment.visual) // Filter out invalid assignments
+                .filter(assignment => assignment && assignment.visual)
                 .map((assignment, index) => 
                   renderChart(assignment.visual, assignment.placement, index)
                 )}
@@ -273,7 +300,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
           ) : (
             <Card className="p-8 text-center" style={{ backgroundColor: themeColors.cardBackground }}>
               <div className="text-lg font-medium mb-2" style={{ color: themeColors.textPrimary }}>
-                No visuals selected
+                No visuals available
               </div>
               <p style={{ color: themeColors.textSecondary }}>
                 Please select some visuals to see your dashboard preview
@@ -282,26 +309,15 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
           )}
         </div>
 
-        {/* Pagination */}
+        {/* Smart Page Navigation */}
         {totalPages > 1 && (
-          <div className="flex justify-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => handlePageChange(currentPage - 1)}
-            >
-              Previous
-            </Button>
-            <span>{currentPage} / {totalPages}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => handlePageChange(currentPage + 1)}
-            >
-              Next
-            </Button>
+          <div className="flex justify-center">
+            <SmartPageNavigation
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageSelect={handlePageChange}
+              config={config}
+            />
           </div>
         )}
       </div>
