@@ -1,4 +1,3 @@
-
 import { LayoutTemplate, ChartPlacement } from './layoutTemplates';
 
 export interface ChartTypeRule {
@@ -7,6 +6,7 @@ export interface ChartTypeRule {
   preferredPosition: 'top' | 'center' | 'side' | 'bottom' | 'full-width';
   allowedLayouts: string[];
   isTable?: boolean;
+  minCols?: number;
 }
 
 export const chartTypeRules: ChartTypeRule[] = [
@@ -20,46 +20,53 @@ export const chartTypeRules: ChartTypeRule[] = [
     type: 'line-charts',
     priority: 2,
     preferredPosition: 'center',
-    allowedLayouts: ['primary-chart', 'hero-chart', 'main-focus', 'primary-trend', 'transaction-trend']
+    allowedLayouts: ['primary-chart', 'hero-chart', 'main-focus', 'primary-trend', 'transaction-trend'],
+    minCols: 6
   },
   {
     type: 'bar-charts',
     priority: 3,
     preferredPosition: 'center',
-    allowedLayouts: ['secondary-chart', 'left-primary', 'secondary-analysis', 'breakdown-chart-1']
+    allowedLayouts: ['secondary-chart', 'left-primary', 'secondary-analysis', 'breakdown-chart-1'],
+    minCols: 6
   },
   {
     type: 'pie-charts',
     priority: 4,
     preferredPosition: 'side',
-    allowedLayouts: ['tertiary-chart', 'right-primary', 'trend-chart', 'risk-metrics']
+    allowedLayouts: ['tertiary-chart', 'right-primary', 'trend-chart', 'risk-metrics'],
+    minCols: 4
   },
   {
     type: 'area-charts',
     priority: 5,
     preferredPosition: 'center',
-    allowedLayouts: ['quaternary-chart', 'chart-1', 'chart-2', 'account-breakdown']
+    allowedLayouts: ['quaternary-chart', 'chart-1', 'chart-2', 'account-breakdown'],
+    minCols: 6
   },
   {
     type: 'data-tables',
     priority: 6,
     preferredPosition: 'full-width',
     allowedLayouts: ['data-table', 'detail-table', 'transaction-table'],
-    isTable: true
+    isTable: true,
+    minCols: 12
   },
   {
     type: 'transaction-tables',
     priority: 7,
     preferredPosition: 'full-width',
     allowedLayouts: ['transaction-table', 'detail-table', 'data-table'],
-    isTable: true
+    isTable: true,
+    minCols: 12
   },
   {
     type: 'summary-tables',
     priority: 8,
     preferredPosition: 'full-width',
     allowedLayouts: ['detail-table', 'data-table'],
-    isTable: true
+    isTable: true,
+    minCols: 12
   },
   {
     type: 'filters',
@@ -80,7 +87,7 @@ export const assignChartsToLayout = (
   layout: LayoutTemplate
 ): { visual: string; placement: ChartPlacement }[] => {
   const assignments: { visual: string; placement: ChartPlacement }[] = [];
-  const availablePlacements = [...layout.chartLayout];
+  const availablePlacements = [...layout.chartLayout].sort((a, b) => a.priority - b.priority);
   
   // Sort visuals by priority based on rules
   const sortedVisuals = visuals.sort((a, b) => {
@@ -89,54 +96,40 @@ export const assignChartsToLayout = (
     return (ruleA?.priority || 10) - (ruleB?.priority || 10);
   });
 
-  // First pass: assign tables and high-priority items
+  // Assign visuals to appropriate placements
   sortedVisuals.forEach((visual) => {
     const rule = chartTypeRules.find(r => r.type === visual);
     
     if (rule && availablePlacements.length > 0) {
-      let bestPlacement = availablePlacements[0];
+      let bestPlacement: ChartPlacement | null = null;
       
-      // Look for preferred placements
-      const preferredPlacements = availablePlacements.filter(p => 
-        rule.allowedLayouts.includes('all') || 
-        rule.allowedLayouts.includes(p.component)
-      );
-      
-      if (preferredPlacements.length > 0) {
-        // For tables, prefer full-width placements
-        if (rule.isTable) {
-          const fullWidthPlacements = preferredPlacements.filter(p => 
-            p.position.colSpan >= 8 || p.component.includes('table')
-          );
-          bestPlacement = fullWidthPlacements.length > 0 ? fullWidthPlacements[0] : preferredPlacements[0];
-        } else {
-          bestPlacement = preferredPlacements[0];
-        }
+      // Find the best placement based on visual type
+      if (rule.isTable) {
+        // Tables need full width
+        bestPlacement = availablePlacements.find(p => p.position.colSpan >= 12) || 
+                      availablePlacements.find(p => p.position.colSpan >= 8) ||
+                      availablePlacements[0];
+      } else {
+        // Charts can use various sizes based on their requirements
+        const minCols = rule.minCols || 4;
+        bestPlacement = availablePlacements.find(p => 
+          p.position.colSpan >= minCols && 
+          (rule.allowedLayouts.includes('all') || rule.allowedLayouts.includes(p.component))
+        ) || availablePlacements[0];
       }
       
-      assignments.push({
-        visual,
-        placement: bestPlacement
-      });
-      
-      // Remove used placement
-      const usedIndex = availablePlacements.indexOf(bestPlacement);
-      availablePlacements.splice(usedIndex, 1);
+      if (bestPlacement) {
+        assignments.push({
+          visual,
+          placement: bestPlacement
+        });
+        
+        // Remove used placement
+        const usedIndex = availablePlacements.indexOf(bestPlacement);
+        availablePlacements.splice(usedIndex, 1);
+      }
     }
   });
-
-  // Second pass: fill remaining slots with duplicate visuals if needed
-  while (availablePlacements.length > 0 && assignments.length < layout.maxVisuals) {
-    const randomVisual = sortedVisuals[Math.floor(Math.random() * sortedVisuals.length)];
-    const remainingPlacement = availablePlacements.shift();
-    
-    if (remainingPlacement) {
-      assignments.push({
-        visual: randomVisual,
-        placement: remainingPlacement
-      });
-    }
-  }
 
   return assignments;
 };

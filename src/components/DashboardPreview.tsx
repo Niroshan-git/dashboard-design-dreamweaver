@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import DataTable from "@/components/DataTable";
 import { assignChartsToLayout, getTableDataForType } from "@/utils/chartPlacementLogic";
-import { layoutTemplates, LayoutTemplate, ChartPlacement } from "@/utils/layoutTemplates";
+import { layoutTemplates, LayoutTemplate } from "@/utils/layoutTemplates";
 import AdvancedKPICard from './AdvancedKPICard';
 import DashboardTopNavigation from './DashboardTopNavigation';
 import { advancedThemes } from '@/utils/advancedThemeSystem';
@@ -178,7 +177,36 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     );
   };
 
-  const renderChart = (visual: string, index: number) => {
+  const getGridClasses = (placement: any) => {
+    const { colSpan, rowSpan } = placement.position;
+    
+    // Map colSpan to grid classes
+    const colClasses = {
+      1: 'col-span-1',
+      2: 'col-span-2', 
+      3: 'col-span-3',
+      4: 'col-span-4',
+      5: 'col-span-5',
+      6: 'col-span-6',
+      7: 'col-span-7',
+      8: 'col-span-8',
+      9: 'col-span-9',
+      10: 'col-span-10',
+      11: 'col-span-11',
+      12: 'col-span-12'
+    };
+    
+    const rowClasses = {
+      1: 'row-span-1',
+      2: 'row-span-2',
+      3: 'row-span-3',
+      4: 'row-span-4'
+    };
+    
+    return `${colClasses[colSpan as keyof typeof colClasses] || 'col-span-4'} ${rowClasses[rowSpan as keyof typeof rowClasses] || 'row-span-1'}`;
+  };
+
+  const renderChart = (visual: string, placement: any, index: number) => {
     if (!visual || typeof visual !== 'string') {
       console.warn('Visual is undefined or not a string:', visual);
       return null;
@@ -192,9 +220,13 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
       }
     };
 
-    if (visual.includes('table')) {
+    const gridClasses = getGridClasses(placement);
+    const isTable = visual.includes('table');
+    const isFullWidth = placement.position.colSpan >= 12;
+
+    if (isTable) {
       return (
-        <Card key={index} className="h-fit" {...commonProps}>
+        <div key={index} className={`${gridClasses} min-h-fit`}>
           <DataTable
             title={getTableTitle(visual)}
             headers={tableData.headers}
@@ -202,64 +234,71 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
             themeColors={themeColors}
             showBadges={config.complexity !== 'simple'}
           />
-        </Card>
+        </div>
       );
     }
 
+    // Determine appropriate height based on placement size
+    const heightClass = isFullWidth ? 'h-96' : placement.position.colSpan >= 8 ? 'h-80' : 'h-72';
+
     return (
-      <Card key={index} className="h-80" {...commonProps}>
-        <CardHeader className="pb-3">
-          <CardTitle style={{ color: themeColors.textPrimary }} className="text-lg">
-            {visual.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-          </CardTitle>
-          <CardDescription style={{ color: themeColors.textSecondary }}>
-            {visual.includes('line') && 'Trend analysis over time'}
-            {visual.includes('bar') && 'Comparative data visualization'}
-            {visual.includes('pie') && 'Distribution breakdown'}
-            {visual.includes('area') && 'Volume and trend analysis'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div style={{ 
-            height: '200px', 
-            background: `linear-gradient(135deg, ${themeColors.chartColors[index % themeColors.chartColors.length]}20, ${themeColors.chartColors[(index + 1) % themeColors.chartColors.length]}20)`,
-            border: `2px dashed ${themeColors.chartColors[index % themeColors.chartColors.length]}40`,
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'column',
-            gap: '8px'
-          }}>
+      <div key={index} className={`${gridClasses}`}>
+        <Card className={`${heightClass} flex flex-col`} {...commonProps}>
+          <CardHeader className="pb-3 flex-shrink-0">
+            <CardTitle style={{ color: themeColors.textPrimary }} className="text-lg">
+              {visual.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            </CardTitle>
+            <CardDescription style={{ color: themeColors.textSecondary }}>
+              {visual.includes('line') && 'Trend analysis over time'}
+              {visual.includes('bar') && 'Comparative data visualization'}
+              {visual.includes('pie') && 'Distribution breakdown'}
+              {visual.includes('area') && 'Volume and trend analysis'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0 flex-1 flex items-center justify-center">
             <div style={{ 
-              color: themeColors.chartColors[index % themeColors.chartColors.length],
-              fontSize: '24px',
-              fontWeight: 'bold'
+              width: '100%',
+              height: '100%',
+              background: `linear-gradient(135deg, ${themeColors.chartColors[index % themeColors.chartColors.length]}20, ${themeColors.chartColors[(index + 1) % themeColors.chartColors.length]}20)`,
+              border: `2px dashed ${themeColors.chartColors[index % themeColors.chartColors.length]}40`,
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexDirection: 'column',
+              gap: '8px',
+              minHeight: '150px'
             }}>
-              {visual.includes('line') && '📈'}
-              {visual.includes('bar') && '📊'}
-              {visual.includes('pie') && '🥧'}
-              {visual.includes('area') && '📈'}
+              <div style={{ 
+                color: themeColors.chartColors[index % themeColors.chartColors.length],
+                fontSize: '24px',
+                fontWeight: 'bold'
+              }}>
+                {visual.includes('line') && '📈'}
+                {visual.includes('bar') && '📊'}
+                {visual.includes('pie') && '🥧'}
+                {visual.includes('area') && '📈'}
+              </div>
+              <div style={{
+                color: themeColors.textPrimary,
+                fontSize: '16px',
+                fontWeight: '600'
+              }}>
+                {visual.includes('line') && 'Line Chart'}
+                {visual.includes('bar') && 'Bar Chart'}
+                {visual.includes('pie') && 'Pie Chart'}
+                {visual.includes('area') && 'Area Chart'}
+              </div>
+              <div style={{
+                color: themeColors.textSecondary,
+                fontSize: '12px'
+              }}>
+                Interactive chart placeholder
+              </div>
             </div>
-            <div style={{
-              color: themeColors.textPrimary,
-              fontSize: '16px',
-              fontWeight: '600'
-            }}>
-              {visual.includes('line') && 'Line Chart'}
-              {visual.includes('bar') && 'Bar Chart'}
-              {visual.includes('pie') && 'Pie Chart'}
-              {visual.includes('area') && 'Area Chart'}
-            </div>
-            <div style={{
-              color: themeColors.textSecondary,
-              fontSize: '12px'
-            }}>
-              Interactive chart placeholder
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     );
   };
 
@@ -272,7 +311,6 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
       background: themeColors.background,
       color: themeColors.textPrimary
     }}>
-      {/* Top Navigation */}
       <DashboardTopNavigation
         config={config}
         onPageSelect={handlePageChange}
@@ -280,20 +318,17 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
         onExport={onExport}
       />
 
-      {/* Main Content */}
       <div className="flex-1 overflow-auto">
         <div className="p-6">
-          {/* Advanced KPI Section */}
           {renderAdvancedKPISection()}
 
-          {/* Dashboard Content */}
           <div className="space-y-6">
             {currentPageVisuals.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-12 gap-4 auto-rows-min">
                 {currentPageVisuals
                   .filter(assignment => assignment && assignment.visual)
                   .map((assignment, index) => 
-                    renderChart(assignment.visual, index)
+                    renderChart(assignment.visual, assignment.placement, index)
                   )}
               </div>
             ) : (
