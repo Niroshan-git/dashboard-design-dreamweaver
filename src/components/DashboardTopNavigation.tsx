@@ -13,6 +13,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, BarChart3, TrendingUp, Calendar, Users, Settings, 
@@ -53,6 +60,14 @@ const DashboardTopNavigation = ({
     icon: i === 0 ? <LayoutDashboard size={16} /> : <CircleDot size={16} />,
     description: i === 0 ? "Main dashboard view" : i === 1 ? "Detailed analytics" : `Report section ${i - 1}`
   }));
+
+  const handlePageSelect = (pageIndex: number) => {
+    console.log('DashboardTopNavigation - Page selected:', pageIndex);
+    onPageSelect(pageIndex);
+  };
+
+  // Show dropdown when there are more than 5 pages
+  const showPageDropdown = pages.length > 5;
 
   return (
     <div className="bg-background border-b border-border">
@@ -149,29 +164,61 @@ const DashboardTopNavigation = ({
       {/* Secondary Navigation - Pages */}
       <div className="h-12 bg-muted/30 border-t border-border">
         <div className="px-6 h-full flex items-center justify-between">
-          <nav className="flex items-center space-x-1">
-            {pages.map((page) => (
-              <button
-                key={page.id}
-                onClick={() => onPageSelect(page.id - 1)}
-                className={cn(
-                  "flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                  "hover:bg-background hover:shadow-sm",
-                  currentPage + 1 === page.id 
-                    ? "bg-background text-foreground shadow-sm border border-border" 
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <span>{page.icon}</span>
-                <span>{page.name}</span>
-                {currentPage + 1 === page.id && (
-                  <Badge variant="secondary" className="text-xs h-5">
-                    Active
-                  </Badge>
-                )}
-              </button>
-            ))}
-          </nav>
+          {showPageDropdown ? (
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium">Page:</span>
+                <Select 
+                  value={currentPage.toString()} 
+                  onValueChange={(value) => handlePageSelect(parseInt(value))}
+                >
+                  <SelectTrigger className="w-48 h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pages.map((page) => (
+                      <SelectItem key={page.id} value={(page.id - 1).toString()}>
+                        <div className="flex items-center space-x-2">
+                          <span>{page.icon}</span>
+                          <div>
+                            <div className="font-medium">{page.name}</div>
+                            <div className="text-xs text-muted-foreground">{page.description}</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Badge variant="secondary" className="text-xs h-6">
+                  {currentPage + 1} of {pages.length}
+                </Badge>
+              </div>
+            </div>
+          ) : (
+            <nav className="flex items-center space-x-1">
+              {pages.map((page) => (
+                <button
+                  key={page.id}
+                  onClick={() => handlePageSelect(page.id - 1)}
+                  className={cn(
+                    "flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                    "hover:bg-background hover:shadow-sm",
+                    currentPage === page.id - 1
+                      ? "bg-background text-foreground shadow-sm border border-border" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <span>{page.icon}</span>
+                  <span>{page.name}</span>
+                  {currentPage === page.id - 1 && (
+                    <Badge variant="secondary" className="text-xs h-5">
+                      Active
+                    </Badge>
+                  )}
+                </button>
+              ))}
+            </nav>
+          )}
           
           {/* Page Info */}
           <div className="flex items-center space-x-2 text-xs text-muted-foreground">

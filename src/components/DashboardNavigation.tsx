@@ -4,13 +4,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, ChevronRight, BarChart3, PieChart, TrendingUp, 
   Calendar, Users, Settings, Search, Menu, ChevronLeft, Zap, Map, 
   LineChart, CircleDot, Layers
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
 
 interface NavigationProps {
   config: any;
@@ -28,7 +34,6 @@ const DashboardNavigation = ({
   onToggleCollapse
 }: NavigationProps) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const location = useLocation();
   
   const getIconForDashboardType = (type: string) => {
     switch(type) {
@@ -48,18 +53,29 @@ const DashboardNavigation = ({
     icon: i === 0 ? <LayoutDashboard size={18} /> : <CircleDot size={18} />,
   }));
 
+  const handlePageSelect = (pageIndex: number) => {
+    console.log('DashboardNavigation - Page selected:', pageIndex);
+    onPageSelect(pageIndex);
+  };
+
+  // Show dropdown in collapsed mode or when there are many pages
+  const showPageDropdown = collapsed || pages.length > 6;
+
   return (
     <div className={cn(
       "h-screen bg-sidebar border-r border-border flex flex-col transition-all duration-300",
       collapsed ? "w-16" : "w-64"
     )}>
-      <div className="flex items-center justify-between p-4">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 min-h-[64px]">
         {!collapsed && (
           <div className="flex items-center">
-            <BarChart3 className="h-6 w-6 text-primary mr-2" />
+            <div className="p-1 bg-primary/10 rounded-md mr-2">
+              {getIconForDashboardType(config.dashboardType)}
+            </div>
             <h3 className="font-semibold text-lg truncate">
               {config.dashboardType 
-                ? config.dashboardType.charAt(0).toUpperCase() + config.dashboardType.slice(1) + " Dashboard" 
+                ? config.dashboardType.charAt(0).toUpperCase() + config.dashboardType.slice(1) 
                 : "Dashboard"}
             </h3>
           </div>
@@ -68,14 +84,15 @@ const DashboardNavigation = ({
           variant="ghost" 
           size="icon"
           onClick={onToggleCollapse}
-          className="ml-auto"
+          className={cn("flex-shrink-0", collapsed && "mx-auto")}
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </Button>
       </div>
       
+      {/* Search */}
       {!collapsed && (
-        <div className="px-3 mb-2">
+        <div className="px-3 mb-4">
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -90,35 +107,90 @@ const DashboardNavigation = ({
       
       <Separator />
       
-      <div className="flex-1 overflow-auto py-2">
-        <div className="px-3 py-2">
+      {/* Pages Navigation */}
+      <div className="flex-1 overflow-auto py-4">
+        <div className="px-3">
           {!collapsed && <p className="text-xs font-medium text-muted-foreground mb-3">PAGES</p>}
-          <nav className="space-y-1">
-            {pages.map((page) => (
-              <button
-                key={page.id}
-                onClick={() => onPageSelect(page.id - 1)}
-                className={cn(
-                  "flex items-center w-full rounded-md text-sm",
-                  "transition-colors hover:bg-accent hover:text-accent-foreground",
-                  "px-3 py-2 font-medium",
-                  currentPage + 1 === page.id ? "bg-accent/50 text-accent-foreground" : "text-muted-foreground"
-                )}
-              >
-                <span className="mr-3">{page.icon}</span>
-                {!collapsed && <span className="truncate">{page.name}</span>}
-                {!collapsed && currentPage + 1 === page.id && (
-                  <Badge className="ml-auto" variant="secondary">Active</Badge>
-                )}
-              </button>
-            ))}
-          </nav>
+          
+          {showPageDropdown ? (
+            <div className="mb-4">
+              {!collapsed && (
+                <Select 
+                  value={currentPage.toString()} 
+                  onValueChange={(value) => handlePageSelect(parseInt(value))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pages.map((page) => (
+                      <SelectItem key={page.id} value={(page.id - 1).toString()}>
+                        <div className="flex items-center space-x-2">
+                          <span>{page.icon}</span>
+                          <span>{page.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {collapsed && (
+                <div className="space-y-1">
+                  {pages.slice(0, 3).map((page) => (
+                    <Button
+                      key={page.id}
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handlePageSelect(page.id - 1)}
+                      className={cn(
+                        "w-full h-10",
+                        currentPage === page.id - 1 && "bg-accent text-accent-foreground"
+                      )}
+                      title={page.name}
+                    >
+                      {page.icon}
+                    </Button>
+                  ))}
+                  {pages.length > 3 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-full h-10"
+                      title={`+${pages.length - 3} more pages`}
+                    >
+                      <span className="text-xs font-bold">+{pages.length - 3}</span>
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <nav className="space-y-1 mb-4">
+              {pages.map((page) => (
+                <button
+                  key={page.id}
+                  onClick={() => handlePageSelect(page.id - 1)}
+                  className={cn(
+                    "flex items-center w-full rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground px-3 py-2 font-medium",
+                    currentPage === page.id - 1 ? "bg-accent/50 text-accent-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  <span className="mr-3">{page.icon}</span>
+                  {!collapsed && <span className="truncate">{page.name}</span>}
+                  {!collapsed && currentPage === page.id - 1 && (
+                    <Badge className="ml-auto" variant="secondary">Active</Badge>
+                  )}
+                </button>
+              ))}
+            </nav>
+          )}
         </div>
         
+        {/* Analytics Section */}
         {!collapsed && (
           <>
-            <Separator className="my-2" />
-            <div className="px-3 py-2">
+            <Separator className="my-4" />
+            <div className="px-3">
               <p className="text-xs font-medium text-muted-foreground mb-3">ANALYTICS</p>
               <nav className="space-y-1">
                 <a 
@@ -148,6 +220,7 @@ const DashboardNavigation = ({
         )}
       </div>
       
+      {/* Footer */}
       <div className="p-3 mt-auto">
         {!collapsed ? (
           <div className="rounded-lg bg-accent/50 p-3">

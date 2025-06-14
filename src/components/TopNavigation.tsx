@@ -13,6 +13,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, BarChart3, TrendingUp, Calendar, Users, Settings, 
@@ -53,6 +60,14 @@ const TopNavigation = ({
     icon: i === 0 ? <LayoutDashboard size={18} /> : <CircleDot size={18} />,
   }));
 
+  const handlePageSelect = (pageIndex: number) => {
+    console.log('TopNavigation - Page selected:', pageIndex);
+    onPageSelect(pageIndex);
+  };
+
+  // Show dropdown when there are more than 4 pages
+  const showPageDropdown = pages.length > 4;
+
   return (
     <div className="h-16 bg-background border-b border-border flex items-center justify-between px-6">
       {/* Left Section - Brand and Navigation */}
@@ -70,25 +85,52 @@ const TopNavigation = ({
         
         {/* Page Navigation */}
         <nav className="flex items-center space-x-1">
-          {pages.map((page) => (
-            <button
-              key={page.id}
-              onClick={() => onPageSelect(page.id - 1)}
-              className={cn(
-                "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                "hover:bg-accent hover:text-accent-foreground",
-                currentPage + 1 === page.id 
-                  ? "bg-accent text-accent-foreground" 
-                  : "text-muted-foreground"
-              )}
-            >
-              <span>{page.icon}</span>
-              <span>{page.name}</span>
-              {currentPage + 1 === page.id && (
-                <Badge variant="secondary" className="text-xs">Active</Badge>
-              )}
-            </button>
-          ))}
+          {showPageDropdown ? (
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-muted-foreground">Page:</span>
+              <Select 
+                value={currentPage.toString()} 
+                onValueChange={(value) => handlePageSelect(parseInt(value))}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {pages.map((page) => (
+                    <SelectItem key={page.id} value={(page.id - 1).toString()}>
+                      <div className="flex items-center space-x-2">
+                        <span>{page.icon}</span>
+                        <span>{page.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Badge variant="secondary" className="text-xs">
+                {currentPage + 1} of {pages.length}
+              </Badge>
+            </div>
+          ) : (
+            pages.map((page) => (
+              <button
+                key={page.id}
+                onClick={() => handlePageSelect(page.id - 1)}
+                className={cn(
+                  "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "hover:bg-accent hover:text-accent-foreground",
+                  currentPage === page.id - 1
+                    ? "bg-accent text-accent-foreground" 
+                    : "text-muted-foreground"
+                )}
+              >
+                <span>{page.icon}</span>
+                <span>{page.name}</span>
+                {currentPage === page.id - 1 && (
+                  <Badge variant="secondary" className="text-xs">Active</Badge>
+                )}
+              </button>
+            ))
+          )}
         </nav>
       </div>
 
