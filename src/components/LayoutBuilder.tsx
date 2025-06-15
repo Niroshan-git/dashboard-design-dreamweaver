@@ -1,19 +1,33 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   LayoutGrid, Plus, Minus, BarChart3, PieChart, TrendingUp, 
-  Table, Filter, Type, Image, Layers, Move, Maximize2
+  Table, Filter, Type, Image, Layers, Move, Maximize2, X, Edit3
 } from "lucide-react";
 
 interface LayoutBuilderProps {
   config: any;
   setConfig: (config: any) => void;
+}
+
+interface Visual {
+  id: string;
+  type: 'kpi' | 'chart' | 'table' | 'filter' | 'text' | 'image';
+  name: string;
+  chartType?: 'bar' | 'line' | 'pie' | 'area' | 'map';
+  description?: string;
+  dataSource?: string;
+  filters?: string[];
+  metrics?: string[];
 }
 
 interface PageComponent {
@@ -23,7 +37,8 @@ interface PageComponent {
   chartType?: 'bar' | 'line' | 'pie' | 'area' | 'map';
   span: number;
   position: { row: number; col: number };
-  visualId?: string; // Link to selected visual
+  visualId?: string;
+  name?: string;
 }
 
 interface PageLayout {
@@ -35,9 +50,13 @@ interface PageLayout {
 const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
+  const [editingVisual, setEditingVisual] = useState<string | null>(null);
+  const [newVisualName, setNewVisualName] = useState('');
 
-  // Initialize layouts if not present
-  const initializeLayouts = () => {
+  // Initialize layouts and visuals if not present
+  const initializeConfig = () => {
+    const updates: any = {};
+    
     if (!config.layouts || config.layouts.length !== config.pages) {
       const newLayouts: PageLayout[] = [];
       for (let i = 0; i < config.pages; i++) {
@@ -47,16 +66,29 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
           preset: undefined
         });
       }
-      setConfig(prev => ({ ...prev, layouts: newLayouts }));
+      updates.layouts = newLayouts;
+    }
+    
+    if (!config.visuals) {
+      updates.visuals = [];
+    }
+    
+    if (!config.navigationStyle) {
+      updates.navigationStyle = 'left-full';
+    }
+    
+    if (Object.keys(updates).length > 0) {
+      setConfig(prev => ({ ...prev, ...updates }));
     }
   };
 
   // Call initialization
-  if (!config.layouts || config.layouts.length !== config.pages) {
-    initializeLayouts();
+  if (!config.layouts || config.layouts.length !== config.pages || !config.visuals || !config.navigationStyle) {
+    initializeConfig();
   }
 
   const layouts = config.layouts || [];
+  const visuals = config.visuals || [];
 
   const componentTypes = [
     { type: 'kpi', label: 'KPI Cards', icon: LayoutGrid, color: 'bg-blue-50 border-blue-200' },
@@ -64,8 +96,7 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
     { type: 'table', label: 'Tables', icon: Table, color: 'bg-purple-50 border-purple-200' },
     { type: 'filter', label: 'Filters', icon: Filter, color: 'bg-orange-50 border-orange-200' },
     { type: 'text', label: 'Text Block', icon: Type, color: 'bg-gray-50 border-gray-200' },
-    { type: 'image', label: 'Image/Logo', icon: Image, color: 'bg-yellow-50 border-yellow-200' },
-    { type: 'tabs', label: 'Tab Container', icon: Layers, color: 'bg-indigo-50 border-indigo-200' }
+    { type: 'image', label: 'Image/Logo', icon: Image, color: 'bg-yellow-50 border-yellow-200' }
   ];
 
   const chartTypes = [
@@ -109,54 +140,6 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
     }
   ];
 
-  const presetLayouts = {
-    simple: [
-      { 
-        name: "KPI Focus", 
-        components: [
-          { type: 'kpi', count: 4, span: 12 },
-          { type: 'chart', count: 1, span: 12, chartType: 'line' }
-        ]
-      },
-      { 
-        name: "Chart Heavy", 
-        components: [
-          { type: 'kpi', count: 2, span: 6 },
-          { type: 'chart', count: 2, span: 6, chartType: 'bar' }
-        ]
-      }
-    ],
-    moderate: [
-      { 
-        name: "Balanced View", 
-        components: [
-          { type: 'kpi', count: 4, span: 12 },
-          { type: 'chart', count: 2, span: 6, chartType: 'line' },
-          { type: 'table', count: 1, span: 12 }
-        ]
-      },
-      { 
-        name: "Analytics Focus", 
-        components: [
-          { type: 'kpi', count: 3, span: 9 },
-          { type: 'filter', count: 1, span: 3 },
-          { type: 'chart', count: 3, span: 4, chartType: 'bar' }
-        ]
-      }
-    ],
-    complex: [
-      { 
-        name: "Executive Dashboard", 
-        components: [
-          { type: 'kpi', count: 6, span: 12 },
-          { type: 'chart', count: 4, span: 3, chartType: 'mixed' },
-          { type: 'table', count: 1, span: 8 },
-          { type: 'filter', count: 1, span: 4 }
-        ]
-      }
-    ]
-  };
-
   const addComponent = (type: string) => {
     const newComponent: PageComponent = {
       id: `${type}-${Date.now()}`,
@@ -199,33 +182,57 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
     }
   };
 
-  const applyPreset = (preset: any) => {
-    const newComponents: PageComponent[] = preset.components.map((comp: any, index: number) => ({
-      id: `${comp.type}-${Date.now()}-${index}`,
-      type: comp.type,
-      count: comp.count,
-      chartType: comp.chartType,
-      span: comp.span,
-      position: { row: Math.floor(index / 3), col: (index % 3) * 4 }
+  const addVisual = (type: string) => {
+    const newVisual: Visual = {
+      id: `visual-${Date.now()}`,
+      type: type as any,
+      name: newVisualName || `${type.charAt(0).toUpperCase() + type.slice(1)} ${visuals.length + 1}`,
+      chartType: type === 'chart' ? 'bar' : undefined,
+      description: '',
+      dataSource: '',
+      filters: [],
+      metrics: []
+    };
+
+    setConfig(prev => ({
+      ...prev,
+      visuals: [...prev.visuals, newVisual]
+    }));
+    setNewVisualName('');
+  };
+
+  const removeVisual = (visualId: string) => {
+    // Remove visual and unlink from components
+    const updatedLayouts = layouts.map((layout: PageLayout) => ({
+      ...layout,
+      components: layout.components.map(comp => 
+        comp.visualId === visualId ? { ...comp, visualId: undefined } : comp
+      )
     }));
 
-    const updatedLayouts = [...layouts];
-    updatedLayouts[currentPageIndex] = {
-      pageId: currentPageIndex,
-      components: newComponents,
-      preset: preset.name
-    };
-    setConfig(prev => ({ ...prev, layouts: updatedLayouts }));
+    setConfig(prev => ({ 
+      ...prev, 
+      visuals: prev.visuals.filter((v: Visual) => v.id !== visualId),
+      layouts: updatedLayouts
+    }));
+  };
+
+  const updateVisual = (visualId: string, updates: Partial<Visual>) => {
+    setConfig(prev => ({
+      ...prev,
+      visuals: prev.visuals.map((v: Visual) => 
+        v.id === visualId ? { ...v, ...updates } : v
+      )
+    }));
+  };
+
+  const linkVisualToComponent = (componentId: string, visualId: string) => {
+    const actualVisualId = visualId === "none" ? undefined : visualId;
+    updateComponent(componentId, { visualId: actualVisualId });
   };
 
   const getCurrentPageLayout = () => {
     return layouts[currentPageIndex] || { pageId: currentPageIndex, components: [] };
-  };
-
-  const linkVisualToComponent = (componentId: string, visualId: string) => {
-    // Handle the "none" case by setting visualId to undefined
-    const actualVisualId = visualId === "none" ? undefined : visualId;
-    updateComponent(componentId, { visualId: actualVisualId });
   };
 
   const renderGridPreview = () => {
@@ -245,6 +252,7 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
             currentLayout.components.map((component) => {
               const componentType = componentTypes.find(t => t.type === component.type);
               const IconComponent = componentType?.icon || LayoutGrid;
+              const linkedVisual = visuals.find((v: Visual) => v.id === component.visualId);
               
               return (
                 <div
@@ -265,9 +273,9 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                       {component.chartType}
                     </Badge>
                   )}
-                  {component.visualId && (
+                  {linkedVisual && (
                     <Badge variant="default" className="text-xs mt-1">
-                      Linked
+                      {linkedVisual.name}
                     </Badge>
                   )}
                   <Button
@@ -296,10 +304,10 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <LayoutGrid className="w-5 h-5" />
-            Interactive Layout Builder
+            Layout & Visual Builder
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Design each page layout by adding components and linking them to your selected visuals
+            Design page layouts, create visuals, and link them together
           </p>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -353,18 +361,18 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
 
           <Separator />
 
-          <Tabs defaultValue="build" className="w-full">
+          <Tabs defaultValue="layout" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="build">Build Layout</TabsTrigger>
-              <TabsTrigger value="presets">Use Presets</TabsTrigger>
-              <TabsTrigger value="preview">Preview Grid</TabsTrigger>
+              <TabsTrigger value="layout">Build Layout</TabsTrigger>
+              <TabsTrigger value="visuals">Manage Visuals</TabsTrigger>
+              <TabsTrigger value="preview">Preview</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="build" className="space-y-4">
+            <TabsContent value="layout" className="space-y-4">
               {/* Component Palette */}
               <div>
                 <Label className="font-semibold mb-3 block">Add Components to Page {currentPageIndex + 1}</Label>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
                   {componentTypes.map((componentType) => {
                     const IconComponent = componentType.icon;
                     return (
@@ -396,7 +404,7 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                           <div>
                             <Label>Number of KPI Cards</Label>
                             <Select
-                              value={component.count?.toString()}
+                              value={component.count?.toString() || "4"}
                               onValueChange={(value) => updateComponent(selectedComponent, { count: parseInt(value) })}
                             >
                               <SelectTrigger>
@@ -416,7 +424,7 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                             <div>
                               <Label>Number of Charts</Label>
                               <Select
-                                value={component.count?.toString()}
+                                value={component.count?.toString() || "1"}
                                 onValueChange={(value) => updateComponent(selectedComponent, { count: parseInt(value) })}
                               >
                                 <SelectTrigger>
@@ -432,7 +440,7 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                             <div>
                               <Label>Chart Type</Label>
                               <Select
-                                value={component.chartType}
+                                value={component.chartType || "bar"}
                                 onValueChange={(value) => updateComponent(selectedComponent, { chartType: value as any })}
                               >
                                 <SelectTrigger>
@@ -477,9 +485,9 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="none">No Link</SelectItem>
-                              {config.visuals?.map((visual: any) => (
+                              {visuals.map((visual: Visual) => (
                                 <SelectItem key={visual.id} value={visual.id}>
-                                  {visual.type} - {visual.name || visual.id}
+                                  {visual.type} - {visual.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -492,32 +500,94 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
               )}
             </TabsContent>
 
-            <TabsContent value="presets" className="space-y-4">
-              <div>
-                <Label className="font-semibold mb-3 block">Quick Layout Presets for Page {currentPageIndex + 1}</Label>
-                <div className="grid gap-4">
-                  {Object.entries(presetLayouts).map(([complexity, presets]) => (
-                    <div key={complexity}>
-                      <h4 className="font-medium mb-2 capitalize">{complexity} Layouts</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {presets.map((preset, index) => (
-                          <Card key={index} className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => applyPreset(preset)}>
-                            <h5 className="font-medium mb-2">{preset.name}</h5>
-                            <div className="flex flex-wrap gap-1 mb-2">
-                              {preset.components.map((comp, i) => (
-                                <Badge key={i} variant="outline" className="text-xs">
-                                  {comp.count} {comp.type}
-                                </Badge>
-                              ))}
-                            </div>
-                            <Button size="sm" className="w-full">Apply Layout</Button>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+            <TabsContent value="visuals" className="space-y-4">
+              {/* Add New Visual */}
+              <Card className="p-4">
+                <h4 className="font-semibold mb-3">Create New Visual</h4>
+                <div className="flex gap-2 mb-4">
+                  <Input
+                    placeholder="Visual name (optional)"
+                    value={newVisualName}
+                    onChange={(e) => setNewVisualName(e.target.value)}
+                    className="flex-1"
+                  />
                 </div>
-              </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                  {componentTypes.map((type) => {
+                    const IconComponent = type.icon;
+                    return (
+                      <Button
+                        key={type.type}
+                        variant="outline"
+                        className="h-16 flex flex-col items-center gap-1"
+                        onClick={() => addVisual(type.type)}
+                      >
+                        <IconComponent className="w-5 h-5" />
+                        <span className="text-xs">{type.label}</span>
+                      </Button>
+                    );
+                  })}
+                </div>
+              </Card>
+
+              {/* Visual Library */}
+              <Card className="p-4">
+                <h4 className="font-semibold mb-3">Visual Library ({visuals.length})</h4>
+                {visuals.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <LayoutGrid className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>No visuals created yet. Add some above!</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
+                    {visuals.map((visual: Visual) => {
+                      const typeInfo = componentTypes.find(t => t.type === visual.type);
+                      const IconComponent = typeInfo?.icon || LayoutGrid;
+                      
+                      return (
+                        <div key={visual.id} className={`p-3 border rounded-lg ${typeInfo?.color} flex items-center justify-between`}>
+                          <div className="flex items-center gap-3">
+                            <IconComponent className="w-5 h-5" />
+                            <div>
+                              {editingVisual === visual.id ? (
+                                <Input
+                                  value={visual.name}
+                                  onChange={(e) => updateVisual(visual.id, { name: e.target.value })}
+                                  className="h-6 text-sm"
+                                  onBlur={() => setEditingVisual(null)}
+                                  onKeyDown={(e) => e.key === 'Enter' && setEditingVisual(null)}
+                                  autoFocus
+                                />
+                              ) : (
+                                <div className="font-medium text-sm">{visual.name}</div>
+                              )}
+                              <div className="text-xs text-gray-600 capitalize">{visual.type}{visual.chartType && ` - ${visual.chartType}`}</div>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => setEditingVisual(visual.id)}
+                            >
+                              <Edit3 className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                              onClick={() => removeVisual(visual.id)}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </Card>
             </TabsContent>
 
             <TabsContent value="preview" className="space-y-4">
@@ -527,7 +597,7 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                 <div className="mt-4 text-sm text-muted-foreground">
                   <p>• Click components to select and edit properties</p>
                   <p>• Use the minus button to remove components</p>
-                  <p>• Link components to your selected visuals</p>
+                  <p>• Create visuals in the Visuals tab and link them to components</p>
                   <p>• Each page has its own unique layout</p>
                 </div>
               </div>
@@ -540,7 +610,7 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
       {layouts.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">All Pages Layout Summary</CardTitle>
+            <CardTitle className="text-base">All Pages Summary</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -548,11 +618,14 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                 <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                   <span className="font-medium">Page {index + 1}</span>
                   <div className="flex gap-1">
-                    {layout.components.map((comp, i) => (
-                      <Badge key={i} variant="secondary" className="text-xs">
-                        {comp.count || 1} {comp.type}{comp.visualId ? ' (linked)' : ''}
-                      </Badge>
-                    ))}
+                    {layout.components.map((comp, i) => {
+                      const linkedVisual = visuals.find((v: Visual) => v.id === comp.visualId);
+                      return (
+                        <Badge key={i} variant="secondary" className="text-xs">
+                          {comp.count || 1} {comp.type}{linkedVisual ? ` (${linkedVisual.name})` : ''}
+                        </Badge>
+                      );
+                    })}
                     {layout.components.length === 0 && (
                       <span className="text-sm text-muted-foreground">Empty</span>
                     )}
