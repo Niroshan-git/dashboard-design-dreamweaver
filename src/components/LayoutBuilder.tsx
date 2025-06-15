@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -224,7 +223,9 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
   };
 
   const linkVisualToComponent = (componentId: string, visualId: string) => {
-    updateComponent(componentId, { visualId });
+    // Handle the "none" case by setting visualId to undefined
+    const actualVisualId = visualId === "none" ? undefined : visualId;
+    updateComponent(componentId, { visualId: actualVisualId });
   };
 
   const renderGridPreview = () => {
@@ -468,14 +469,14 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                         <div>
                           <Label>Link to Visual</Label>
                           <Select
-                            value={component.visualId || ''}
+                            value={component.visualId || 'none'}
                             onValueChange={(value) => linkVisualToComponent(selectedComponent, value)}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Select visual" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">No Link</SelectItem>
+                              <SelectItem value="none">No Link</SelectItem>
                               {config.visuals?.map((visual: any) => (
                                 <SelectItem key={visual.id} value={visual.id}>
                                   {visual.type} - {visual.name || visual.id}
