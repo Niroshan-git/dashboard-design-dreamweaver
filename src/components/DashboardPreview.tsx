@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
 
   console.log('DashboardPreview - Current page:', currentPage);
   console.log('DashboardPreview - Config layouts:', config.layouts);
+  console.log('DashboardPreview - Navigation style:', config.navigationStyle);
 
   const getDeviceClasses = () => {
     switch (deviceView) {
@@ -41,7 +43,9 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   };
 
   const getNavigationComponent = () => {
+    // Use the navigationStyle from config, fallback to 'left-full'
     const navStyle = config.navigationStyle || 'left-full';
+    console.log('DashboardPreview - Using navigation style:', navStyle);
     
     switch (navStyle) {
       case 'left-full':
@@ -51,7 +55,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
             config={config} 
             currentPage={currentPage} 
             onPageSelect={handlePageChange}
-            collapsed={collapsed}
+            collapsed={navStyle === 'left-collapsible' ? collapsed : false}
             onToggleCollapse={() => setCollapsed(!collapsed)}
           />
         );
@@ -64,6 +68,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
             currentPage={currentPage} 
             onPageSelect={handlePageChange}
             onExport={onExport}
+            style={navStyle}
           />
         );
       default:
@@ -77,6 +82,16 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
           />
         );
     }
+  };
+
+  const isLeftNavigation = () => {
+    const navStyle = config.navigationStyle || 'left-full';
+    return navStyle.startsWith('left-');
+  };
+
+  const isTopNavigation = () => {
+    const navStyle = config.navigationStyle || 'left-full';
+    return navStyle.startsWith('top-');
   };
 
   const hasValidLayouts = config.layouts && config.layouts.length > 0;
@@ -140,6 +155,14 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
             </div>
           </div>
 
+          {/* Navigation Style Display */}
+          <div className="flex items-center gap-4">
+            <Label>Active Navigation:</Label>
+            <Badge variant="outline" className="capitalize">
+              {config.navigationStyle?.replace('-', ' ') || 'Left Full'}
+            </Badge>
+          </div>
+
           {/* Export Options */}
           <div className="flex items-center gap-4">
             <Label>Export as:</Label>
@@ -174,8 +197,8 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
         <div className="border rounded-lg overflow-hidden bg-white shadow-lg">
           {hasValidLayouts ? (
             <div className="flex min-h-screen">
-              {/* Navigation */}
-              {(config.navigationStyle === 'left-full' || config.navigationStyle === 'left-collapsible') && (
+              {/* Left Navigation */}
+              {isLeftNavigation() && (
                 <div className="flex-shrink-0">
                   {getNavigationComponent()}
                 </div>
@@ -184,7 +207,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
               {/* Main Content */}
               <div className="flex-1 flex flex-col">
                 {/* Top Navigation */}
-                {(config.navigationStyle?.startsWith('top-')) && (
+                {isTopNavigation() && (
                   <div className="flex-shrink-0">
                     {getNavigationComponent()}
                   </div>
