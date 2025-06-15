@@ -1,155 +1,30 @@
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, Area, AreaChart } from "recharts";
-import { CircleDot, TrendingUp, TrendingDown, MoreHorizontal, User, Calendar, DollarSign, Activity, ChevronRight, ChevronDown, Filter, Download, Users, ShoppingCart, Package, Clock } from "lucide-react";
+import { CircleDot, TrendingUp, TrendingDown, MoreHorizontal, User, Calendar, DollarSign, Activity, ChevronRight, ChevronDown, Filter, Download, Users, ShoppingCart, Package, Clock, LayoutGrid, Table, Type, Image } from "lucide-react";
 
 interface MainDashboardProps {
   config: any;
+  currentPage?: number;
   onExport: (format: string) => void;
 }
 
-const MainDashboard = ({ config, onExport }: MainDashboardProps) => {
+const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps) => {
   const isDarkTheme = config.themeStyle === 'dark';
   const chartColors = config.colorPalette || ['#2563eb', '#7c3aed', '#059669', '#dc2626'];
   
-  const getFinanceData = () => {
-    if (config.dashboardType === 'finance') {
-      return {
-        kpis: [
-          { 
-            label: 'Total Revenue', 
-            value: '$2,847,392', 
-            change: '+12.5%', 
-            trend: 'up', 
-            detail: 'Monthly recurring revenue increased by 12.5% compared to last quarter',
-            icon: DollarSign,
-            color: 'text-green-600'
-          },
-          { 
-            label: 'Net Profit Margin', 
-            value: '18.4%', 
-            change: '+2.1%', 
-            trend: 'up', 
-            detail: 'Profit margin improved due to cost optimization initiatives',
-            icon: TrendingUp,
-            color: 'text-blue-600'
-          },
-          { 
-            label: 'Operating Expenses', 
-            value: '$1,247,238', 
-            change: '-5.2%', 
-            trend: 'up', 
-            detail: 'Reduced operational costs through automation and efficiency improvements',
-            icon: Activity,
-            color: 'text-purple-600'
-          },
-          { 
-            label: 'Cash Flow', 
-            value: '$892,847', 
-            change: '+8.7%', 
-            trend: 'up', 
-            detail: 'Positive cash flow trend with improved collection cycles',
-            icon: CircleDot,
-            color: 'text-orange-600'
-          }
-        ],
-        chartData: [
-          { month: 'Jan', revenue: 2400000, expenses: 1800000, profit: 600000 },
-          { month: 'Feb', revenue: 2200000, expenses: 1700000, profit: 500000 },
-          { month: 'Mar', revenue: 2800000, expenses: 1900000, profit: 900000 },
-          { month: 'Apr', revenue: 2600000, expenses: 1750000, profit: 850000 },
-          { month: 'May', revenue: 3200000, expenses: 2100000, profit: 1100000 },
-          { month: 'Jun', revenue: 2900000, expenses: 1950000, profit: 950000 }
-        ],
-        pieData: [
-          { name: 'Product Sales', value: 45, color: '#2563eb' },
-          { name: 'Services', value: 30, color: '#7c3aed' },
-          { name: 'Subscriptions', value: 20, color: '#059669' },
-          { name: 'Other', value: 5, color: '#dc2626' }
-        ],
-        recentTransactions: [
-          { id: 1, description: 'Q4 Sales Commission', amount: '+$45,280', type: 'income', date: '2024-01-15' },
-          { id: 2, description: 'Office Rent Payment', amount: '-$8,500', type: 'expense', date: '2024-01-14' },
-          { id: 3, description: 'Client Retainer Fee', amount: '+$12,000', type: 'income', date: '2024-01-13' },
-          { id: 4, description: 'Software Subscriptions', amount: '-$2,340', type: 'expense', date: '2024-01-12' },
-          { id: 5, description: 'Consulting Revenue', amount: '+$8,750', type: 'income', date: '2024-01-11' }
-        ],
-        performanceMetrics: [
-          { name: 'Customer Acquisition Cost', value: '$125', status: 'positive', change: '-8%' },
-          { name: 'Customer Lifetime Value', value: '$2,450', status: 'positive', change: '+15%' },
-          { name: 'Monthly Churn Rate', value: '2.3%', status: 'negative', change: '+0.5%' },
-          { name: 'Average Order Value', value: '$189', status: 'positive', change: '+12%' }
-        ]
-      };
+  const getCurrentPageLayout = () => {
+    if (!config.layouts || !config.layouts[currentPage]) {
+      return { pageId: currentPage, components: [] };
     }
-    return {
-      kpis: [
-        { 
-          label: 'Total Revenue', 
-          value: '$2.4M', 
-          change: '+12.5%', 
-          trend: 'up', 
-          detail: 'Overall revenue performance across all channels',
-          icon: DollarSign,
-          color: 'text-green-600'
-        },
-        { 
-          label: 'Active Users', 
-          value: '45.2K', 
-          change: '+8.3%', 
-          trend: 'up', 
-          detail: 'Monthly active users showing consistent growth',
-          icon: Users,
-          color: 'text-blue-600'
-        },
-        { 
-          label: 'Conversion Rate', 
-          value: '3.24%', 
-          change: '-2.1%', 
-          trend: 'down', 
-          detail: 'Conversion rate needs optimization and attention',
-          icon: TrendingDown,
-          color: 'text-red-600'
-        },
-        { 
-          label: 'Customer Satisfaction', 
-          value: '94.2%', 
-          change: '+5.7%', 
-          trend: 'up', 
-          detail: 'High customer satisfaction indicates strong product-market fit',
-          icon: User,
-          color: 'text-purple-600'
-        }
-      ],
-      chartData: [
-        { month: 'Jan', value: 4000, users: 2400 },
-        { month: 'Feb', value: 3000, users: 1398 },
-        { month: 'Mar', value: 2000, users: 9800 },
-        { month: 'Apr', value: 2780, users: 3908 },
-        { month: 'May', value: 1890, users: 4800 },
-        { month: 'Jun', value: 2390, users: 3800 }
-      ],
-      pieData: [
-        { name: 'Desktop', value: 45, color: '#2563eb' },
-        { name: 'Mobile', value: 35, color: '#7c3aed' },
-        { name: 'Tablet', value: 20, color: '#059669' }
-      ],
-      recentTransactions: [
-        { id: 1, description: 'Product Sales', amount: '+$1,280', type: 'income', date: '2024-01-15' },
-        { id: 2, description: 'Marketing Expense', amount: '-$500', type: 'expense', date: '2024-01-14' },
-        { id: 3, description: 'Service Revenue', amount: '+$750', type: 'income', date: '2024-01-13' }
-      ],
-      performanceMetrics: [
-        { name: 'Bounce Rate', value: '32%', status: 'positive', change: '-5%' },
-        { name: 'Session Duration', value: '4m 32s', status: 'positive', change: '+18%' },
-        { name: 'Page Views', value: '128K', status: 'positive', change: '+22%' }
-      ]
-    };
+    return config.layouts[currentPage];
   };
 
-  const mockData = getFinanceData();
+  const currentLayout = getCurrentPageLayout();
+  const visuals = config.visuals || [];
 
   const getThemeColors = () => {
     const themeStyle = config.themeStyle;
@@ -216,79 +91,299 @@ const MainDashboard = ({ config, onExport }: MainDashboardProps) => {
 
   const themeColors = getThemeColors();
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-3 border rounded-lg shadow-lg">
-          <p className="font-semibold">{label}</p>
-          {payload.map((entry: any, index: number) => (
-            <p key={index} style={{ color: entry.color }}>
-              {entry.name}: {typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
+  // Mock data for charts and KPIs
+  const getMockData = (type: string) => {
+    const kpiData = [
+      { label: 'Total Revenue', value: '$2.4M', change: '+12.5%', trend: 'up', icon: DollarSign, color: 'text-green-600' },
+      { label: 'Active Users', value: '45.2K', change: '+8.3%', trend: 'up', icon: Users, color: 'text-blue-600' },
+      { label: 'Conversion Rate', value: '3.24%', change: '-2.1%', trend: 'down', icon: TrendingDown, color: 'text-red-600' },
+      { label: 'Customer Satisfaction', value: '94.2%', change: '+5.7%', trend: 'up', icon: User, color: 'text-purple-600' },
+      { label: 'Sales Growth', value: '18.4%', change: '+3.2%', trend: 'up', icon: TrendingUp, color: 'text-orange-600' },
+      { label: 'Monthly Orders', value: '1,284', change: '+15.8%', trend: 'up', icon: ShoppingCart, color: 'text-indigo-600' }
+    ];
+
+    const chartData = [
+      { month: 'Jan', value: 4000, sales: 2400, users: 1200 },
+      { month: 'Feb', value: 3000, sales: 1398, users: 1100 },
+      { month: 'Mar', value: 2000, sales: 9800, users: 1500 },
+      { month: 'Apr', value: 2780, sales: 3908, users: 1300 },
+      { month: 'May', value: 1890, sales: 4800, users: 1700 },
+      { month: 'Jun', value: 2390, sales: 3800, users: 1400 }
+    ];
+
+    return { kpiData, chartData };
   };
 
-  const renderKPICard = (kpi: any, index: number) => {
-    const IconComponent = kpi.icon;
+  const mockData = getMockData(config.dashboardType);
+
+  const renderKPIComponent = (component: any, linkedVisual: any) => {
+    const kpiCount = component.count || 4;
+    const kpisToShow = mockData.kpiData.slice(0, kpiCount);
+
+    return (
+      <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${Math.min(kpiCount, 4)}, 1fr)` }}>
+        {kpisToShow.map((kpi, index) => {
+          const IconComponent = kpi.icon;
+          
+          const cardContent = (
+            <Card 
+              key={index} 
+              className="hover:shadow-lg transition-shadow"
+              style={{ 
+                backgroundColor: themeColors.cardBackground,
+                borderColor: themeColors.borderColor,
+                color: themeColors.textPrimary
+              }}
+            >
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium" style={{ color: themeColors.textSecondary }}>
+                  {linkedVisual ? linkedVisual.name : kpi.label}
+                </CardTitle>
+                <IconComponent className={`h-4 w-4 ${kpi.color}`} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold" style={{ color: themeColors.textPrimary }}>{kpi.value}</div>
+                <div className="flex items-center pt-1">
+                  <Badge variant={kpi.trend === 'up' ? "secondary" : "destructive"} className="text-xs">
+                    {kpi.change}
+                  </Badge>
+                  <span className="text-xs ml-2" style={{ color: themeColors.textSecondary }}>vs last period</span>
+                </div>
+              </CardContent>
+            </Card>
+          );
+
+          if (config.tooltipsEnabled) {
+            return (
+              <TooltipProvider key={index}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    {cardContent}
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs">
+                    <p className="text-sm">{linkedVisual ? linkedVisual.description || 'KPI Card' : kpi.label}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          }
+
+          return cardContent;
+        })}
+      </div>
+    );
+  };
+
+  const renderChartComponent = (component: any, linkedVisual: any) => {
+    const chartType = component.chartType || linkedVisual?.chartType || 'bar';
+    const chartCount = component.count || 1;
     
-    const cardContent = (
-      <Card 
-        key={index} 
-        className="hover:shadow-lg transition-shadow cursor-pointer"
-        style={{ 
-          backgroundColor: themeColors.cardBackground,
-          borderColor: themeColors.borderColor,
-          color: themeColors.textPrimary
-        }}
-      >
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium" style={{ color: themeColors.textSecondary }}>
-            {kpi.label}
+    return (
+      <div className={`grid gap-4 ${chartCount > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+        {Array.from({ length: chartCount }, (_, index) => (
+          <Card key={index} style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+            <CardHeader>
+              <CardTitle style={{ color: themeColors.textPrimary }}>
+                {linkedVisual ? linkedVisual.name : `${chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart ${index + 1}`}
+              </CardTitle>
+              <CardDescription style={{ color: themeColors.textSecondary }}>
+                {linkedVisual ? linkedVisual.description || 'Chart visualization' : 'Performance metrics over time'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                {chartType === 'pie' ? (
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: 'Category A', value: 45, color: themeColors.chartColors[0] },
+                        { name: 'Category B', value: 30, color: themeColors.chartColors[1] },
+                        { name: 'Category C', value: 25, color: themeColors.chartColors[2] }
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {[0, 1, 2].map((entry, i) => (
+                        <Cell key={`cell-${i}`} fill={themeColors.chartColors[i]} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip />
+                  </PieChart>
+                ) : chartType === 'line' ? (
+                  <LineChart data={mockData.chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <RechartsTooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="value" stroke={themeColors.chartColors[0]} strokeWidth={2} />
+                  </LineChart>
+                ) : chartType === 'area' ? (
+                  <AreaChart data={mockData.chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <RechartsTooltip />
+                    <Legend />
+                    <Area type="monotone" dataKey="value" stroke={themeColors.chartColors[0]} fill={themeColors.chartColors[0]} fillOpacity={0.3} />
+                  </AreaChart>
+                ) : (
+                  <BarChart data={mockData.chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <RechartsTooltip />
+                    <Legend />
+                    <Bar dataKey="value" fill={themeColors.chartColors[0]} />
+                  </BarChart>
+                )}
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
+  const renderTableComponent = (component: any, linkedVisual: any) => {
+    const sampleData = [
+      { id: 1, name: 'Product A', value: '$1,234', status: 'Active', date: '2024-01-15' },
+      { id: 2, name: 'Product B', value: '$2,456', status: 'Pending', date: '2024-01-14' },
+      { id: 3, name: 'Product C', value: '$789', status: 'Active', date: '2024-01-13' },
+    ];
+
+    return (
+      <Card style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+        <CardHeader>
+          <CardTitle style={{ color: themeColors.textPrimary }}>
+            {linkedVisual ? linkedVisual.name : 'Data Table'}
           </CardTitle>
-          <IconComponent className={`h-4 w-4 ${kpi.color}`} />
+          <CardDescription style={{ color: themeColors.textSecondary }}>
+            {linkedVisual ? linkedVisual.description || 'Table data' : 'Tabular data representation'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold" style={{ color: themeColors.textPrimary }}>{kpi.value}</div>
-          <div className="flex items-center pt-1">
-            <Badge variant={kpi.trend === 'up' ? "secondary" : "destructive"} className="text-xs">
-              {kpi.change}
-            </Badge>
-            <span className="text-xs ml-2" style={{ color: themeColors.textSecondary }}>vs last period</span>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b" style={{ borderColor: themeColors.borderColor }}>
+                  <th className="text-left p-2" style={{ color: themeColors.textPrimary }}>Name</th>
+                  <th className="text-left p-2" style={{ color: themeColors.textPrimary }}>Value</th>
+                  <th className="text-left p-2" style={{ color: themeColors.textPrimary }}>Status</th>
+                  <th className="text-left p-2" style={{ color: themeColors.textPrimary }}>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sampleData.map((row) => (
+                  <tr key={row.id} className="border-b" style={{ borderColor: themeColors.borderColor }}>
+                    <td className="p-2" style={{ color: themeColors.textPrimary }}>{row.name}</td>
+                    <td className="p-2" style={{ color: themeColors.textPrimary }}>{row.value}</td>
+                    <td className="p-2">
+                      <Badge variant={row.status === 'Active' ? 'secondary' : 'outline'}>{row.status}</Badge>
+                    </td>
+                    <td className="p-2" style={{ color: themeColors.textSecondary }}>{row.date}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </CardContent>
       </Card>
     );
-
-    if (config.tooltipsEnabled) {
-      return (
-        <TooltipProvider key={index}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              {cardContent}
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-xs">
-              <p className="text-sm">{kpi.detail}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    }
-
-    return cardContent;
   };
+
+  const renderComponent = (component: any) => {
+    const linkedVisual = visuals.find((v: any) => v.id === component.visualId);
+    
+    switch (component.type) {
+      case 'kpi':
+        return renderKPIComponent(component, linkedVisual);
+      case 'chart':
+        return renderChartComponent(component, linkedVisual);
+      case 'table':
+        return renderTableComponent(component, linkedVisual);
+      case 'filter':
+        return (
+          <Card style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+            <CardHeader>
+              <CardTitle style={{ color: themeColors.textPrimary }}>
+                {linkedVisual ? linkedVisual.name : 'Filters'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm">Date Range</Button>
+                <Button variant="outline" size="sm">Category</Button>
+                <Button variant="outline" size="sm">Status</Button>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      case 'text':
+        return (
+          <Card style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+            <CardContent className="p-4">
+              <div style={{ color: themeColors.textPrimary }}>
+                {linkedVisual ? linkedVisual.name : 'Text content goes here. This is a sample text block that can contain important information, descriptions, or any other textual content.'}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      case 'image':
+        return (
+          <Card style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+            <CardContent className="p-4 flex items-center justify-center h-32">
+              <div className="text-center" style={{ color: themeColors.textSecondary }}>
+                <Image className="w-8 h-8 mx-auto mb-2" />
+                <p className="text-sm">{linkedVisual ? linkedVisual.name : 'Image Placeholder'}</p>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      default:
+        return (
+          <Card style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+            <CardContent className="p-4 flex items-center justify-center h-32">
+              <div className="text-center" style={{ color: themeColors.textSecondary }}>
+                <LayoutGrid className="w-8 h-8 mx-auto mb-2" />
+                <p className="text-sm">Unknown Component</p>
+              </div>
+            </CardContent>
+          </Card>
+        );
+    }
+  };
+
+  if (currentLayout.components.length === 0) {
+    return (
+      <div className="p-6 h-full flex items-center justify-center" style={{ background: themeColors.background }}>
+        <div className="text-center">
+          <LayoutGrid className="w-16 h-16 mx-auto mb-4 opacity-50" style={{ color: themeColors.textSecondary }} />
+          <h3 className="text-xl font-semibold mb-2" style={{ color: themeColors.textPrimary }}>
+            Page {currentPage + 1} is Empty
+          </h3>
+          <p style={{ color: themeColors.textSecondary }}>
+            Add components in the Layout Builder to see them here
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6" style={{ background: themeColors.background, color: themeColors.textPrimary }}>
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight" style={{ color: themeColors.textPrimary }}>Dashboard Overview</h1>
+          <h1 className="text-3xl font-bold tracking-tight" style={{ color: themeColors.textPrimary }}>
+            Page {currentPage + 1}
+          </h1>
           <p style={{ color: themeColors.textSecondary }}>
-            Welcome to your {config.dashboardType} dashboard. Here's what's happening with your business today.
+            {currentLayout.components.length} component{currentLayout.components.length !== 1 ? 's' : ''} configured
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -303,151 +398,17 @@ const MainDashboard = ({ config, onExport }: MainDashboardProps) => {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {mockData.kpis.map((kpi, index) => renderKPICard(kpi, index))}
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue Trend Chart */}
-        <Card style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between" style={{ color: themeColors.textPrimary }}>
-              <span>{config.dashboardType === 'finance' ? 'Revenue Trend' : 'Performance Trend'}</span>
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </CardTitle>
-            <CardDescription style={{ color: themeColors.textSecondary }}>
-              {config.dashboardType === 'finance' 
-                ? 'Monthly revenue performance over the last 6 months' 
-                : 'Key metrics performance over time'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={mockData.chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <RechartsTooltip content={<CustomTooltip />} />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey={config.dashboardType === 'finance' ? 'revenue' : 'value'} 
-                  stroke={themeColors.chartColors[0]} 
-                  strokeWidth={2}
-                  name={config.dashboardType === 'finance' ? 'Revenue' : 'Value'}
-                />
-                {config.dashboardType === 'finance' && (
-                  <Line 
-                    type="monotone" 
-                    dataKey="profit" 
-                    stroke={themeColors.chartColors[1]} 
-                    strokeWidth={2}
-                    name="Profit"
-                  />
-                )}
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Distribution Chart */}
-        <Card style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-          <CardHeader>
-            <CardTitle style={{ color: themeColors.textPrimary }}>
-              {config.dashboardType === 'finance' ? 'Revenue Distribution' : 'Traffic Sources'}
-            </CardTitle>
-            <CardDescription style={{ color: themeColors.textSecondary }}>
-              Breakdown by category
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={mockData.pieData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {mockData.pieData.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <RechartsTooltip content={<CustomTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Additional Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
-        <Card className="lg:col-span-2" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-          <CardHeader>
-            <CardTitle style={{ color: themeColors.textPrimary }}>Recent {config.dashboardType === 'finance' ? 'Transactions' : 'Activity'}</CardTitle>
-            <CardDescription style={{ color: themeColors.textSecondary }}>
-              Latest {config.dashboardType === 'finance' ? 'financial transactions' : 'system activity'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {mockData.recentTransactions.map((transaction: any) => (
-                <div key={transaction.id} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: `${themeColors.textSecondary}10` }}>
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-2 h-2 rounded-full ${transaction.type === 'income' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: themeColors.textPrimary }}>{transaction.description}</p>
-                      <p className="text-xs" style={{ color: themeColors.textSecondary }}>{transaction.date}</p>
-                    </div>
-                  </div>
-                  <div className={`text-sm font-medium ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                    {transaction.amount}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button variant="outline" className="w-full">
-              View All Transactions
-              <ChevronRight className="w-4 h-4 ml-2" />
-            </Button>
-          </CardFooter>
-        </Card>
-
-        {/* Performance Metrics */}
-        <Card style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-          <CardHeader>
-            <CardTitle style={{ color: themeColors.textPrimary }}>Performance Metrics</CardTitle>
-            <CardDescription style={{ color: themeColors.textSecondary }}>
-              Key performance indicators
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {mockData.performanceMetrics.map((metric: any, index: number) => (
-                <div key={index} className="flex items-center justify-between">
-                  <span className="text-sm" style={{ color: themeColors.textPrimary }}>{metric.name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium" style={{ color: themeColors.textPrimary }}>{metric.value}</span>
-                    <Badge variant={metric.status === 'positive' ? "secondary" : "destructive"} className="text-xs">
-                      {metric.change}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Dynamic Layout Grid */}
+      <div className="grid grid-cols-12 gap-6">
+        {currentLayout.components.map((component: any) => (
+          <div
+            key={component.id}
+            className={`col-span-12`}
+            style={{ gridColumn: `span ${Math.min(component.span, 12)}` }}
+          >
+            {renderComponent(component)}
+          </div>
+        ))}
       </div>
     </div>
   );
