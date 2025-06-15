@@ -97,7 +97,12 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
 
   const componentTypes = [
     { type: 'kpi', label: 'KPI Cards', icon: Target, color: 'bg-blue-50 border-blue-200' },
-    { type: 'chart', label: 'Charts', icon: BarChart3, color: 'bg-green-50 border-green-200' },
+    { type: 'chart', label: 'Bar Chart', icon: BarChart3, color: 'bg-green-50 border-green-200', chartType: 'bar' },
+    { type: 'chart', label: 'Line Chart', icon: ChartLine, color: 'bg-green-50 border-green-200', chartType: 'line' },
+    { type: 'chart', label: 'Area Chart', icon: ChartArea, color: 'bg-green-50 border-green-200', chartType: 'area' },
+    { type: 'chart', label: 'Pie Chart', icon: ChartPie, color: 'bg-green-50 border-green-200', chartType: 'pie' },
+    { type: 'chart', label: 'Donut Chart', icon: Donut, color: 'bg-green-50 border-green-200', chartType: 'donut' },
+    { type: 'chart', label: 'Map Chart', icon: Map, color: 'bg-green-50 border-green-200', chartType: 'map' },
     { type: 'table', label: 'Tables', icon: Table, color: 'bg-purple-50 border-purple-200' },
     { type: 'filter', label: 'Filters', icon: Filter, color: 'bg-orange-50 border-orange-200' },
     { type: 'text', label: 'Text Block', icon: Type, color: 'bg-gray-50 border-gray-200' },
@@ -109,12 +114,12 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
   ];
 
   const chartTypes = [
-    { value: 'bar', label: 'Bar Chart', icon: BarChart3 },
-    { value: 'line', label: 'Line Chart', icon: ChartLine },
-    { value: 'area', label: 'Area Chart', icon: ChartArea },
-    { value: 'pie', label: 'Pie Chart', icon: ChartPie },
-    { value: 'donut', label: 'Donut Chart', icon: Donut },
-    { value: 'map', label: 'Map Chart', icon: Map }
+    { value: 'bar' as const, label: 'Bar Chart', icon: BarChart3 },
+    { value: 'line' as const, label: 'Line Chart', icon: ChartLine },
+    { value: 'area' as const, label: 'Area Chart', icon: ChartArea },
+    { value: 'pie' as const, label: 'Pie Chart', icon: ChartPie },
+    { value: 'donut' as const, label: 'Donut Chart', icon: Donut },
+    { value: 'map' as const, label: 'Map Chart', icon: Map }
   ];
 
   const navigationStyles = [
@@ -150,7 +155,7 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
     }
   ];
 
-  const addComponent = (type: string, chartType?: string) => {
+  const addComponent = (type: string, chartType?: 'bar' | 'line' | 'pie' | 'area' | 'map' | 'donut') => {
     const newComponent: PageComponent = {
       id: `${type}-${Date.now()}`,
       type: type as any,
@@ -387,74 +392,19 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
               <div>
                 <Label className="font-semibold mb-3 block">Add Components to Page {currentPageIndex + 1}</Label>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-                  {componentTypes.map((componentType) => {
+                  {componentTypes.map((componentType, index) => {
                     const IconComponent = componentType.icon;
-                    
-                    if (componentType.type === 'chart') {
-                      return (
-                        <div key={componentType.type} className="space-y-2">
-                          {/* Main Chart Button */}
-                          <Button
-                            variant="outline"
-                            className="h-20 flex flex-col items-center gap-2 w-full"
-                            onClick={() => addComponent(componentType.type)}
-                          >
-                            <IconComponent className="w-6 h-6" />
-                            <span className="text-xs">{componentType.label}</span>
-                          </Button>
-                          
-                          {/* Chart Type Quick Add Buttons */}
-                          <div className="grid grid-cols-2 gap-1">
-                            {chartTypes.slice(0, 4).map((chart) => {
-                              const ChartIcon = chart.icon;
-                              return (
-                                <Button
-                                  key={chart.value}
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 flex items-center gap-1 text-xs"
-                                  onClick={() => addComponent('chart', chart.value)}
-                                  title={`Add ${chart.label}`}
-                                >
-                                  <ChartIcon className="w-3 h-3" />
-                                  <span className="truncate">{chart.value}</span>
-                                </Button>
-                              );
-                            })}
-                          </div>
-                          
-                          {/* Additional chart types */}
-                          <div className="grid grid-cols-2 gap-1">
-                            {chartTypes.slice(4).map((chart) => {
-                              const ChartIcon = chart.icon;
-                              return (
-                                <Button
-                                  key={chart.value}
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 flex items-center gap-1 text-xs"
-                                  onClick={() => addComponent('chart', chart.value)}
-                                  title={`Add ${chart.label}`}
-                                >
-                                  <ChartIcon className="w-3 h-3" />
-                                  <span className="truncate">{chart.value}</span>
-                                </Button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    }
+                    const chartType = (componentType as any).chartType;
                     
                     return (
                       <Button
-                        key={componentType.type}
+                        key={`${componentType.type}-${chartType || index}`}
                         variant="outline"
-                        className="h-20 flex flex-col items-center gap-2"
-                        onClick={() => addComponent(componentType.type)}
+                        className={`h-20 flex flex-col items-center gap-2 border-2 ${componentType.color}`}
+                        onClick={() => addComponent(componentType.type, chartType)}
                       >
                         <IconComponent className="w-6 h-6" />
-                        <span className="text-xs">{componentType.label}</span>
+                        <span className="text-xs font-medium">{componentType.label}</span>
                       </Button>
                     );
                   })}
@@ -596,7 +546,9 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                   />
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-                  {componentTypes.map((type) => {
+                  {componentTypes.filter((type, index, self) => 
+                    index === self.findIndex(t => t.type === type.type)
+                  ).map((type) => {
                     const IconComponent = type.icon;
                     return (
                       <Button
