@@ -17,47 +17,73 @@ const DashboardGrid = ({ components, visuals, themeColors, mockData, config }: D
   const calculateDynamicHeights = () => {
     if (components.length === 0) return {};
     
+    // Calculate total available height (viewport minus header/padding)
+    const totalCanvasHeight = 'calc(100vh - 120px)';
+    
     // Group components by row to calculate row heights
     const rowGroups: { [key: number]: any[] } = {};
+    const rowHeights: { [key: number]: string } = {};
+    
     components.forEach(component => {
       const row = component.position?.row || 1;
       if (!rowGroups[row]) rowGroups[row] = [];
       rowGroups[row].push(component);
     });
     
+    // Calculate base height per row
+    const baseRowHeight = `calc(${totalCanvasHeight} / ${gridRows})`;
+    
+    // First pass: Calculate row heights based on content
+    Object.entries(rowGroups).forEach(([rowStr, rowComponents]) => {
+      const row = parseInt(rowStr);
+      const hasKPI = rowComponents.some(comp => comp.type === 'kpi');
+      
+      if (hasKPI) {
+        // Rows with KPIs use standard height
+        rowHeights[row] = baseRowHeight;
+      } else {
+        // Rows without KPIs can use enhanced height to fill gaps
+        rowHeights[row] = `calc(${baseRowHeight} * 1.2)`;
+      }
+    });
+    
+    // Second pass: Redistribute remaining space to non-KPI rows
+    const kpiRows = Object.keys(rowGroups).filter(row => 
+      rowGroups[parseInt(row)].some(comp => comp.type === 'kpi')
+    ).length;
+    
+    const nonKpiRows = gridRows - kpiRows;
+    
+    if (nonKpiRows > 0) {
+      // Enhanced height for non-KPI rows to fill empty spaces
+      const enhancedRowHeight = `calc((${totalCanvasHeight} - (${baseRowHeight} * ${kpiRows})) / ${nonKpiRows})`;
+      
+      Object.entries(rowGroups).forEach(([rowStr, rowComponents]) => {
+        const row = parseInt(rowStr);
+        const hasKPI = rowComponents.some(comp => comp.type === 'kpi');
+        
+        if (!hasKPI) {
+          rowHeights[row] = enhancedRowHeight;
+        }
+      });
+    }
+    
+    // Final pass: Assign heights to individual components
     const componentHeights: { [key: string]: string } = {};
     
     Object.entries(rowGroups).forEach(([rowStr, rowComponents]) => {
       const row = parseInt(rowStr);
+      const rowHeight = rowHeights[row];
       
-      // Check if this row has KPI cards
-      const hasKPI = rowComponents.some(comp => comp.type === 'kpi');
-      const hasNonKPI = rowComponents.some(comp => comp.type !== 'kpi');
-      
-      // Calculate height based on row content and canvas utilization
-      let baseHeight = `calc((100vh - 120px) / ${gridRows})`;  // Distribute available height
-      
-      if (hasKPI && hasNonKPI) {
-        // Mixed row: charts/other components match KPI height
-        rowComponents.forEach(comp => {
-          if (comp.type === 'kpi') {
-            componentHeights[comp.id] = baseHeight;
-          } else {
-            componentHeights[comp.id] = baseHeight; // Match KPI height in mixed rows
-          }
-        });
-      } else if (hasKPI && !hasNonKPI) {
-        // Only KPIs: use standard height
-        rowComponents.forEach(comp => {
-          componentHeights[comp.id] = baseHeight;
-        });
-      } else {
-        // No KPIs: components can use enhanced height
-        const enhancedHeight = `calc(${baseHeight} * 1.5)`;
-        rowComponents.forEach(comp => {
-          componentHeights[comp.id] = gridRows > 3 ? baseHeight : enhancedHeight;
-        });
-      }
+      rowComponents.forEach(comp => {
+        const rowSpan = comp.position?.rowSpan || 1;
+        if (rowSpan > 1) {
+          // Multi-row components get proportional height
+          componentHeights[comp.id] = `calc(${rowHeight} * ${rowSpan})`;
+        } else {
+          componentHeights[comp.id] = rowHeight;
+        }
+      });
     });
     
     return componentHeights;

@@ -26,6 +26,27 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     { label: 'Monthly Orders', value: '1,284', change: '+15.8%', trend: 'up', icon: ShoppingCart, color: 'text-indigo-600' }
   ];
 
+  // Get dynamic container height - Always use dynamic height when available
+  const getContainerHeight = () => {
+    if (dynamicHeight) {
+      return { 
+        height: dynamicHeight, 
+        minHeight: dynamicHeight,
+        maxHeight: dynamicHeight 
+      };
+    }
+    return { height: '100%' };
+  };
+
+  // For charts, calculate content height more precisely
+  const getChartContentHeight = () => {
+    if (dynamicHeight) {
+      // Subtract header and padding from dynamic height
+      return `calc(${dynamicHeight} - 70px)`;
+    }
+    return '180px';
+  };
+
   // Function to determine if chart should use compact height (next to KPI) or enhanced height (standalone)
   const getChartContextualHeight = () => {
     if (dynamicHeight) {
@@ -61,14 +82,6 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     });
     
     return hasAdjacentKPI ? 'compact' : 'enhanced';
-  };
-
-  // Get dynamic container height
-  const getContainerHeight = () => {
-    if (dynamicHeight) {
-      return { minHeight: dynamicHeight, height: dynamicHeight };
-    }
-    return { height: '100%' };
   };
 
   const renderKPIComponent = () => {
@@ -187,30 +200,20 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
 
   const renderChartComponent = () => {
     const chartType = linkedVisual?.chartType || component.chartType || 'bar';
-    const contextualHeight = getChartContextualHeight();
-    
-    // Use dynamic height for chart content area
-    const chartContentHeight = dynamicHeight ? 
-      `calc(${dynamicHeight} - 60px)` : // Subtract header height
-      (contextualHeight === 'compact' ? '120px' : '180px');
-    
-    const cardPadding = contextualHeight === 'compact' ? 'p-1' : 'p-2';
-    const headerPadding = contextualHeight === 'compact' ? 'px-2 pt-2 pb-1' : 'px-3 pt-3 pb-2';
-    const titleSize = contextualHeight === 'compact' ? 'text-xs' : 'text-sm';
-    const descriptionSize = contextualHeight === 'compact' ? 'text-xs' : 'text-xs';
+    const chartContentHeight = getChartContentHeight();
     
     return (
       <Card className="flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
-        <CardHeader className={`flex-shrink-0 ${headerPadding}`}>
-          <CardTitle className={`${titleSize} truncate`} style={{ color: themeColors.textPrimary }}>
+        <CardHeader className="flex-shrink-0 px-3 pt-3 pb-2">
+          <CardTitle className="text-sm truncate" style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : `${chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart`}
           </CardTitle>
-          <CardDescription className={`${descriptionSize} truncate`} style={{ color: themeColors.textSecondary }}>
+          <CardDescription className="text-xs truncate" style={{ color: themeColors.textSecondary }}>
             {linkedVisual ? linkedVisual.description || 'Chart visualization' : 'Performance metrics over time'}
           </CardDescription>
         </CardHeader>
-        <CardContent className={`flex-1 flex flex-col min-h-0 ${cardPadding}`}>
-          <div className="flex-1 min-h-0" style={{ minHeight: chartContentHeight }}>
+        <CardContent className="flex-1 flex flex-col min-h-0 p-2">
+          <div className="flex-1 min-h-0" style={{ height: chartContentHeight, minHeight: chartContentHeight }}>
             <ResponsiveContainer width="100%" height="100%">
               {chartType === 'pie' ? (
                 <PieChart>
@@ -225,7 +228,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                     outerRadius="80%"
                     fill="#8884d8"
                     dataKey="value"
-                    label={contextualHeight === 'enhanced' ? ({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%` : false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   >
                     {[0, 1, 2].map((entry, i) => (
                       <Cell key={`cell-${i}`} fill={themeColors.chartColors[i]} />
@@ -234,26 +237,26 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                   <RechartsTooltip />
                 </PieChart>
               ) : chartType === 'line' ? (
-                <LineChart data={mockData.chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                <LineChart data={mockData.chartData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" tick={{ fontSize: contextualHeight === 'compact' ? 8 : 10 }} />
-                  <YAxis tick={{ fontSize: contextualHeight === 'compact' ? 8 : 10 }} />
+                  <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
                   <RechartsTooltip />
-                  <Line type="monotone" dataKey="value" stroke={themeColors.chartColors[0]} strokeWidth={2} dot={{ r: contextualHeight === 'compact' ? 2 : 3 }} />
+                  <Line type="monotone" dataKey="value" stroke={themeColors.chartColors[0]} strokeWidth={2} dot={{ r: 3 }} />
                 </LineChart>
               ) : chartType === 'area' ? (
-                <AreaChart data={mockData.chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                <AreaChart data={mockData.chartData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" tick={{ fontSize: contextualHeight === 'compact' ? 8 : 10 }} />
-                  <YAxis tick={{ fontSize: contextualHeight === 'compact' ? 8 : 10 }} />
+                  <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
                   <RechartsTooltip />
                   <Area type="monotone" dataKey="value" stroke={themeColors.chartColors[0]} fill={themeColors.chartColors[0]} fillOpacity={0.3} />
                 </AreaChart>
               ) : (
-                <BarChart data={mockData.chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                <BarChart data={mockData.chartData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" tick={{ fontSize: contextualHeight === 'compact' ? 8 : 10 }} />
-                  <YAxis tick={{ fontSize: contextualHeight === 'compact' ? 8 : 10 }} />
+                  <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
                   <RechartsTooltip />
                   <Bar dataKey="value" fill={themeColors.chartColors[0]} />
                 </BarChart>
