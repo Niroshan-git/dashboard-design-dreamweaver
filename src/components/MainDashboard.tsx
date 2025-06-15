@@ -1,5 +1,5 @@
 
-import { LayoutGrid, Lightbulb } from "lucide-react";
+import { LayoutGrid, Lightbulb, DollarSign, Users, TrendingDown, User, TrendingUp, ShoppingCart } from "lucide-react";
 import { optimizeLayout, generateLayoutSuggestions } from "../utils/smartLayoutOptimizer";
 import DashboardHeader from "./dashboard/DashboardHeader";
 import LayoutSuggestions from "./dashboard/LayoutSuggestions";
@@ -99,12 +99,12 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
   // Mock data for charts and KPIs
   const getMockData = () => {
     const kpiData = [
-      { label: 'Total Revenue', value: '$2.4M', change: '+12.5%', trend: 'up', icon: require('lucide-react').DollarSign, color: 'text-green-600' },
-      { label: 'Active Users', value: '45.2K', change: '+8.3%', trend: 'up', icon: require('lucide-react').Users, color: 'text-blue-600' },
-      { label: 'Conversion Rate', value: '3.24%', change: '-2.1%', trend: 'down', icon: require('lucide-react').TrendingDown, color: 'text-red-600' },
-      { label: 'Customer Satisfaction', value: '94.2%', change: '+5.7%', trend: 'up', icon: require('lucide-react').User, color: 'text-purple-600' },
-      { label: 'Sales Growth', value: '18.4%', change: '+3.2%', trend: 'up', icon: require('lucide-react').TrendingUp, color: 'text-orange-600' },
-      { label: 'Monthly Orders', value: '1,284', change: '+15.8%', trend: 'up', icon: require('lucide-react').ShoppingCart, color: 'text-indigo-600' }
+      { label: 'Total Revenue', value: '$2.4M', change: '+12.5%', trend: 'up', icon: DollarSign, color: 'text-green-600' },
+      { label: 'Active Users', value: '45.2K', change: '+8.3%', trend: 'up', icon: Users, color: 'text-blue-600' },
+      { label: 'Conversion Rate', value: '3.24%', change: '-2.1%', trend: 'down', icon: TrendingDown, color: 'text-red-600' },
+      { label: 'Customer Satisfaction', value: '94.2%', change: '+5.7%', trend: 'up', icon: User, color: 'text-purple-600' },
+      { label: 'Sales Growth', value: '18.4%', change: '+3.2%', trend: 'up', icon: TrendingUp, color: 'text-orange-600' },
+      { label: 'Monthly Orders', value: '1,284', change: '+15.8%', trend: 'up', icon: ShoppingCart, color: 'text-indigo-600' }
     ];
 
     const chartData = [
