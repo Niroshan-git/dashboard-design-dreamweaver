@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, BarChart3, TrendingUp, Calendar, Users, Settings, 
@@ -31,13 +32,15 @@ interface DashboardTopNavigationProps {
   onPageSelect: (page: number) => void;
   currentPage: number;
   onExport: (format: string) => void;
+  style?: string;
 }
 
 const DashboardTopNavigation = ({ 
   config, 
   onPageSelect,
   currentPage,
-  onExport
+  onExport,
+  style = 'top-wide'
 }: DashboardTopNavigationProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -66,14 +69,11 @@ const DashboardTopNavigation = ({
     onPageSelect(pageIndex);
   };
 
-  // Show dropdown when there are more than 5 pages
-  const showPageDropdown = pages.length > 5;
-
-  return (
+  // Render different styles based on the selected navigation style
+  const renderTopWideStyle = () => (
     <div className="bg-background border-b border-border">
       {/* Main Navigation Bar */}
       <div className="h-16 flex items-center justify-between px-6">
-        {/* Left Section - Brand and Quick Actions */}
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-primary/10 rounded-lg">
@@ -91,7 +91,6 @@ const DashboardTopNavigation = ({
           
           <Separator orientation="vertical" className="h-8" />
           
-          {/* Quick Actions */}
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm" className="h-8">
               <Filter className="w-4 h-4 mr-1" />
@@ -104,9 +103,7 @@ const DashboardTopNavigation = ({
           </div>
         </div>
 
-        {/* Right Section - Search and User Menu */}
         <div className="flex items-center space-x-3">
-          {/* Search */}
           {showSearch ? (
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -125,13 +122,11 @@ const DashboardTopNavigation = ({
             </Button>
           )}
           
-          {/* Notifications */}
           <Button variant="ghost" size="sm" className="relative">
             <Bell size={16} />
             <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
           </Button>
           
-          {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2 h-9">
@@ -161,66 +156,30 @@ const DashboardTopNavigation = ({
         </div>
       </div>
 
-      {/* Secondary Navigation - Pages */}
       <div className="h-12 bg-muted/30 border-t border-border">
         <div className="px-6 h-full flex items-center justify-between">
-          {showPageDropdown ? (
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium">Page:</span>
-                <Select 
-                  value={currentPage.toString()} 
-                  onValueChange={(value) => handlePageSelect(parseInt(value))}
-                >
-                  <SelectTrigger className="w-48 h-8">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {pages.map((page) => (
-                      <SelectItem key={page.id} value={(page.id - 1).toString()}>
-                        <div className="flex items-center space-x-2">
-                          <span>{page.icon}</span>
-                          <div>
-                            <div className="font-medium">{page.name}</div>
-                            <div className="text-xs text-muted-foreground">{page.description}</div>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Badge variant="secondary" className="text-xs h-6">
-                  {currentPage + 1} of {pages.length}
-                </Badge>
-              </div>
-            </div>
-          ) : (
-            <nav className="flex items-center space-x-1">
-              {pages.map((page) => (
-                <button
-                  key={page.id}
-                  onClick={() => handlePageSelect(page.id - 1)}
-                  className={cn(
-                    "flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                    "hover:bg-background hover:shadow-sm",
-                    currentPage === page.id - 1
-                      ? "bg-background text-foreground shadow-sm border border-border" 
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <span>{page.icon}</span>
-                  <span>{page.name}</span>
-                  {currentPage === page.id - 1 && (
-                    <Badge variant="secondary" className="text-xs h-5">
-                      Active
-                    </Badge>
-                  )}
-                </button>
-              ))}
-            </nav>
-          )}
+          <nav className="flex items-center space-x-1">
+            {pages.map((page) => (
+              <button
+                key={page.id}
+                onClick={() => handlePageSelect(page.id - 1)}
+                className={cn(
+                  "flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                  "hover:bg-background hover:shadow-sm",
+                  currentPage === page.id - 1
+                    ? "bg-background text-foreground shadow-sm border border-border" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <span>{page.icon}</span>
+                <span>{page.name}</span>
+                {currentPage === page.id - 1 && (
+                  <Badge variant="secondary" className="text-xs h-5">Active</Badge>
+                )}
+              </button>
+            ))}
+          </nav>
           
-          {/* Page Info */}
           <div className="flex items-center space-x-2 text-xs text-muted-foreground">
             <span>Page {currentPage + 1} of {pages.length}</span>
             <Separator orientation="vertical" className="h-4" />
@@ -230,6 +189,131 @@ const DashboardTopNavigation = ({
       </div>
     </div>
   );
+
+  const renderTopTabsStyle = () => (
+    <div className="bg-background border-b border-border">
+      <div className="h-16 flex items-center justify-between px-6 border-b">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-primary/10 rounded-lg">
+            {getIconForDashboardType(config.dashboardType)}
+          </div>
+          <h1 className="font-semibold text-lg">
+            {config.dashboardType 
+              ? config.dashboardType.charAt(0).toUpperCase() + config.dashboardType.slice(1) + " Dashboard" 
+              : "Business Dashboard"}
+          </h1>
+        </div>
+
+        <div className="flex items-center space-x-3">
+          <Button variant="ghost" size="sm" onClick={() => setShowSearch(!showSearch)}>
+            <Search size={16} />
+          </Button>
+          <Button variant="ghost" size="sm" className="relative">
+            <Bell size={16} />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="flex items-center gap-2 h-9">
+                <Avatar className="h-7 w-7">
+                  <AvatarImage src="/placeholder.svg" />
+                  <AvatarFallback className="text-xs">JD</AvatarFallback>
+                </Avatar>
+                <ChevronDown size={12} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>Profile Settings</DropdownMenuItem>
+              <DropdownMenuItem>Dashboard Settings</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>Sign Out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      <Tabs value={currentPage.toString()} onValueChange={(value) => handlePageSelect(parseInt(value))}>
+        <TabsList className="h-12 w-full justify-start rounded-none bg-muted/30 border-0">
+          {pages.map((page) => (
+            <TabsTrigger
+              key={page.id}
+              value={(page.id - 1).toString()}
+              className="flex items-center space-x-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              <span>{page.icon}</span>
+              <span>{page.name}</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+    </div>
+  );
+
+  const renderTopMinimalStyle = () => (
+    <div className="bg-background border-b border-border">
+      <div className="h-14 flex items-center justify-between px-6">
+        <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-2">
+            <LayoutDashboard className="h-5 w-5 text-primary" />
+            <h1 className="font-medium text-base">
+              {config.dashboardType 
+                ? config.dashboardType.charAt(0).toUpperCase() + config.dashboardType.slice(1) 
+                : "Dashboard"}
+            </h1>
+          </div>
+          
+          <nav className="flex items-center space-x-1">
+            {pages.map((page) => (
+              <button
+                key={page.id}
+                onClick={() => handlePageSelect(page.id - 1)}
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
+                  currentPage === page.id - 1
+                    ? "bg-primary text-primary-foreground" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                )}
+              >
+                {page.name}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Button variant="ghost" size="sm" onClick={() => onExport('pdf')}>
+            <Download className="w-4 h-4" />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <User size={16} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>Profile</DropdownMenuItem>
+              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>Sign Out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Render based on style prop
+  switch (style) {
+    case 'top-tabs':
+      return renderTopTabsStyle();
+    case 'top-minimal':
+      return renderTopMinimalStyle();
+    case 'top-wide':
+    default:
+      return renderTopWideStyle();
+  }
 };
 
 export default DashboardTopNavigation;
