@@ -24,6 +24,7 @@ interface PageComponent {
   chartType?: 'bar' | 'line' | 'pie' | 'area' | 'map';
   span: number;
   position: { row: number; col: number };
+  visualId?: string; // Link to selected visual
 }
 
 interface PageLayout {
@@ -34,8 +35,29 @@ interface PageLayout {
 
 const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  const [layouts, setLayouts] = useState<PageLayout[]>([]);
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
+
+  // Initialize layouts if not present
+  const initializeLayouts = () => {
+    if (!config.layouts || config.layouts.length !== config.pages) {
+      const newLayouts: PageLayout[] = [];
+      for (let i = 0; i < config.pages; i++) {
+        newLayouts.push({
+          pageId: i,
+          components: [],
+          preset: undefined
+        });
+      }
+      setConfig(prev => ({ ...prev, layouts: newLayouts }));
+    }
+  };
+
+  // Call initialization
+  if (!config.layouts || config.layouts.length !== config.pages) {
+    initializeLayouts();
+  }
+
+  const layouts = config.layouts || [];
 
   const componentTypes = [
     { type: 'kpi', label: 'KPI Cards', icon: LayoutGrid, color: 'bg-blue-50 border-blue-200' },
@@ -55,54 +77,85 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
     { value: 'map', label: 'Map Chart', icon: LayoutGrid }
   ];
 
+  const navigationStyles = [
+    { 
+      value: 'left-full', 
+      label: 'Full Left Sidebar', 
+      description: 'Fixed full-height sidebar with navigation',
+      preview: 'bg-gradient-to-r from-blue-50 to-white'
+    },
+    { 
+      value: 'left-collapsible', 
+      label: 'Collapsible Left Bar', 
+      description: 'Icon-only collapsible sidebar',
+      preview: 'bg-gradient-to-r from-gray-50 to-white'
+    },
+    { 
+      value: 'top-wide', 
+      label: 'Wide Top Navigation', 
+      description: 'Full-width top bar with logo and menu',
+      preview: 'bg-gradient-to-r from-purple-50 to-white'
+    },
+    { 
+      value: 'top-tabs', 
+      label: 'Tabbed Top Navigation', 
+      description: 'Tab-based navigation with dropdowns',
+      preview: 'bg-gradient-to-r from-green-50 to-white'
+    },
+    { 
+      value: 'top-minimal', 
+      label: 'Minimal Top Bar', 
+      description: 'Clean minimal navigation',
+      preview: 'bg-gradient-to-r from-yellow-50 to-white'
+    }
+  ];
+
   const presetLayouts = {
     simple: [
-      { name: "KPI Focus", components: [
-        { type: 'kpi', count: 4, span: 12 },
-        { type: 'chart', count: 1, span: 12, chartType: 'line' }
-      ]},
-      { name: "Chart Heavy", components: [
-        { type: 'kpi', count: 2, span: 6 },
-        { type: 'chart', count: 2, span: 6, chartType: 'bar' }
-      ]}
+      { 
+        name: "KPI Focus", 
+        components: [
+          { type: 'kpi', count: 4, span: 12 },
+          { type: 'chart', count: 1, span: 12, chartType: 'line' }
+        ]
+      },
+      { 
+        name: "Chart Heavy", 
+        components: [
+          { type: 'kpi', count: 2, span: 6 },
+          { type: 'chart', count: 2, span: 6, chartType: 'bar' }
+        ]
+      }
     ],
     moderate: [
-      { name: "Balanced View", components: [
-        { type: 'kpi', count: 4, span: 12 },
-        { type: 'chart', count: 2, span: 6, chartType: 'line' },
-        { type: 'table', count: 1, span: 12 }
-      ]},
-      { name: "Analytics Focus", components: [
-        { type: 'kpi', count: 3, span: 9 },
-        { type: 'filter', count: 1, span: 3 },
-        { type: 'chart', count: 3, span: 4, chartType: 'bar' }
-      ]}
+      { 
+        name: "Balanced View", 
+        components: [
+          { type: 'kpi', count: 4, span: 12 },
+          { type: 'chart', count: 2, span: 6, chartType: 'line' },
+          { type: 'table', count: 1, span: 12 }
+        ]
+      },
+      { 
+        name: "Analytics Focus", 
+        components: [
+          { type: 'kpi', count: 3, span: 9 },
+          { type: 'filter', count: 1, span: 3 },
+          { type: 'chart', count: 3, span: 4, chartType: 'bar' }
+        ]
+      }
     ],
     complex: [
-      { name: "Executive Dashboard", components: [
-        { type: 'kpi', count: 6, span: 12 },
-        { type: 'chart', count: 4, span: 3, chartType: 'mixed' },
-        { type: 'table', count: 1, span: 8 },
-        { type: 'filter', count: 1, span: 4 }
-      ]},
-      { name: "Full Analytics", components: [
-        { type: 'kpi', count: 4, span: 8 },
-        { type: 'filter', count: 1, span: 4 },
-        { type: 'chart', count: 6, span: 2, chartType: 'mixed' }
-      ]}
+      { 
+        name: "Executive Dashboard", 
+        components: [
+          { type: 'kpi', count: 6, span: 12 },
+          { type: 'chart', count: 4, span: 3, chartType: 'mixed' },
+          { type: 'table', count: 1, span: 8 },
+          { type: 'filter', count: 1, span: 4 }
+        ]
+      }
     ]
-  };
-
-  const initializeLayouts = () => {
-    const newLayouts: PageLayout[] = [];
-    for (let i = 0; i < config.pages; i++) {
-      newLayouts.push({
-        pageId: i,
-        components: [],
-        preset: undefined
-      });
-    }
-    setLayouts(newLayouts);
   };
 
   const addComponent = (type: string) => {
@@ -120,9 +173,7 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
       updatedLayouts[currentPageIndex] = { pageId: currentPageIndex, components: [] };
     }
     updatedLayouts[currentPageIndex].components.push(newComponent);
-    setLayouts(updatedLayouts);
     
-    // Update main config
     setConfig(prev => ({ ...prev, layouts: updatedLayouts }));
   };
 
@@ -131,7 +182,6 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
     if (updatedLayouts[currentPageIndex]) {
       updatedLayouts[currentPageIndex].components = 
         updatedLayouts[currentPageIndex].components.filter(c => c.id !== componentId);
-      setLayouts(updatedLayouts);
       setConfig(prev => ({ ...prev, layouts: updatedLayouts }));
     }
   };
@@ -145,7 +195,6 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
           ...updatedLayouts[currentPageIndex].components[componentIndex],
           ...updates
         };
-        setLayouts(updatedLayouts);
         setConfig(prev => ({ ...prev, layouts: updatedLayouts }));
       }
     }
@@ -167,12 +216,15 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
       components: newComponents,
       preset: preset.name
     };
-    setLayouts(updatedLayouts);
     setConfig(prev => ({ ...prev, layouts: updatedLayouts }));
   };
 
   const getCurrentPageLayout = () => {
     return layouts[currentPageIndex] || { pageId: currentPageIndex, components: [] };
+  };
+
+  const linkVisualToComponent = (componentId: string, visualId: string) => {
+    updateComponent(componentId, { visualId });
   };
 
   const renderGridPreview = () => {
@@ -185,7 +237,7 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
             <div className="col-span-12 flex items-center justify-center text-gray-400 border-2 border-dashed border-gray-300 rounded">
               <div className="text-center">
                 <LayoutGrid className="w-8 h-8 mx-auto mb-2" />
-                <p>Drag components here or use presets</p>
+                <p>Add components to Page {currentPageIndex + 1}</p>
               </div>
             </div>
           ) : (
@@ -196,7 +248,7 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
               return (
                 <div
                   key={component.id}
-                  className={`${componentType?.color} border rounded p-2 flex flex-col items-center justify-center cursor-pointer hover:shadow-md transition-shadow`}
+                  className={`${componentType?.color} border rounded p-2 flex flex-col items-center justify-center cursor-pointer hover:shadow-md transition-shadow relative`}
                   style={{ gridColumn: `span ${Math.min(component.span, 12)}` }}
                   onClick={() => setSelectedComponent(component.id)}
                 >
@@ -212,10 +264,15 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                       {component.chartType}
                     </Badge>
                   )}
+                  {component.visualId && (
+                    <Badge variant="default" className="text-xs mt-1">
+                      Linked
+                    </Badge>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="mt-1 h-4 w-4 p-0"
+                    className="mt-1 h-4 w-4 p-0 absolute top-1 right-1"
                     onClick={(e) => {
                       e.stopPropagation();
                       removeComponent(component.id);
@@ -232,11 +289,6 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
     );
   };
 
-  // Initialize layouts if empty
-  if (layouts.length !== config.pages) {
-    initializeLayouts();
-  }
-
   return (
     <div className="space-y-6">
       <Card>
@@ -246,13 +298,13 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
             Interactive Layout Builder
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Design each page layout by adding components and arranging them in a responsive grid
+            Design each page layout by adding components and linking them to your selected visuals
           </p>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Page Selector */}
           <div className="flex items-center gap-4">
-            <Label className="font-semibold">Page:</Label>
+            <Label className="font-semibold">Current Page:</Label>
             <div className="flex gap-2">
               {Array.from({ length: config.pages }, (_, i) => (
                 <Button
@@ -274,6 +326,32 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
 
           <Separator />
 
+          {/* Navigation Style Selection */}
+          <div className="space-y-3">
+            <Label className="font-semibold">Navigation Style</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {navigationStyles.map((style) => (
+                <Card 
+                  key={style.value}
+                  className={`cursor-pointer transition-all hover:shadow-md ${
+                    config.navigationStyle === style.value 
+                      ? 'ring-2 ring-blue-500 bg-blue-50' 
+                      : 'hover:bg-gray-50'
+                  }`}
+                  onClick={() => setConfig(prev => ({ ...prev, navigationStyle: style.value }))}
+                >
+                  <CardContent className="p-4">
+                    <div className={`h-8 rounded mb-2 ${style.preview}`}></div>
+                    <div className="font-medium text-sm">{style.label}</div>
+                    <div className="text-xs text-gray-500 mt-1">{style.description}</div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          <Separator />
+
           <Tabs defaultValue="build" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="build">Build Layout</TabsTrigger>
@@ -284,7 +362,7 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
             <TabsContent value="build" className="space-y-4">
               {/* Component Palette */}
               <div>
-                <Label className="font-semibold mb-3 block">Add Components</Label>
+                <Label className="font-semibold mb-3 block">Add Components to Page {currentPageIndex + 1}</Label>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
                   {componentTypes.map((componentType) => {
                     const IconComponent = componentType.icon;
@@ -385,6 +463,27 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                             </SelectContent>
                           </Select>
                         </div>
+
+                        {/* Link to Visual */}
+                        <div>
+                          <Label>Link to Visual</Label>
+                          <Select
+                            value={component.visualId || ''}
+                            onValueChange={(value) => linkVisualToComponent(selectedComponent, value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select visual" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">No Link</SelectItem>
+                              {config.visuals?.map((visual: any) => (
+                                <SelectItem key={visual.id} value={visual.id}>
+                                  {visual.type} - {visual.name || visual.id}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     );
                   })()}
@@ -394,7 +493,7 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
 
             <TabsContent value="presets" className="space-y-4">
               <div>
-                <Label className="font-semibold mb-3 block">Quick Layout Presets</Label>
+                <Label className="font-semibold mb-3 block">Quick Layout Presets for Page {currentPageIndex + 1}</Label>
                 <div className="grid gap-4">
                   {Object.entries(presetLayouts).map(([complexity, presets]) => (
                     <div key={complexity}>
@@ -427,7 +526,8 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                 <div className="mt-4 text-sm text-muted-foreground">
                   <p>• Click components to select and edit properties</p>
                   <p>• Use the minus button to remove components</p>
-                  <p>• Grid shows 16:9 aspect ratio preview</p>
+                  <p>• Link components to your selected visuals</p>
+                  <p>• Each page has its own unique layout</p>
                 </div>
               </div>
             </TabsContent>
@@ -435,11 +535,11 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
         </CardContent>
       </Card>
 
-      {/* Layout Summary */}
+      {/* Layout Summary - All Pages */}
       {layouts.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Layout Summary</CardTitle>
+            <CardTitle className="text-base">All Pages Layout Summary</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -449,7 +549,7 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                   <div className="flex gap-1">
                     {layout.components.map((comp, i) => (
                       <Badge key={i} variant="secondary" className="text-xs">
-                        {comp.count || 1} {comp.type}
+                        {comp.count || 1} {comp.type}{comp.visualId ? ' (linked)' : ''}
                       </Badge>
                     ))}
                     {layout.components.length === 0 && (
