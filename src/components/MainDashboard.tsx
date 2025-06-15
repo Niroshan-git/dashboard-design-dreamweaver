@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, Area, AreaChart } from "recharts";
-import { CircleDot, TrendingUp, TrendingDown, MoreHorizontal, User, Calendar, DollarSign, Activity, ChevronRight, ChevronDown, Filter, Download, Users, ShoppingCart, Package, Clock, LayoutGrid, Table, Type, Image, Target, Grid3X3, Map } from "lucide-react";
+import { CircleDot, TrendingUp, TrendingDown, MoreHorizontal, User, Calendar, DollarSign, Activity, ChevronRight, ChevronDown, Filter, Download, Users, ShoppingCart, Package, Clock, LayoutGrid, Table, Type, Image, Target, Grid3X3, Map, Lightbulb, Info } from "lucide-react";
+import { optimizeLayout, generateLayoutSuggestions } from "../utils/smartLayoutOptimizer";
 
 interface MainDashboardProps {
   config: any;
@@ -26,8 +27,11 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
   const currentLayout = getCurrentPageLayout();
   const visuals = config.visuals || [];
 
-  console.log('MainDashboard - Current layout:', currentLayout);
-  console.log('MainDashboard - Available visuals:', visuals);
+  // Optimize layout using smart optimizer
+  const optimizedLayout = optimizeLayout(currentLayout.components || []);
+  const layoutSuggestions = generateLayoutSuggestions(currentLayout.components || [], visuals);
+
+  console.log('MainDashboard - Optimized layout:', optimizedLayout);
 
   const getThemeColors = () => {
     const themeStyle = config.themeStyle;
@@ -124,17 +128,14 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
     const kpisToShow = mockData.kpiData.slice(0, kpiCount);
     
     const getKpiGridCols = (count: number, span: number) => {
-      if (span >= 12) return Math.min(count, 6);
-      if (span >= 8) return Math.min(count, 4);
-      if (span >= 6) return Math.min(count, 3);
-      return Math.min(count, 2);
+      return Math.min(count, Math.floor(span / 3));
     };
 
     const gridCols = getKpiGridCols(kpiCount, component.span);
 
     return (
       <div 
-        className="grid gap-4" 
+        className="grid gap-4 h-full" 
         style={{ 
           gridTemplateColumns: `repeat(${gridCols}, 1fr)` 
         }}
@@ -145,7 +146,7 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
           const cardContent = (
             <Card 
               key={index} 
-              className="hover:shadow-lg transition-shadow"
+              className="hover:shadow-lg transition-shadow h-full"
               style={{ 
                 backgroundColor: themeColors.cardBackground,
                 borderColor: themeColors.borderColor,
@@ -437,14 +438,14 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
   };
 
   const renderTextComponent = (component: any, linkedVisual: any) => {
-    const textContent = linkedVisual?.textContent || component.textContent || 'Welcome to Dashboard';
+    const textContent = linkedVisual?.textContent || component.textContent || 'Welcome to your Dashboard! This is your central hub for monitoring key metrics and insights. Navigate through different sections to explore your data and make informed decisions.';
     
     return (
       <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-        <CardContent className="p-6">
+        <CardContent className="p-6 h-full flex flex-col justify-center">
           <div style={{ color: themeColors.textPrimary }} className="prose max-w-none">
             <h3 className="text-lg font-semibold mb-3">
-              {linkedVisual ? linkedVisual.name : 'Welcome Message'}
+              {linkedVisual ? linkedVisual.name : 'Dashboard Welcome Message'}
             </h3>
             <div className="whitespace-pre-wrap text-sm leading-relaxed">
               {textContent}
@@ -467,67 +468,15 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
         return renderChartComponent(component, linkedVisual);
       case 'table':
         return renderTableComponent(component, linkedVisual);
-      case 'heatmap':
-        return renderHeatmapComponent(component, linkedVisual);
-      case 'funnel':
-        return renderFunnelComponent(component, linkedVisual);
       case 'progress':
         return renderProgressComponent(component, linkedVisual);
-      case 'scatter':
-        return (
-          <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-            <CardHeader>
-              <CardTitle style={{ color: themeColors.textPrimary }}>
-                {linkedVisual ? linkedVisual.name : 'Scatter Plot'}
-              </CardTitle>
-              <CardDescription style={{ color: themeColors.textSecondary }}>
-                {linkedVisual ? linkedVisual.description || 'Correlation analysis' : 'Data correlation visualization'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64 flex items-center justify-center" style={{ color: themeColors.textSecondary }}>
-                <div className="text-center">
-                  <Target className="w-12 h-12 mx-auto mb-2" />
-                  <p className="text-sm">Scatter plot visualization</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      case 'filter':
-        return (
-          <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-            <CardHeader>
-              <CardTitle style={{ color: themeColors.textPrimary }}>
-                {linkedVisual ? linkedVisual.name : 'Filters'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm">Date Range</Button>
-                <Button variant="outline" size="sm">Category</Button>
-                <Button variant="outline" size="sm">Status</Button>
-                <Button variant="outline" size="sm">Region</Button>
-              </div>
-            </CardContent>
-          </Card>
-        );
       case 'text':
         return renderTextComponent(component, linkedVisual);
+      case 'heatmap':
+      case 'funnel':
+      case 'scatter':
+      case 'filter':
       case 'image':
-        return (
-          <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-            <CardContent className="p-6 flex items-center justify-center min-h-[200px]">
-              <div className="text-center" style={{ color: themeColors.textSecondary }}>
-                <Image className="w-12 h-12 mx-auto mb-4" />
-                <h4 className="font-medium mb-2" style={{ color: themeColors.textPrimary }}>
-                  {linkedVisual ? linkedVisual.name : 'Image Placeholder'}
-                </h4>
-                <p className="text-sm">Image content will appear here</p>
-              </div>
-            </CardContent>
-          </Card>
-        );
       default:
         return (
           <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
@@ -535,9 +484,9 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
               <div className="text-center" style={{ color: themeColors.textSecondary }}>
                 <LayoutGrid className="w-12 h-12 mx-auto mb-4" />
                 <h4 className="font-medium mb-2" style={{ color: themeColors.textPrimary }}>
-                  Unknown Component
+                  {component.type.charAt(0).toUpperCase() + component.type.slice(1)} Component
                 </h4>
-                <p className="text-sm">Component type not recognized</p>
+                <p className="text-sm">Component preview</p>
               </div>
             </CardContent>
           </Card>
@@ -545,17 +494,30 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
     }
   };
 
-  if (currentLayout.components.length === 0) {
+  if (optimizedLayout.components.length === 0) {
     return (
       <div className="p-6 h-full flex items-center justify-center" style={{ background: themeColors.background }}>
-        <div className="text-center">
+        <div className="text-center max-w-md">
           <LayoutGrid className="w-16 h-16 mx-auto mb-4 opacity-50" style={{ color: themeColors.textSecondary }} />
           <h3 className="text-xl font-semibold mb-2" style={{ color: themeColors.textPrimary }}>
             Page {currentPage + 1} is Empty
           </h3>
-          <p style={{ color: themeColors.textSecondary }}>
+          <p className="mb-4" style={{ color: themeColors.textSecondary }}>
             Add components in the Layout Builder to see them here
           </p>
+          {layoutSuggestions.length > 0 && (
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2 mb-2">
+                <Lightbulb className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800">Suggestions</span>
+              </div>
+              <ul className="text-xs text-blue-700 text-left space-y-1">
+                {layoutSuggestions.map((suggestion, index) => (
+                  <li key={index}>• {suggestion}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -564,13 +526,13 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
   return (
     <div className="p-6 space-y-6 min-h-screen" style={{ background: themeColors.background, color: themeColors.textPrimary }}>
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold tracking-tight" style={{ color: themeColors.textPrimary }}>
             Page {currentPage + 1}
           </h1>
           <p style={{ color: themeColors.textSecondary }}>
-            {currentLayout.components.length} component{currentLayout.components.length !== 1 ? 's' : ''} configured
+            {optimizedLayout.components.length} component{optimizedLayout.components.length !== 1 ? 's' : ''} configured
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -585,30 +547,40 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
         </div>
       </div>
 
-      {/* Dynamic Layout Grid - 12 Column System */}
-      <div className="grid grid-cols-12 gap-6 auto-rows-min">
-        {currentLayout.components
-          .sort((a: any, b: any) => {
-            if (a.position && b.position) {
-              if (a.position.row !== b.position.row) {
-                return a.position.row - b.position.row;
-              }
-              return a.position.col - b.position.col;
-            }
-            return a.id.localeCompare(b.id);
-          })
-          .map((component: any, index: number) => (
-            <div
-              key={component.id}
-              className="flex flex-col"
-              style={{ 
-                gridColumn: `span ${Math.min(component.span, 12)} / span ${Math.min(component.span, 12)}`,
-                minHeight: component.type === 'kpi' ? 'auto' : '300px'
-              }}
-            >
-              {renderComponent(component, index)}
+      {/* Layout Suggestions */}
+      {optimizedLayout.suggestions.length > 0 && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <h4 className="font-medium text-blue-900 mb-2">Layout Suggestions</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  {optimizedLayout.suggestions.map((suggestion, index) => (
+                    <li key={index}>• {suggestion}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
-          ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Optimized Layout Grid */}
+      <div className="grid grid-cols-12 gap-4">
+        {optimizedLayout.components.map((component: any, index: number) => (
+          <div
+            key={component.id}
+            className="flex flex-col"
+            style={{ 
+              gridColumn: `span ${component.span} / span ${component.span}`,
+              gridRow: `span ${component.position?.rowSpan || 1} / span ${component.position?.rowSpan || 1}`,
+              minHeight: component.type === 'kpi' ? '150px' : '300px'
+            }}
+          >
+            {renderComponent(component, index)}
+          </div>
+        ))}
       </div>
     </div>
   );

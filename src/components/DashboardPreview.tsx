@@ -63,6 +63,7 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
             config={config} 
             currentPage={currentPage} 
             onPageSelect={handlePageChange}
+            onExport={onExport}
           />
         );
       default:
