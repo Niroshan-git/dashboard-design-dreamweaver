@@ -26,35 +26,25 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     { label: 'Monthly Orders', value: '1,284', change: '+15.8%', trend: 'up', icon: ShoppingCart, color: 'text-indigo-600' }
   ];
 
-  // Get dynamic container height - KPI cards should be conservative with height usage
+  // Get dynamic container height - ensure proper height usage
   const getContainerHeight = () => {
     if (dynamicHeight) {
-      if (component.type === 'kpi') {
-        // KPI cards use dynamic height but maintain compact design
-        return { 
-          height: dynamicHeight, 
-          minHeight: dynamicHeight,
-          maxHeight: dynamicHeight 
-        };
-      } else {
-        // Charts use full dynamic height
-        return { 
-          height: dynamicHeight, 
-          minHeight: dynamicHeight,
-          maxHeight: dynamicHeight 
-        };
-      }
+      return { 
+        height: dynamicHeight, 
+        minHeight: dynamicHeight,
+        maxHeight: dynamicHeight 
+      };
     }
-    return { height: '100%' };
+    return { height: '100%', minHeight: '200px' };
   };
 
-  // For charts, calculate content height more precisely
+  // For charts, calculate content height more precisely to fit within borders
   const getChartContentHeight = () => {
     if (dynamicHeight) {
-      // Subtract header and padding from dynamic height
-      return `calc(${dynamicHeight} - 70px)`;
+      // Subtract header (60px) and padding (16px) from dynamic height
+      return `calc(${dynamicHeight} - 76px)`;
     }
-    return '180px';
+    return 'calc(100% - 76px)';
   };
 
   // Check if KPI should be enhanced (only when it comes after a chart in same row)
@@ -211,20 +201,33 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     const chartContentHeight = getChartContentHeight();
     
     return (
-      <Card className="flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
-        <CardHeader className="flex-shrink-0 px-3 pt-3 pb-2">
-          <CardTitle className="text-sm truncate" style={{ color: themeColors.textPrimary }}>
+      <Card 
+        className="flex flex-col h-full" 
+        style={{ 
+          backgroundColor: themeColors.cardBackground, 
+          borderColor: themeColors.borderColor, 
+          ...getContainerHeight() 
+        }}
+      >
+        <CardHeader className="flex-shrink-0 px-4 pt-4 pb-2">
+          <CardTitle className="text-sm font-medium truncate" style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : `${chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart`}
           </CardTitle>
           <CardDescription className="text-xs truncate" style={{ color: themeColors.textSecondary }}>
             {linkedVisual ? linkedVisual.description || 'Chart visualization' : 'Performance metrics over time'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col min-h-0 p-2">
-          <div className="flex-1 min-h-0" style={{ height: chartContentHeight, minHeight: chartContentHeight }}>
+        <CardContent className="flex-1 p-4 min-h-0">
+          <div 
+            className="w-full h-full"
+            style={{ 
+              height: chartContentHeight,
+              minHeight: chartContentHeight
+            }}
+          >
             <ResponsiveContainer width="100%" height="100%">
               {chartType === 'pie' ? (
-                <PieChart>
+                <PieChart margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                   <Pie
                     data={[
                       { name: 'Category A', value: 45, color: themeColors.chartColors[0] },
@@ -233,7 +236,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                     ]}
                     cx="50%"
                     cy="50%"
-                    outerRadius="80%"
+                    outerRadius="70%"
                     fill="#8884d8"
                     dataKey="value"
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
@@ -242,31 +245,94 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                       <Cell key={`cell-${i}`} fill={themeColors.chartColors[i]} />
                     ))}
                   </Pie>
-                  <RechartsTooltip />
+                  <RechartsTooltip 
+                    contentStyle={{ 
+                      backgroundColor: themeColors.cardBackground,
+                      border: `1px solid ${themeColors.borderColor}`,
+                      borderRadius: '6px'
+                    }}
+                  />
                 </PieChart>
               ) : chartType === 'line' ? (
-                <LineChart data={mockData.chartData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} />
-                  <RechartsTooltip />
-                  <Line type="monotone" dataKey="value" stroke={themeColors.chartColors[0]} strokeWidth={2} dot={{ r: 3 }} />
+                <LineChart data={mockData.chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={themeColors.borderColor} />
+                  <XAxis 
+                    dataKey="month" 
+                    tick={{ fontSize: 12, fill: themeColors.textSecondary }} 
+                    axisLine={{ stroke: themeColors.borderColor }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12, fill: themeColors.textSecondary }}
+                    axisLine={{ stroke: themeColors.borderColor }}
+                  />
+                  <RechartsTooltip 
+                    contentStyle={{ 
+                      backgroundColor: themeColors.cardBackground,
+                      border: `1px solid ${themeColors.borderColor}`,
+                      borderRadius: '6px'
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="value" 
+                    stroke={themeColors.chartColors[0]} 
+                    strokeWidth={2} 
+                    dot={{ r: 4, fill: themeColors.chartColors[0] }}
+                    activeDot={{ r: 6, fill: themeColors.chartColors[0] }}
+                  />
                 </LineChart>
               ) : chartType === 'area' ? (
-                <AreaChart data={mockData.chartData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} />
-                  <RechartsTooltip />
-                  <Area type="monotone" dataKey="value" stroke={themeColors.chartColors[0]} fill={themeColors.chartColors[0]} fillOpacity={0.3} />
+                <AreaChart data={mockData.chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={themeColors.borderColor} />
+                  <XAxis 
+                    dataKey="month" 
+                    tick={{ fontSize: 12, fill: themeColors.textSecondary }}
+                    axisLine={{ stroke: themeColors.borderColor }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12, fill: themeColors.textSecondary }}
+                    axisLine={{ stroke: themeColors.borderColor }}
+                  />
+                  <RechartsTooltip 
+                    contentStyle={{ 
+                      backgroundColor: themeColors.cardBackground,
+                      border: `1px solid ${themeColors.borderColor}`,
+                      borderRadius: '6px'
+                    }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="value" 
+                    stroke={themeColors.chartColors[0]} 
+                    fill={themeColors.chartColors[0]} 
+                    fillOpacity={0.3}
+                    strokeWidth={2}
+                  />
                 </AreaChart>
               ) : (
-                <BarChart data={mockData.chartData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} />
-                  <RechartsTooltip />
-                  <Bar dataKey="value" fill={themeColors.chartColors[0]} />
+                <BarChart data={mockData.chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={themeColors.borderColor} />
+                  <XAxis 
+                    dataKey="month" 
+                    tick={{ fontSize: 12, fill: themeColors.textSecondary }}
+                    axisLine={{ stroke: themeColors.borderColor }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12, fill: themeColors.textSecondary }}
+                    axisLine={{ stroke: themeColors.borderColor }}
+                  />
+                  <RechartsTooltip 
+                    contentStyle={{ 
+                      backgroundColor: themeColors.cardBackground,
+                      border: `1px solid ${themeColors.borderColor}`,
+                      borderRadius: '6px'
+                    }}
+                  />
+                  <Bar 
+                    dataKey="value" 
+                    fill={themeColors.chartColors[0]}
+                    radius={[4, 4, 0, 0]}
+                  />
                 </BarChart>
               )}
             </ResponsiveContainer>
@@ -449,8 +515,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 10 }} />
                 <RechartsTooltip />
-                <Bar dataKey="sales" fill={themeColors.chartColors[0]} />
-                <Bar dataKey="users" fill={themeColors.chartColors[1]} />
+                <Bar dataKey="value" fill={themeColors.chartColors[0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
