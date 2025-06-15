@@ -11,7 +11,7 @@ interface ComponentRendererProps {
   themeColors: any;
   mockData: any;
   config: any;
-  allComponents?: any[]; // Add this to get context of all components
+  allComponents?: any[];
 }
 
 const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, config, allComponents = [] }: ComponentRendererProps) => {
@@ -25,23 +25,31 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     { label: 'Monthly Orders', value: '1,284', change: '+15.8%', trend: 'up', icon: ShoppingCart, color: 'text-indigo-600' }
   ];
 
-  // Function to determine if chart should use compact height (next to KPI) or full height (standalone)
+  // Function to determine if chart should use compact height (next to KPI) or enhanced height (standalone)
   const getChartContextualHeight = () => {
     const currentRow = component.position?.row || 1;
     const currentCol = component.position?.col || 1;
+    const currentColSpan = component.position?.colSpan || component.span || 6;
     const currentRowSpan = component.position?.rowSpan || 1;
     
-    // Check if there are KPI cards in the same row
-    const hasKPIInSameRow = allComponents.some(comp => 
-      comp.id !== component.id && 
-      comp.type === 'kpi' && 
-      comp.position?.row === currentRow
-    );
+    // Check if there are KPI cards that are truly adjacent (sharing column boundaries)
+    const hasAdjacentKPI = allComponents.some(comp => {
+      if (comp.id === component.id || comp.type !== 'kpi' || comp.position?.row !== currentRow) {
+        return false;
+      }
+      
+      const compCol = comp.position?.col || 1;
+      const compColSpan = comp.position?.colSpan || comp.span || 3;
+      
+      // Check if components are truly adjacent (one ends where another begins)
+      const isLeftAdjacent = compCol + compColSpan === currentCol;
+      const isRightAdjacent = currentCol + currentColSpan === compCol;
+      
+      return isLeftAdjacent || isRightAdjacent;
+    });
     
-    // Check if this chart spans only 1 row and has KPI neighbors
-    const isCompactChart = currentRowSpan === 1 && hasKPIInSameRow;
-    
-    return isCompactChart ? 'compact' : 'full';
+    // Only use compact height if there's a truly adjacent KPI
+    return hasAdjacentKPI ? 'compact' : 'enhanced';
   };
 
   const renderKPIComponent = () => {
@@ -162,7 +170,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     const contextualHeight = getChartContextualHeight();
     
     // Determine chart container height based on context
-    const chartHeight = contextualHeight === 'compact' ? '120px' : '240px'; // Compact = KPI height, Full = 2x KPI height
+    const chartHeight = contextualHeight === 'compact' ? '120px' : '180px'; // Enhanced = 1.5x KPI height
     const cardPadding = contextualHeight === 'compact' ? 'p-1' : 'p-2';
     const headerPadding = contextualHeight === 'compact' ? 'px-2 pt-2 pb-1' : 'px-3 pt-3 pb-2';
     const titleSize = contextualHeight === 'compact' ? 'text-xs' : 'text-sm';
@@ -194,7 +202,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                     outerRadius="80%"
                     fill="#8884d8"
                     dataKey="value"
-                    label={contextualHeight === 'full' ? ({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%` : false}
+                    label={contextualHeight === 'enhanced' ? ({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%` : false}
                   >
                     {[0, 1, 2].map((entry, i) => (
                       <Cell key={`cell-${i}`} fill={themeColors.chartColors[i]} />
@@ -284,6 +292,9 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
   };
 
   const renderProgressComponent = () => {
+    const contextualHeight = getChartContextualHeight();
+    const progressHeight = contextualHeight === 'compact' ? '120px' : '180px'; // Enhanced = 1.5x KPI height
+    
     const progressData = [
       { label: 'Sales Target', value: 85, color: 'bg-blue-500' },
       { label: 'Customer Satisfaction', value: 92, color: 'bg-green-500' },
@@ -301,19 +312,19 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
             {linkedVisual ? linkedVisual.description || 'Goal completion tracking' : 'Goal completion tracking'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col justify-center px-3 pb-3">
-          <div className="space-y-3">
+        <CardContent className="flex-1 flex flex-col justify-center px-3 pb-3" style={{ minHeight: progressHeight }}>
+          <div className="space-y-4">
             {progressData.map((item, index) => (
-              <div key={item.label} className="space-y-1">
+              <div key={item.label} className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-medium" style={{ color: themeColors.textPrimary }}>
+                  <span className="text-sm font-medium" style={{ color: themeColors.textPrimary }}>
                     {item.label}
                   </span>
-                  <span className="text-xs font-bold" style={{ color: themeColors.textPrimary }}>
+                  <span className="text-sm font-bold" style={{ color: themeColors.textPrimary }}>
                     {item.value}%
                   </span>
                 </div>
-                <Progress value={item.value} className="h-1.5" />
+                <Progress value={item.value} className="h-2" />
               </div>
             ))}
           </div>
