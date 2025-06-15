@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -144,16 +145,16 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     
     return (
       <Card className="h-full w-full flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-        <CardHeader className="flex-shrink-0 pb-2">
-          <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
+        <CardHeader className="flex-shrink-0 pb-1 px-3 pt-3">
+          <CardTitle className="text-sm truncate" style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : `${chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart`}
           </CardTitle>
-          <CardDescription className="text-xs" style={{ color: themeColors.textSecondary }}>
+          <CardDescription className="text-xs truncate" style={{ color: themeColors.textSecondary }}>
             {linkedVisual ? linkedVisual.description || 'Chart visualization' : 'Performance metrics over time'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col min-h-0 p-3">
-          <div className="flex-1 min-h-[180px]">
+        <CardContent className="flex-1 flex flex-col min-h-0 p-2">
+          <div className="flex-1 min-h-0" style={{ minHeight: '120px' }}>
             <ResponsiveContainer width="100%" height="100%">
               {chartType === 'pie' ? (
                 <PieChart>
@@ -165,7 +166,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                     ]}
                     cx="50%"
                     cy="50%"
-                    outerRadius={60}
+                    outerRadius="80%"
                     fill="#8884d8"
                     dataKey="value"
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
@@ -177,30 +178,27 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                   <RechartsTooltip />
                 </PieChart>
               ) : chartType === 'line' ? (
-                <LineChart data={mockData.chartData}>
+                <LineChart data={mockData.chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
+                  <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
                   <RechartsTooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="value" stroke={themeColors.chartColors[0]} strokeWidth={2} />
+                  <Line type="monotone" dataKey="value" stroke={themeColors.chartColors[0]} strokeWidth={2} dot={{ r: 3 }} />
                 </LineChart>
               ) : chartType === 'area' ? (
-                <AreaChart data={mockData.chartData}>
+                <AreaChart data={mockData.chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
+                  <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
                   <RechartsTooltip />
-                  <Legend />
                   <Area type="monotone" dataKey="value" stroke={themeColors.chartColors[0]} fill={themeColors.chartColors[0]} fillOpacity={0.3} />
                 </AreaChart>
               ) : (
-                <BarChart data={mockData.chartData}>
+                <BarChart data={mockData.chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
+                  <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
                   <RechartsTooltip />
-                  <Legend />
                   <Bar dataKey="value" fill={themeColors.chartColors[0]} />
                 </BarChart>
               )}
@@ -222,23 +220,23 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
 
     return (
       <Card className="h-full w-full flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-        <CardHeader className="flex-shrink-0">
-          <CardTitle style={{ color: themeColors.textPrimary }}>
+        <CardHeader className="flex-shrink-0 pb-1 px-3 pt-3">
+          <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : 'Data Table'}
           </CardTitle>
-          <CardDescription style={{ color: themeColors.textSecondary }}>
+          <CardDescription className="text-xs" style={{ color: themeColors.textSecondary }}>
             {linkedVisual ? linkedVisual.description || 'Table data' : 'Tabular data representation'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-auto">
-            <table className="w-full">
+        <CardContent className="flex-1 flex flex-col min-h-0 p-2">
+          <div className="flex-1 overflow-auto border rounded" style={{ borderColor: themeColors.borderColor }}>
+            <table className="w-full text-xs">
               <thead className="sticky top-0" style={{ backgroundColor: themeColors.cardBackground }}>
                 <tr className="border-b" style={{ borderColor: themeColors.borderColor }}>
-                  <th className="text-left p-2" style={{ color: themeColors.textPrimary }}>Name</th>
-                  <th className="text-left p-2" style={{ color: themeColors.textPrimary }}>Value</th>
-                  <th className="text-left p-2" style={{ color: themeColors.textPrimary }}>Status</th>
-                  <th className="text-left p-2" style={{ color: themeColors.textPrimary }}>Date</th>
+                  <th className="text-left p-2 font-medium" style={{ color: themeColors.textPrimary }}>Name</th>
+                  <th className="text-left p-2 font-medium" style={{ color: themeColors.textPrimary }}>Value</th>
+                  <th className="text-left p-2 font-medium" style={{ color: themeColors.textPrimary }}>Status</th>
+                  <th className="text-left p-2 font-medium" style={{ color: themeColors.textPrimary }}>Date</th>
                 </tr>
               </thead>
               <tbody>
@@ -247,9 +245,9 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                     <td className="p-2" style={{ color: themeColors.textPrimary }}>{row.name}</td>
                     <td className="p-2" style={{ color: themeColors.textPrimary }}>{row.value}</td>
                     <td className="p-2">
-                      <Badge variant={row.status === 'Active' ? 'secondary' : 'outline'}>{row.status}</Badge>
+                      <Badge variant={row.status === 'Active' ? 'secondary' : 'outline'} className="text-xs">{row.status}</Badge>
                     </td>
-                    <td className="p-2" style={{ color: themeColors.textSecondary }}>{row.date}</td>
+                    <td className="p-2 text-xs" style={{ color: themeColors.textSecondary }}>{row.date}</td>
                   </tr>
                 ))}
               </tbody>
@@ -270,27 +268,27 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
 
     return (
       <Card className="h-full w-full flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-        <CardHeader className="flex-shrink-0">
-          <CardTitle style={{ color: themeColors.textPrimary }}>
+        <CardHeader className="flex-shrink-0 pb-1 px-3 pt-3">
+          <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : 'Progress Indicators'}
           </CardTitle>
-          <CardDescription style={{ color: themeColors.textSecondary }}>
+          <CardDescription className="text-xs" style={{ color: themeColors.textSecondary }}>
             {linkedVisual ? linkedVisual.description || 'Goal completion tracking' : 'Goal completion tracking'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col justify-center">
-          <div className="space-y-4">
+        <CardContent className="flex-1 flex flex-col justify-center px-3 pb-3">
+          <div className="space-y-3">
             {progressData.map((item, index) => (
-              <div key={item.label} className="space-y-2">
+              <div key={item.label} className="space-y-1">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium" style={{ color: themeColors.textPrimary }}>
+                  <span className="text-xs font-medium" style={{ color: themeColors.textPrimary }}>
                     {item.label}
                   </span>
-                  <span className="text-sm font-bold" style={{ color: themeColors.textPrimary }}>
+                  <span className="text-xs font-bold" style={{ color: themeColors.textPrimary }}>
                     {item.value}%
                   </span>
                 </div>
-                <Progress value={item.value} className="h-2" />
+                <Progress value={item.value} className="h-1.5" />
               </div>
             ))}
           </div>
@@ -304,9 +302,9 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     
     return (
       <Card className="h-full w-full flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-        <CardContent className="p-6 h-full flex flex-col justify-center">
+        <CardContent className="p-4 h-full flex flex-col justify-center">
           <div style={{ color: themeColors.textPrimary }} className="prose max-w-none">
-            <h3 className="text-lg font-semibold mb-3">
+            <h3 className="text-base font-semibold mb-2">
               {linkedVisual ? linkedVisual.name : 'Dashboard Welcome Message'}
             </h3>
             <div className="whitespace-pre-wrap text-sm leading-relaxed">
@@ -321,13 +319,13 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
   const renderImageComponent = () => {
     return (
       <Card className="h-full w-full flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-        <CardContent className="p-6 flex items-center justify-center flex-1">
+        <CardContent className="p-4 flex items-center justify-center flex-1">
           <div className="text-center" style={{ color: themeColors.textSecondary }}>
-            <Image className="w-16 h-16 mx-auto mb-4" />
-            <h4 className="font-medium mb-2" style={{ color: themeColors.textPrimary }}>
+            <Image className="w-12 h-12 mx-auto mb-3" />
+            <h4 className="font-medium mb-1 text-sm" style={{ color: themeColors.textPrimary }}>
               {linkedVisual ? linkedVisual.name : 'Image Component'}
             </h4>
-            <p className="text-sm">
+            <p className="text-xs">
               {linkedVisual ? linkedVisual.description || 'Image placeholder' : 'Image visualization placeholder'}
             </p>
           </div>
@@ -339,20 +337,20 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
   const renderHeatmapComponent = () => {
     return (
       <Card className="h-full w-full flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-        <CardHeader className="flex-shrink-0">
-          <CardTitle style={{ color: themeColors.textPrimary }}>
+        <CardHeader className="flex-shrink-0 pb-1 px-3 pt-3">
+          <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : 'Heatmap Visualization'}
           </CardTitle>
-          <CardDescription style={{ color: themeColors.textSecondary }}>
+          <CardDescription className="text-xs" style={{ color: themeColors.textSecondary }}>
             {linkedVisual ? linkedVisual.description || 'Heatmap data visualization' : 'Interactive heatmap display'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center">
-          <div className="grid grid-cols-7 gap-1 w-full max-w-md">
+        <CardContent className="flex-1 flex items-center justify-center p-2">
+          <div className="grid grid-cols-7 gap-0.5 w-full max-w-full">
             {Array.from({ length: 35 }, (_, i) => (
               <div
                 key={i}
-                className="aspect-square rounded"
+                className="aspect-square rounded-sm"
                 style={{
                   backgroundColor: themeColors.chartColors[i % themeColors.chartColors.length],
                   opacity: Math.random() * 0.8 + 0.2
@@ -368,21 +366,21 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
   const renderScatterComponent = () => {
     return (
       <Card className="h-full w-full flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-        <CardHeader className="flex-shrink-0">
-          <CardTitle style={{ color: themeColors.textPrimary }}>
+        <CardHeader className="flex-shrink-0 pb-1 px-3 pt-3">
+          <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : 'Scatter Plot'}
           </CardTitle>
-          <CardDescription style={{ color: themeColors.textSecondary }}>
+          <CardDescription className="text-xs" style={{ color: themeColors.textSecondary }}>
             {linkedVisual ? linkedVisual.description || 'Scatter plot visualization' : 'Data point correlation'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 min-h-[200px]">
+        <CardContent className="flex-1 flex flex-col min-h-0 p-2">
+          <div className="flex-1 min-h-0" style={{ minHeight: '120px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={mockData.chartData}>
+              <BarChart data={mockData.chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
+                <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} />
                 <RechartsTooltip />
                 <Bar dataKey="sales" fill={themeColors.chartColors[0]} />
                 <Bar dataKey="users" fill={themeColors.chartColors[1]} />
@@ -397,24 +395,24 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
   const renderFunnelComponent = () => {
     return (
       <Card className="h-full w-full flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-        <CardHeader className="flex-shrink-0">
-          <CardTitle style={{ color: themeColors.textPrimary }}>
+        <CardHeader className="flex-shrink-0 pb-1 px-3 pt-3">
+          <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : 'Funnel Chart'}
           </CardTitle>
-          <CardDescription style={{ color: themeColors.textSecondary }}>
+          <CardDescription className="text-xs" style={{ color: themeColors.textSecondary }}>
             {linkedVisual ? linkedVisual.description || 'Funnel visualization' : 'Conversion funnel analysis'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col justify-center">
-          <div className="space-y-3">
+        <CardContent className="flex-1 flex flex-col justify-center p-2">
+          <div className="space-y-2">
             {['Visitors', 'Leads', 'Opportunities', 'Customers'].map((stage, index) => {
               const width = 100 - (index * 20);
               return (
-                <div key={stage} className="flex items-center gap-4">
-                  <div className="w-24 text-sm" style={{ color: themeColors.textPrimary }}>{stage}</div>
+                <div key={stage} className="flex items-center gap-2">
+                  <div className="w-16 text-xs" style={{ color: themeColors.textPrimary }}>{stage}</div>
                   <div className="flex-1">
                     <div
-                      className="h-8 flex items-center justify-center rounded"
+                      className="h-6 flex items-center justify-center rounded text-xs font-medium"
                       style={{
                         width: `${width}%`,
                         backgroundColor: themeColors.chartColors[index % themeColors.chartColors.length],
@@ -436,13 +434,13 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
   const renderDefaultComponent = () => {
     return (
       <Card className="h-full w-full flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-        <CardContent className="p-6 flex items-center justify-center flex-1">
+        <CardContent className="p-4 flex items-center justify-center flex-1">
           <div className="text-center" style={{ color: themeColors.textSecondary }}>
-            <LayoutGrid className="w-12 h-12 mx-auto mb-4" />
-            <h4 className="font-medium mb-2" style={{ color: themeColors.textPrimary }}>
+            <LayoutGrid className="w-8 h-8 mx-auto mb-3" />
+            <h4 className="font-medium mb-1 text-sm" style={{ color: themeColors.textPrimary }}>
               {component.type.charAt(0).toUpperCase() + component.type.slice(1)} Component
             </h4>
-            <p className="text-sm">Component preview</p>
+            <p className="text-xs">Component preview</p>
           </div>
         </CardContent>
       </Card>
