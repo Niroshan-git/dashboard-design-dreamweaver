@@ -234,6 +234,34 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                     }}
                   />
                 </PieChart>
+              ) : chartType === 'donut' ? (
+                <PieChart margin={chartConfig.margins}>
+                  <Pie
+                    data={[
+                      { name: 'Category A', value: 45, color: themeColors.chartColors[0] },
+                      { name: 'Category B', value: 30, color: themeColors.chartColors[1] },
+                      { name: 'Category C', value: 25, color: themeColors.chartColors[2] }
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="40%"
+                    outerRadius="70%"
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {[0, 1, 2].map((entry, i) => (
+                      <Cell key={`cell-${i}`} fill={themeColors.chartColors[i]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    contentStyle={{ 
+                      backgroundColor: themeColors.cardBackground,
+                      border: `1px solid ${themeColors.borderColor}`,
+                      borderRadius: '6px'
+                    }}
+                  />
+                </PieChart>
               ) : chartType === 'line' ? (
                 <LineChart data={mockData.chartData} margin={chartConfig.margins}>
                   <CartesianGrid strokeDasharray={`${chartConfig.gridSpacing} ${chartConfig.gridSpacing}`} stroke={themeColors.borderColor} />
