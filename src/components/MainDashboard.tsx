@@ -123,7 +123,7 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
   // Empty state matching layout preview style
   if (optimizedLayout.components.length === 0) {
     return (
-      <div className="p-6 h-full flex items-center justify-center" style={{ background: themeColors.background }}>
+      <div className="w-full h-full flex items-center justify-center" style={{ background: themeColors.background }}>
         <div className="text-center max-w-md">
           <LayoutGrid className="w-16 h-16 mx-auto mb-4 opacity-50" style={{ color: themeColors.textSecondary }} />
           <h3 className="text-xl font-semibold mb-2" style={{ color: themeColors.textPrimary }}>
@@ -151,26 +151,36 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
   }
 
   return (
-    <div className="p-6 space-y-6 min-h-screen" style={{ background: themeColors.background, color: themeColors.textPrimary }}>
-      {/* Header */}
-      <DashboardHeader 
-        currentPage={currentPage}
-        componentCount={optimizedLayout.components.length}
-        themeColors={themeColors}
-        onExport={onExport}
-      />
+    <div 
+      className="w-full h-full flex flex-col overflow-hidden" 
+      style={{ 
+        background: themeColors.background, 
+        color: themeColors.textPrimary 
+      }}
+    >
+      {/* Header - Fixed height */}
+      <div className="flex-shrink-0 p-4">
+        <DashboardHeader 
+          currentPage={currentPage}
+          componentCount={optimizedLayout.components.length}
+          themeColors={themeColors}
+          onExport={onExport}
+        />
+        
+        {/* Layout Suggestions */}
+        <LayoutSuggestions suggestions={optimizedLayout.suggestions} />
+      </div>
 
-      {/* Layout Suggestions */}
-      <LayoutSuggestions suggestions={optimizedLayout.suggestions} />
-
-      {/* Optimized Layout Grid - Now accounts for navigation space */}
-      <DashboardGrid 
-        components={optimizedLayout.components}
-        visuals={visuals}
-        themeColors={themeColors}
-        mockData={mockData}
-        config={config}
-      />
+      {/* Main Content Area - 16:9 Canvas */}
+      <div className="flex-1 overflow-hidden">
+        <DashboardGrid 
+          components={optimizedLayout.components}
+          visuals={visuals}
+          themeColors={themeColors}
+          mockData={mockData}
+          config={config}
+        />
+      </div>
     </div>
   );
 };
