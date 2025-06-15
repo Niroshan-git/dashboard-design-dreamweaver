@@ -46,56 +46,51 @@ const DashboardGrid = ({ components, visuals, themeColors, mockData, config }: D
       
       // Find KPI and non-KPI components in this row
       const kpiComponents = rowComponents.filter(comp => comp.type === 'kpi');
-      const nonKpiComponents = rowComponents.filter(comp => comp.type !== 'kpi');
+      const chartComponents = rowComponents.filter(comp => comp.type !== 'kpi');
       
       if (kpiComponents.length === 0) {
-        // Row with no KPIs - components can use enhanced height
+        // Row with no KPIs - charts can use enhanced height
         const enhancedHeight = `calc(${baseRowHeight} * 1.8)`;
-        rowComponents.forEach(comp => {
+        chartComponents.forEach(comp => {
           const rowSpan = comp.position?.rowSpan || 1;
           componentHeights[comp.id] = rowSpan > 1 ? `calc(${enhancedHeight} * ${rowSpan})` : enhancedHeight;
         });
       } else {
-        // Row with KPIs - apply complex logic
+        // Row with KPIs - apply specific logic
         rowComponents.forEach((comp, index) => {
           if (comp.type === 'kpi') {
-            // Check if KPI comes after a chart in the same row
-            const hasChartBefore = rowComponents.slice(0, index).some(c => c.type !== 'kpi');
-            
-            if (hasChartBefore) {
-              // KPI after chart - match chart height and enhance KPI content
-              const chartHeight = `calc(${baseRowHeight} * 1.5)`;
-              componentHeights[comp.id] = chartHeight;
-            } else {
-              // Standard KPI height
-              componentHeights[comp.id] = baseRowHeight;
-            }
+            // KPI cards ALWAYS use standard height - never enhanced
+            componentHeights[comp.id] = baseRowHeight;
           } else {
-            // Non-KPI component in row with KPIs
-            const hasKpiBefore = rowComponents.slice(0, index).some(c => c.type === 'kpi');
+            // Chart component - check position relative to KPIs
+            const firstComponent = rowComponents[0];
             
-            if (hasKpiBefore) {
-              // Chart after KPI - use KPI height
-              componentHeights[comp.id] = baseRowHeight;
-            } else {
-              // Chart before KPI - use enhanced height
+            if (comp === firstComponent) {
+              // Chart is first in row - use enhanced height
               const enhancedHeight = `calc(${baseRowHeight} * 1.5)`;
               componentHeights[comp.id] = enhancedHeight;
+            } else {
+              // Chart after KPI - use standard height to match KPI
+              componentHeights[comp.id] = baseRowHeight;
             }
           }
         });
       }
     });
     
-    // Check for rows that need vertical expansion to fill canvas
+    // Fill remaining canvas space by distributing extra height
     const usedRows = Object.keys(rowGroups).length;
     if (usedRows < gridRows) {
-      // Redistribute extra space to existing components
+      // Calculate extra space to distribute
       const extraSpacePerRow = `calc((${totalCanvasHeight} - (${baseRowHeight} * ${usedRows})) / ${usedRows})`;
       
+      // Only add extra space to non-KPI components (charts only)
       Object.keys(componentHeights).forEach(compId => {
-        const currentHeight = componentHeights[compId];
-        componentHeights[compId] = `calc(${currentHeight} + ${extraSpacePerRow})`;
+        const component = components.find(c => c.id === compId);
+        if (component && component.type !== 'kpi') {
+          const currentHeight = componentHeights[compId];
+          componentHeights[compId] = `calc(${currentHeight} + ${extraSpacePerRow})`;
+        }
       });
     }
     

@@ -26,14 +26,24 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     { label: 'Monthly Orders', value: '1,284', change: '+15.8%', trend: 'up', icon: ShoppingCart, color: 'text-indigo-600' }
   ];
 
-  // Get dynamic container height - Always use dynamic height when available
+  // Get dynamic container height - KPI cards should be conservative with height usage
   const getContainerHeight = () => {
     if (dynamicHeight) {
-      return { 
-        height: dynamicHeight, 
-        minHeight: dynamicHeight,
-        maxHeight: dynamicHeight 
-      };
+      if (component.type === 'kpi') {
+        // KPI cards use dynamic height but maintain compact design
+        return { 
+          height: dynamicHeight, 
+          minHeight: dynamicHeight,
+          maxHeight: dynamicHeight 
+        };
+      } else {
+        // Charts use full dynamic height
+        return { 
+          height: dynamicHeight, 
+          minHeight: dynamicHeight,
+          maxHeight: dynamicHeight 
+        };
+      }
     }
     return { height: '100%' };
   };
@@ -47,9 +57,9 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     return '180px';
   };
 
-  // Check if KPI should be enhanced (when it comes after a chart)
+  // Check if KPI should be enhanced (only when it comes after a chart in same row)
   const shouldEnhanceKPI = () => {
-    if (!dynamicHeight || component.type !== 'kpi') return false;
+    if (component.type !== 'kpi') return false;
     
     const currentRow = component.position?.row || 1;
     const currentCol = component.position?.col || 1;
@@ -59,8 +69,11 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
       comp.position?.row === currentRow && (comp.position?.col || 1) < currentCol
     );
     
-    // Check if any preceding component is a chart
-    return componentsInRow.some(comp => comp.type !== 'kpi');
+    // Check if any preceding component is a chart AND this KPI has enhanced height
+    const hasChartBefore = componentsInRow.some(comp => comp.type !== 'kpi');
+    
+    // Only enhance if there's a chart before AND the KPI has been given enhanced height
+    return hasChartBefore && dynamicHeight && dynamicHeight.includes('1.5');
   };
 
   const renderKPIComponent = () => {
@@ -86,20 +99,20 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
           }}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4 flex-shrink-0">
-            <CardTitle className={`font-medium ${isEnhanced ? 'text-base' : 'text-sm'}`} style={{ color: themeColors.textSecondary }}>
+            <CardTitle className="font-medium text-sm" style={{ color: themeColors.textSecondary }}>
               {linkedVisual ? linkedVisual.name : kpi.label}
             </CardTitle>
-            <IconComponent className={`${isEnhanced ? 'h-6 w-6' : 'h-4 w-4'} ${kpi.color}`} />
+            <IconComponent className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent className="flex-1 flex flex-col justify-center px-4 pb-4">
-            <div className={`font-bold mb-2 ${isEnhanced ? 'text-4xl' : 'text-2xl'}`} style={{ color: themeColors.textPrimary }}>
+            <div className="font-bold mb-2 text-2xl" style={{ color: themeColors.textPrimary }}>
               {kpi.value}
             </div>
             <div className="flex items-center mb-2">
-              <Badge variant={kpi.trend === 'up' ? "secondary" : "destructive"} className={isEnhanced ? 'text-sm' : 'text-xs'}>
+              <Badge variant={kpi.trend === 'up' ? "secondary" : "destructive"} className="text-xs">
                 {kpi.change}
               </Badge>
-              <span className={`ml-2 ${isEnhanced ? 'text-sm' : 'text-xs'}`} style={{ color: themeColors.textSecondary }}>
+              <span className="ml-2 text-xs" style={{ color: themeColors.textSecondary }}>
                 vs last period
               </span>
             </div>
