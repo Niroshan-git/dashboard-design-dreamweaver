@@ -12,7 +12,6 @@ import { toast } from "sonner";
 import { FileDown, Eye, Palette, BarChart3, TrendingUp, Map, Grid3X3, Clock, Filter, Zap, Navigation, Monitor, Tablet, Smartphone, LayoutGrid } from "lucide-react";
 import DashboardPreview from "@/components/DashboardPreview";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
-import VisualSelector from "@/components/VisualSelector";
 import LayoutBuilder from "@/components/LayoutBuilder";
 
 const Dashboard = () => {
@@ -90,7 +89,7 @@ const Dashboard = () => {
     }
 
     toast.success("Dashboard generated successfully!", {
-      description: `Created ${config.pages} page(s) with ${config.visuals.length} visual components`
+      description: `Created ${config.pages} page(s) with configured layouts`
     });
     
     setActiveTab("preview");
@@ -122,7 +121,7 @@ const Dashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-8">
+          <TabsList className="grid w-full grid-cols-4 mb-8">
             <TabsTrigger value="configure" className="flex items-center gap-2">
               <Grid3X3 className="w-4 h-4" />
               Configure
@@ -134,10 +133,6 @@ const Dashboard = () => {
             <TabsTrigger value="theme" className="flex items-center gap-2">
               <Palette className="w-4 h-4" />
               Theme
-            </TabsTrigger>
-            <TabsTrigger value="visuals" className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              Visuals
             </TabsTrigger>
             <TabsTrigger value="preview" className="flex items-center gap-2">
               <Eye className="w-4 h-4" />
@@ -363,13 +358,6 @@ const Dashboard = () => {
               config={config} 
               setConfig={setConfig} 
               themeStyles={themeStyles}
-            />
-          </TabsContent>
-
-          <TabsContent value="visuals">
-            <VisualSelector 
-              config={config} 
-              setConfig={setConfig}
             />
           </TabsContent>
 
