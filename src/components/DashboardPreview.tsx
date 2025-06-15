@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,10 @@ interface DashboardPreviewProps {
 const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [deviceView, setDeviceView] = useState("desktop");
+  const [collapsed, setCollapsed] = useState(false);
+
+  console.log('DashboardPreview - Current page:', currentPage);
+  console.log('DashboardPreview - Config layouts:', config.layouts);
 
   const getDeviceClasses = () => {
     switch (deviceView) {
@@ -31,19 +36,46 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
     }
   };
 
+  const handlePageChange = (pageIndex: number) => {
+    console.log('DashboardPreview - Page changed to:', pageIndex);
+    setCurrentPage(pageIndex);
+  };
+
   const getNavigationComponent = () => {
     const navStyle = config.navigationStyle || 'left-full';
     
     switch (navStyle) {
       case 'left-full':
       case 'left-collapsible':
-        return <DashboardNavigation config={config} currentPage={currentPage} onPageChange={setCurrentPage} />;
+        return (
+          <DashboardNavigation 
+            config={config} 
+            currentPage={currentPage} 
+            onPageSelect={handlePageChange}
+            collapsed={collapsed}
+            onToggleCollapse={() => setCollapsed(!collapsed)}
+          />
+        );
       case 'top-wide':
       case 'top-tabs':
       case 'top-minimal':
-        return <DashboardTopNavigation config={config} currentPage={currentPage} onPageChange={setCurrentPage} />;
+        return (
+          <DashboardTopNavigation 
+            config={config} 
+            currentPage={currentPage} 
+            onPageChange={handlePageChange}
+          />
+        );
       default:
-        return <DashboardNavigation config={config} currentPage={currentPage} onPageChange={setCurrentPage} />;
+        return (
+          <DashboardNavigation 
+            config={config} 
+            currentPage={currentPage} 
+            onPageSelect={handlePageChange}
+            collapsed={collapsed}
+            onToggleCollapse={() => setCollapsed(!collapsed)}
+          />
+        );
     }
   };
 
@@ -81,6 +113,28 @@ const DashboardPreview = ({ config, onExport }: DashboardPreviewProps) => {
                 >
                   <Icon className="w-4 h-4" />
                   {label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Page Navigation for Preview */}
+          <div className="flex items-center gap-4">
+            <Label>Current Page:</Label>
+            <div className="flex gap-2">
+              {Array.from({ length: config.pages || 1 }, (_, i) => (
+                <Button
+                  key={i}
+                  variant={currentPage === i ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handlePageChange(i)}
+                >
+                  Page {i + 1}
+                  {config.layouts && config.layouts[i]?.components.length > 0 && (
+                    <Badge variant="secondary" className="ml-2">
+                      {config.layouts[i].components.length}
+                    </Badge>
+                  )}
                 </Button>
               ))}
             </div>

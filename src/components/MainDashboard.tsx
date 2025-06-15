@@ -13,8 +13,8 @@ interface MainDashboardProps {
 }
 
 const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps) => {
-  const isDarkTheme = config.themeStyle === 'dark';
-  const chartColors = config.colorPalette || ['#2563eb', '#7c3aed', '#059669', '#dc2626'];
+  console.log('MainDashboard - Current page:', currentPage);
+  console.log('MainDashboard - Config:', config);
   
   const getCurrentPageLayout = () => {
     if (!config.layouts || !config.layouts[currentPage]) {
@@ -25,6 +25,9 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
 
   const currentLayout = getCurrentPageLayout();
   const visuals = config.visuals || [];
+
+  console.log('MainDashboard - Current layout:', currentLayout);
+  console.log('MainDashboard - Available visuals:', visuals);
 
   const getThemeColors = () => {
     const themeStyle = config.themeStyle;
@@ -92,7 +95,7 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
   const themeColors = getThemeColors();
 
   // Mock data for charts and KPIs
-  const getMockData = (type: string) => {
+  const getMockData = () => {
     const kpiData = [
       { label: 'Total Revenue', value: '$2.4M', change: '+12.5%', trend: 'up', icon: DollarSign, color: 'text-green-600' },
       { label: 'Active Users', value: '45.2K', change: '+8.3%', trend: 'up', icon: Users, color: 'text-blue-600' },
@@ -114,14 +117,29 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
     return { kpiData, chartData };
   };
 
-  const mockData = getMockData(config.dashboardType);
+  const mockData = getMockData();
 
   const renderKPIComponent = (component: any, linkedVisual: any) => {
     const kpiCount = component.count || 4;
     const kpisToShow = mockData.kpiData.slice(0, kpiCount);
+    
+    // Calculate grid for KPIs - distribute evenly within the component's span
+    const getKpiGridCols = (count: number, span: number) => {
+      if (span >= 12) return Math.min(count, 6); // Max 6 columns for full width
+      if (span >= 8) return Math.min(count, 4);  // Max 4 columns for large
+      if (span >= 6) return Math.min(count, 3);  // Max 3 columns for medium
+      return Math.min(count, 2);                  // Max 2 columns for small
+    };
+
+    const gridCols = getKpiGridCols(kpiCount, component.span);
 
     return (
-      <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${Math.min(kpiCount, 4)}, 1fr)` }}>
+      <div 
+        className="grid gap-4" 
+        style={{ 
+          gridTemplateColumns: `repeat(${gridCols}, 1fr)` 
+        }}
+      >
         {kpisToShow.map((kpi, index) => {
           const IconComponent = kpi.icon;
           
@@ -179,18 +197,18 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
     const chartCount = component.count || 1;
     
     return (
-      <div className={`grid gap-4 ${chartCount > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+      <div className={`grid gap-4 ${chartCount > 1 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'} h-full`}>
         {Array.from({ length: chartCount }, (_, index) => (
-          <Card key={index} style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+          <Card key={index} className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
             <CardHeader>
               <CardTitle style={{ color: themeColors.textPrimary }}>
-                {linkedVisual ? linkedVisual.name : `${chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart ${index + 1}`}
+                {linkedVisual ? linkedVisual.name : `${chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart ${chartCount > 1 ? index + 1 : ''}`}
               </CardTitle>
               <CardDescription style={{ color: themeColors.textSecondary }}>
                 {linkedVisual ? linkedVisual.description || 'Chart visualization' : 'Performance metrics over time'}
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1">
               <ResponsiveContainer width="100%" height={300}>
                 {chartType === 'pie' ? (
                   <PieChart>
@@ -254,10 +272,12 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
       { id: 1, name: 'Product A', value: '$1,234', status: 'Active', date: '2024-01-15' },
       { id: 2, name: 'Product B', value: '$2,456', status: 'Pending', date: '2024-01-14' },
       { id: 3, name: 'Product C', value: '$789', status: 'Active', date: '2024-01-13' },
+      { id: 4, name: 'Product D', value: '$3,456', status: 'Active', date: '2024-01-12' },
+      { id: 5, name: 'Product E', value: '$567', status: 'Pending', date: '2024-01-11' },
     ];
 
     return (
-      <Card style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+      <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
         <CardHeader>
           <CardTitle style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : 'Data Table'}
@@ -279,7 +299,7 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
               </thead>
               <tbody>
                 {sampleData.map((row) => (
-                  <tr key={row.id} className="border-b" style={{ borderColor: themeColors.borderColor }}>
+                  <tr key={row.id} className="border-b hover:bg-gray-50" style={{ borderColor: themeColors.borderColor }}>
                     <td className="p-2" style={{ color: themeColors.textPrimary }}>{row.name}</td>
                     <td className="p-2" style={{ color: themeColors.textPrimary }}>{row.value}</td>
                     <td className="p-2">
@@ -296,8 +316,10 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
     );
   };
 
-  const renderComponent = (component: any) => {
+  const renderComponent = (component: any, index: number) => {
     const linkedVisual = visuals.find((v: any) => v.id === component.visualId);
+    
+    console.log('Rendering component:', component.type, 'with visual:', linkedVisual?.name);
     
     switch (component.type) {
       case 'kpi':
@@ -308,49 +330,61 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
         return renderTableComponent(component, linkedVisual);
       case 'filter':
         return (
-          <Card style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+          <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
             <CardHeader>
               <CardTitle style={{ color: themeColors.textPrimary }}>
                 {linkedVisual ? linkedVisual.name : 'Filters'}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm">Date Range</Button>
                 <Button variant="outline" size="sm">Category</Button>
                 <Button variant="outline" size="sm">Status</Button>
+                <Button variant="outline" size="sm">Region</Button>
               </div>
             </CardContent>
           </Card>
         );
       case 'text':
         return (
-          <Card style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-            <CardContent className="p-4">
-              <div style={{ color: themeColors.textPrimary }}>
-                {linkedVisual ? linkedVisual.name : 'Text content goes here. This is a sample text block that can contain important information, descriptions, or any other textual content.'}
+          <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+            <CardContent className="p-6">
+              <div style={{ color: themeColors.textPrimary }} className="prose max-w-none">
+                <h3 className="text-lg font-semibold mb-3">
+                  {linkedVisual ? linkedVisual.name : 'Text Block'}
+                </h3>
+                <p>
+                  {linkedVisual?.description || 'This is a sample text block that can contain important information, descriptions, announcements, or any other textual content. You can customize this content through the visual configuration.'}
+                </p>
               </div>
             </CardContent>
           </Card>
         );
       case 'image':
         return (
-          <Card style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-            <CardContent className="p-4 flex items-center justify-center h-32">
+          <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+            <CardContent className="p-6 flex items-center justify-center min-h-[200px]">
               <div className="text-center" style={{ color: themeColors.textSecondary }}>
-                <Image className="w-8 h-8 mx-auto mb-2" />
-                <p className="text-sm">{linkedVisual ? linkedVisual.name : 'Image Placeholder'}</p>
+                <Image className="w-12 h-12 mx-auto mb-4" />
+                <h4 className="font-medium mb-2" style={{ color: themeColors.textPrimary }}>
+                  {linkedVisual ? linkedVisual.name : 'Image Placeholder'}
+                </h4>
+                <p className="text-sm">Image content will appear here</p>
               </div>
             </CardContent>
           </Card>
         );
       default:
         return (
-          <Card style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-            <CardContent className="p-4 flex items-center justify-center h-32">
+          <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+            <CardContent className="p-6 flex items-center justify-center min-h-[200px]">
               <div className="text-center" style={{ color: themeColors.textSecondary }}>
-                <LayoutGrid className="w-8 h-8 mx-auto mb-2" />
-                <p className="text-sm">Unknown Component</p>
+                <LayoutGrid className="w-12 h-12 mx-auto mb-4" />
+                <h4 className="font-medium mb-2" style={{ color: themeColors.textPrimary }}>
+                  Unknown Component
+                </h4>
+                <p className="text-sm">Component type not recognized</p>
               </div>
             </CardContent>
           </Card>
@@ -375,7 +409,7 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
   }
 
   return (
-    <div className="p-6 space-y-6" style={{ background: themeColors.background, color: themeColors.textPrimary }}>
+    <div className="p-6 space-y-6 min-h-screen" style={{ background: themeColors.background, color: themeColors.textPrimary }}>
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -398,17 +432,32 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
         </div>
       </div>
 
-      {/* Dynamic Layout Grid */}
-      <div className="grid grid-cols-12 gap-6">
-        {currentLayout.components.map((component: any) => (
-          <div
-            key={component.id}
-            className={`col-span-12`}
-            style={{ gridColumn: `span ${Math.min(component.span, 12)}` }}
-          >
-            {renderComponent(component)}
-          </div>
-        ))}
+      {/* Dynamic Layout Grid - 12 Column System */}
+      <div className="grid grid-cols-12 gap-6 auto-rows-min">
+        {/* Sort components by their creation order to maintain layout sequence */}
+        {currentLayout.components
+          .sort((a: any, b: any) => {
+            // Sort by position first, then by ID to maintain order
+            if (a.position && b.position) {
+              if (a.position.row !== b.position.row) {
+                return a.position.row - b.position.row;
+              }
+              return a.position.col - b.position.col;
+            }
+            return a.id.localeCompare(b.id);
+          })
+          .map((component: any, index: number) => (
+            <div
+              key={component.id}
+              className={`col-span-12 md:col-span-${Math.min(component.span, 12)} flex flex-col`}
+              style={{ 
+                gridColumn: `span ${Math.min(component.span, 12)} / span ${Math.min(component.span, 12)}`,
+                minHeight: component.type === 'kpi' ? 'auto' : '300px'
+              }}
+            >
+              {renderComponent(component, index)}
+            </div>
+          ))}
       </div>
     </div>
   );
