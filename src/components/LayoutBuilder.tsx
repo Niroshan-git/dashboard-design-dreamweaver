@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -151,12 +150,12 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
     }
   ];
 
-  const addComponent = (type: string) => {
+  const addComponent = (type: string, chartType?: string) => {
     const newComponent: PageComponent = {
       id: `${type}-${Date.now()}`,
       type: type as any,
       count: type === 'kpi' ? 1 : type === 'chart' ? 1 : 1,
-      chartType: type === 'chart' ? 'bar' : undefined,
+      chartType: chartType || (type === 'chart' ? 'bar' : undefined),
       span: type === 'kpi' ? 3 : type === 'chart' ? 6 : type === 'table' ? 12 : 6,
       position: { row: 0, col: 0 },
       kpiCount: type === 'kpi' ? 1 : undefined,
@@ -390,6 +389,63 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
                   {componentTypes.map((componentType) => {
                     const IconComponent = componentType.icon;
+                    
+                    if (componentType.type === 'chart') {
+                      return (
+                        <div key={componentType.type} className="space-y-2">
+                          {/* Main Chart Button */}
+                          <Button
+                            variant="outline"
+                            className="h-20 flex flex-col items-center gap-2 w-full"
+                            onClick={() => addComponent(componentType.type)}
+                          >
+                            <IconComponent className="w-6 h-6" />
+                            <span className="text-xs">{componentType.label}</span>
+                          </Button>
+                          
+                          {/* Chart Type Quick Add Buttons */}
+                          <div className="grid grid-cols-2 gap-1">
+                            {chartTypes.slice(0, 4).map((chart) => {
+                              const ChartIcon = chart.icon;
+                              return (
+                                <Button
+                                  key={chart.value}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 flex items-center gap-1 text-xs"
+                                  onClick={() => addComponent('chart', chart.value)}
+                                  title={`Add ${chart.label}`}
+                                >
+                                  <ChartIcon className="w-3 h-3" />
+                                  <span className="truncate">{chart.value}</span>
+                                </Button>
+                              );
+                            })}
+                          </div>
+                          
+                          {/* Additional chart types */}
+                          <div className="grid grid-cols-2 gap-1">
+                            {chartTypes.slice(4).map((chart) => {
+                              const ChartIcon = chart.icon;
+                              return (
+                                <Button
+                                  key={chart.value}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 flex items-center gap-1 text-xs"
+                                  onClick={() => addComponent('chart', chart.value)}
+                                  title={`Add ${chart.label}`}
+                                >
+                                  <ChartIcon className="w-3 h-3" />
+                                  <span className="truncate">{chart.value}</span>
+                                </Button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    }
+                    
                     return (
                       <Button
                         key={componentType.type}
