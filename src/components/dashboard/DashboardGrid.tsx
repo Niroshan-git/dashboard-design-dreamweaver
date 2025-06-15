@@ -14,7 +14,7 @@ const DashboardGrid = ({ components, visuals, themeColors, mockData, config }: D
   const calculateTotalAvailableHeight = () => {
     const headerHeight = 80; // Dashboard header height
     const navigationHeight = config.showTopNavigation ? 60 : 0; // Top navigation if enabled
-    const padding = 40; // Overall padding
+    const padding = 20; // Reduced overall padding
     return `calc(100vh - ${headerHeight + navigationHeight + padding}px)`;
   };
 
@@ -34,37 +34,30 @@ const DashboardGrid = ({ components, visuals, themeColors, mockData, config }: D
     const totalRows = Math.max(...Object.keys(rowComponents).map(r => parseInt(r)), 4);
     const totalAvailableHeight = calculateTotalAvailableHeight();
     
-    // Calculate base row height (equal distribution)
-    const baseRowHeight = `calc(${totalAvailableHeight} / ${totalRows})`;
-    
-    // Calculate individual row heights based on content
+    // Calculate row heights - ensure they fill the entire container
     const rowHeights: { [key: number]: string } = {};
     const maxRow = Math.max(...Object.keys(rowComponents).map(r => parseInt(r)));
     
+    // Create equal distribution first
+    const baseRowHeight = `calc(${totalAvailableHeight} / ${totalRows})`;
+    
+    // Apply row heights based on content and position
     Object.entries(rowComponents).forEach(([rowStr, rowComps]) => {
       const row = parseInt(rowStr);
       const isBottomRow = row === maxRow;
       
-      // Check if row has charts that should be enhanced
-      const hasEnhanceableChart = rowComps.some(comp => {
-        if (comp.type !== 'chart' && comp.type !== 'heatmap' && comp.type !== 'funnel' && comp.type !== 'scatter') {
-          return false;
-        }
-        
-        // Get position of this chart in the row
-        const sortedComps = rowComps.sort((a, b) => (a.position?.col || 1) - (b.position?.col || 1));
-        const chartIndex = sortedComps.findIndex(c => c.id === comp.id);
-        const isFirstChart = chartIndex === 0;
-        
-        return isFirstChart;
-      });
+      // Check if row has charts that need enhancement
+      const hasChartComponent = rowComps.some(comp => 
+        comp.type === 'chart' || comp.type === 'heatmap' || 
+        comp.type === 'funnel' || comp.type === 'scatter'
+      );
       
-      if (hasEnhanceableChart || isBottomRow) {
-        // Enhanced row height for rows with first charts or bottom row
-        const enhancementFactor = isBottomRow ? 1.6 : 1.4;
+      if (hasChartComponent) {
+        // Enhanced height for chart rows, especially bottom ones
+        const enhancementFactor = isBottomRow ? 1.4 : 1.2;
         rowHeights[row] = `calc(${baseRowHeight} * ${enhancementFactor})`;
       } else {
-        // Standard row height
+        // Standard height for KPI and other components
         rowHeights[row] = baseRowHeight;
       }
     });
@@ -75,22 +68,23 @@ const DashboardGrid = ({ components, visuals, themeColors, mockData, config }: D
   const gridStructure = getGridStructure();
   
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full overflow-hidden">
       <div 
-        className="w-full"
+        className="w-full overflow-hidden"
         style={{ 
           height: calculateTotalAvailableHeight(),
           maxHeight: calculateTotalAvailableHeight()
         }}
       >
         <div 
-          className="grid gap-2 w-full h-full"
+          className="grid gap-2 w-full h-full overflow-hidden"
           style={{ 
             gridTemplateColumns: 'repeat(12, 1fr)',
             gridTemplateRows: Object.values(gridStructure.rowHeights).length > 0 
               ? Object.values(gridStructure.rowHeights).join(' ')
               : `repeat(${gridStructure.totalRows}, 1fr)`,
-            height: '100%'
+            height: '100%',
+            maxHeight: '100%'
           }}
         >
           {components.map((component: any, index: number) => {
@@ -112,6 +106,8 @@ const DashboardGrid = ({ components, visuals, themeColors, mockData, config }: D
                 style={{ 
                   gridColumn: `${colStart} / span ${colSpan}`,
                   gridRow: `${rowStart} / span ${rowSpan}`,
+                  height: '100%',
+                  maxHeight: '100%'
                 }}
               >
                 <ComponentRenderer 
