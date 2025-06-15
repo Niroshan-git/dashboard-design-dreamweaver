@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   LayoutGrid, Plus, Minus, BarChart3, PieChart, TrendingUp, 
-  Table, Filter, Type, Image, Layers, Move, Resize
+  Table, Filter, Type, Image, Layers, Move, Maximize2
 } from "lucide-react";
 
 interface LayoutBuilderProps {
