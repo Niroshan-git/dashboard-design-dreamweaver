@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -15,7 +14,7 @@ interface ComponentRendererProps {
 }
 
 const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, config }: ComponentRendererProps) => {
-  // Use exact same KPI data as layout preview
+  // Use exact same KPI data as layout preview but prioritize linked visual
   const getKPIData = () => [
     { label: 'Total Revenue', value: '$2.4M', change: '+12.5%', trend: 'up', icon: DollarSign, color: 'text-green-600' },
     { label: 'Active Users', value: '45.2K', change: '+8.3%', trend: 'up', icon: Users, color: 'text-blue-600' },
@@ -26,19 +25,21 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
   ];
 
   const renderKPIComponent = () => {
-    const kpiCount = linkedVisual?.kpiCount || component.kpiCount || 1;
+    // Prioritize linked visual count over component count
+    const kpiCount = linkedVisual?.kpiCount || component.kpiCount || linkedVisual?.count || 1;
     const kpiData = getKPIData();
     const kpisToShow = kpiData.slice(0, kpiCount);
     
-    // Use the exact same grid calculation as layout preview
+    // Use the exact same grid calculation as layout preview - force horizontal layout for multiple KPIs
     const colSpan = component.position?.colSpan || component.span;
-    const gridCols = Math.min(kpiCount, Math.max(1, Math.floor(colSpan / 3)));
-
+    const gridCols = kpiCount > 1 ? Math.min(kpiCount, 4) : 1; // Max 4 KPIs per row like layout preview
+    
     return (
       <div 
-        className="grid gap-3 h-full w-full" 
+        className="grid gap-2 h-full w-full" 
         style={{ 
-          gridTemplateColumns: `repeat(${gridCols}, 1fr)` 
+          gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
+          gridTemplateRows: '1fr'
         }}
       >
         {kpisToShow.map((kpi, index) => {
@@ -47,26 +48,26 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
           const cardContent = (
             <Card 
               key={index} 
-              className="hover:shadow-lg transition-shadow h-full flex flex-col"
+              className="hover:shadow-md transition-shadow h-full flex flex-col"
               style={{ 
                 backgroundColor: themeColors.cardBackground,
                 borderColor: themeColors.borderColor,
                 color: themeColors.textPrimary
               }}
             >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 flex-shrink-0">
-                <CardTitle className="text-sm font-medium truncate" style={{ color: themeColors.textSecondary }}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-3 pt-3 flex-shrink-0">
+                <CardTitle className="text-xs font-medium truncate" style={{ color: themeColors.textSecondary }}>
                   {linkedVisual ? linkedVisual.name : kpi.label}
                 </CardTitle>
-                <IconComponent className={`h-4 w-4 flex-shrink-0 ${kpi.color}`} />
+                <IconComponent className={`h-3 w-3 flex-shrink-0 ${kpi.color}`} />
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col justify-center">
-                <div className="text-2xl font-bold mb-2" style={{ color: themeColors.textPrimary }}>{kpi.value}</div>
+              <CardContent className="flex-1 flex flex-col justify-center px-3 pb-3">
+                <div className="text-lg font-bold mb-1" style={{ color: themeColors.textPrimary }}>{kpi.value}</div>
                 <div className="flex items-center">
-                  <Badge variant={kpi.trend === 'up' ? "secondary" : "destructive"} className="text-xs">
+                  <Badge variant={kpi.trend === 'up' ? "secondary" : "destructive"} className="text-xs px-1 py-0">
                     {kpi.change}
                   </Badge>
-                  <span className="text-xs ml-2" style={{ color: themeColors.textSecondary }}>vs last period</span>
+                  <span className="text-xs ml-1" style={{ color: themeColors.textSecondary }}>vs last</span>
                 </div>
               </CardContent>
             </Card>
@@ -94,20 +95,21 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
   };
 
   const renderChartComponent = () => {
-    const chartType = component.chartType || linkedVisual?.chartType || 'bar';
+    // Prioritize linked visual chart type
+    const chartType = linkedVisual?.chartType || component.chartType || 'bar';
     
     return (
       <Card className="h-full w-full flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-        <CardHeader className="flex-shrink-0">
-          <CardTitle style={{ color: themeColors.textPrimary }}>
+        <CardHeader className="flex-shrink-0 pb-2">
+          <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : `${chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart`}
           </CardTitle>
-          <CardDescription style={{ color: themeColors.textSecondary }}>
+          <CardDescription className="text-xs" style={{ color: themeColors.textSecondary }}>
             {linkedVisual ? linkedVisual.description || 'Chart visualization' : 'Performance metrics over time'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 min-h-[250px]">
+        <CardContent className="flex-1 flex flex-col min-h-0 p-3">
+          <div className="flex-1 min-h-[180px]">
             <ResponsiveContainer width="100%" height="100%">
               {chartType === 'pie' ? (
                 <PieChart>
@@ -119,7 +121,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                     ]}
                     cx="50%"
                     cy="50%"
-                    outerRadius={80}
+                    outerRadius={60}
                     fill="#8884d8"
                     dataKey="value"
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
