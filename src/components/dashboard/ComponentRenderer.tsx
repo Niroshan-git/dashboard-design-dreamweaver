@@ -12,10 +12,11 @@ interface ComponentRendererProps {
   mockData: any;
   config: any;
   allComponents?: any[];
-  dynamicHeight?: string;
+  containerHeight?: string;
+  gridStructure?: any;
 }
 
-const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, config, allComponents = [], dynamicHeight }: ComponentRendererProps) => {
+const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, config, allComponents = [], containerHeight, gridStructure }: ComponentRendererProps) => {
   // Use exact same KPI data as layout preview but prioritize linked visual
   const getKPIData = () => [
     { label: 'Total Revenue', value: '$2.4M', change: '+12.5%', trend: 'up', icon: DollarSign, color: 'text-green-600' },
@@ -26,73 +27,40 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     { label: 'Monthly Orders', value: '1,284', change: '+15.8%', trend: 'up', icon: ShoppingCart, color: 'text-indigo-600' }
   ];
 
-  // Get dynamic container height - KPIs always use base height
+  // Get container height - KPIs always use 100% of their allocated space
   const getContainerHeight = () => {
-    if (component.type === 'kpi') {
-      // KPIs always use base height regardless of dynamicHeight
-      return { height: '100%', minHeight: '120px' };
-    }
-    
-    if (dynamicHeight) {
-      return { 
-        height: dynamicHeight, 
-        minHeight: dynamicHeight,
-        maxHeight: dynamicHeight 
-      };
-    }
-    return { height: '100%', minHeight: '200px' };
+    return { height: '100%', minHeight: '100%' };
   };
 
-  // Calculate chart margins and content height based on container size
+  // Calculate chart configuration based on available space
   const getChartConfig = () => {
-    const isEnhanced = dynamicHeight && (dynamicHeight.includes('1.5') || dynamicHeight.includes('1.8'));
+    if (component.type === 'kpi') {
+      return null; // KPIs don't use chart config
+    }
+
+    const currentRow = component.position?.row || 1;
+    const currentRowHeight = gridStructure?.rowHeights?.[currentRow];
     
-    if (isEnhanced) {
+    // Check if this is an enhanced row
+    const isEnhancedRow = currentRowHeight && (currentRowHeight.includes('1.4') || currentRowHeight.includes('1.6'));
+    
+    if (isEnhancedRow) {
       // Enhanced charts get more generous margins and spacing
       return {
-        contentHeight: `calc(${dynamicHeight} - 80px)`,
-        margins: { top: 20, right: 40, left: 40, bottom: 40 },
+        margins: { top: 20, right: 30, left: 40, bottom: 50 },
         tickFontSize: 14,
-        gridSpacing: 4
+        gridSpacing: 4,
+        contentPadding: 20
       };
     } else {
       // Standard charts
-      const baseHeight = dynamicHeight || 'calc(100% - 76px)';
       return {
-        contentHeight: `calc(${baseHeight} - 60px)`,
-        margins: { top: 10, right: 20, left: 20, bottom: 25 },
+        margins: { top: 15, right: 20, left: 30, bottom: 40 },
         tickFontSize: 12,
-        gridSpacing: 3
+        gridSpacing: 3,
+        contentPadding: 16
       };
     }
-  };
-
-  // For charts, calculate content height more precisely to fit within borders
-  const getChartContentHeight = () => {
-    if (dynamicHeight) {
-      // Subtract header (60px) and padding (16px) from dynamic height
-      return `calc(${dynamicHeight} - 76px)`;
-    }
-    return 'calc(100% - 76px)';
-  };
-
-  // Check if KPI should be enhanced (only when it comes after a chart in same row)
-  const shouldEnhanceKPI = () => {
-    if (component.type !== 'kpi') return false;
-    
-    const currentRow = component.position?.row || 1;
-    const currentCol = component.position?.col || 1;
-    
-    // Find components in the same row that come before this KPI
-    const componentsInRow = allComponents.filter(comp => 
-      comp.position?.row === currentRow && (comp.position?.col || 1) < currentCol
-    );
-    
-    // Check if any preceding component is a chart AND this KPI has enhanced height
-    const hasChartBefore = componentsInRow.some(comp => comp.type !== 'kpi');
-    
-    // Only enhance if there's a chart before AND the KPI has been given enhanced height
-    return hasChartBefore && dynamicHeight && dynamicHeight.includes('1.5');
   };
 
   const renderKPIComponent = () => {
@@ -100,7 +68,6 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     const kpiCount = linkedVisual?.kpiCount || component.kpiCount || linkedVisual?.count || 1;
     const kpiData = getKPIData();
     const kpisToShow = kpiData.slice(0, kpiCount);
-    const isEnhanced = shouldEnhanceKPI();
 
     // For single KPI, just show one card
     if (kpiCount === 1) {
@@ -109,7 +76,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
       
       const cardContent = (
         <Card 
-          className="hover:shadow-md transition-shadow flex flex-col"
+          className="hover:shadow-md transition-shadow flex flex-col h-full"
           style={{ 
             backgroundColor: themeColors.cardBackground,
             borderColor: themeColors.borderColor,
@@ -135,17 +102,6 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                 vs last period
               </span>
             </div>
-            {isEnhanced && (
-              <div className="mt-2 text-sm" style={{ color: themeColors.textSecondary }}>
-                <div className="flex justify-between mb-1">
-                  <span>Target: $3.0M</span>
-                  <span>80%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-green-500 h-2 rounded-full" style={{ width: '80%' }}></div>
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
       );
@@ -172,7 +128,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     const maxKpisPerRow = Math.min(kpiCount, 4);
     
     return (
-      <div className="grid gap-2 w-full" style={{ gridTemplateColumns: `repeat(${maxKpisPerRow}, 1fr)`, ...getContainerHeight() }}>
+      <div className="grid gap-2 w-full h-full" style={{ gridTemplateColumns: `repeat(${maxKpisPerRow}, 1fr)` }}>
         {kpisToShow.map((kpi, index) => {
           const IconComponent = kpi.icon;
           
@@ -238,7 +194,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
           ...getContainerHeight() 
         }}
       >
-        <CardHeader className="flex-shrink-0 px-4 pt-4 pb-3">
+        <CardHeader className={`flex-shrink-0 px-${chartConfig.contentPadding / 4} pt-${chartConfig.contentPadding / 4} pb-3`}>
           <CardTitle className="text-sm font-medium truncate" style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : `${chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart`}
           </CardTitle>
@@ -246,14 +202,8 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
             {linkedVisual ? linkedVisual.description || 'Chart visualization' : 'Performance metrics over time'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 p-4 min-h-0">
-          <div 
-            className="w-full h-full"
-            style={{ 
-              height: chartConfig.contentHeight,
-              minHeight: chartConfig.contentHeight
-            }}
-          >
+        <CardContent className={`flex-1 p-${chartConfig.contentPadding / 4} min-h-0`}>
+          <div className="w-full h-full">
             <ResponsiveContainer width="100%" height="100%">
               {chartType === 'pie' ? (
                 <PieChart margin={chartConfig.margins}>
@@ -265,7 +215,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                     ]}
                     cx="50%"
                     cy="50%"
-                    outerRadius="70%"
+                    outerRadius="60%"
                     fill="#8884d8"
                     dataKey="value"
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
@@ -289,12 +239,10 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                     dataKey="month" 
                     tick={{ fontSize: chartConfig.tickFontSize, fill: themeColors.textSecondary }} 
                     axisLine={{ stroke: themeColors.borderColor }}
-                    height={chartConfig.margins.bottom}
                   />
                   <YAxis 
                     tick={{ fontSize: chartConfig.tickFontSize, fill: themeColors.textSecondary }}
                     axisLine={{ stroke: themeColors.borderColor }}
-                    width={chartConfig.margins.left}
                   />
                   <RechartsTooltip 
                     contentStyle={{ 
@@ -319,12 +267,10 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                     dataKey="month" 
                     tick={{ fontSize: chartConfig.tickFontSize, fill: themeColors.textSecondary }}
                     axisLine={{ stroke: themeColors.borderColor }}
-                    height={chartConfig.margins.bottom}
                   />
                   <YAxis 
                     tick={{ fontSize: chartConfig.tickFontSize, fill: themeColors.textSecondary }}
                     axisLine={{ stroke: themeColors.borderColor }}
-                    width={chartConfig.margins.left}
                   />
                   <RechartsTooltip 
                     contentStyle={{ 
@@ -349,12 +295,10 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                     dataKey="month" 
                     tick={{ fontSize: chartConfig.tickFontSize, fill: themeColors.textSecondary }}
                     axisLine={{ stroke: themeColors.borderColor }}
-                    height={chartConfig.margins.bottom}
                   />
                   <YAxis 
                     tick={{ fontSize: chartConfig.tickFontSize, fill: themeColors.textSecondary }}
                     axisLine={{ stroke: themeColors.borderColor }}
-                    width={chartConfig.margins.left}
                   />
                   <RechartsTooltip 
                     contentStyle={{ 
@@ -506,8 +450,8 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     const chartConfig = getChartConfig();
     
     return (
-      <Card className="flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
-        <CardHeader className="flex-shrink-0 pb-2 px-4 pt-4">
+      <Card className="flex flex-col h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
+        <CardHeader className={`flex-shrink-0 pb-2 px-${chartConfig.contentPadding / 4} pt-${chartConfig.contentPadding / 4}`}>
           <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : 'Heatmap Visualization'}
           </CardTitle>
@@ -515,21 +459,16 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
             {linkedVisual ? linkedVisual.description || 'Heatmap data visualization' : 'Interactive heatmap display'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center p-4">
-          <div 
-            className="grid grid-cols-7 gap-1 w-full max-w-full"
-            style={{ 
-              height: chartConfig.contentHeight,
-              maxHeight: chartConfig.contentHeight
-            }}
-          >
+        <CardContent className={`flex-1 flex items-center justify-center p-${chartConfig.contentPadding / 4}`}>
+          <div className="grid grid-cols-7 gap-1 w-full max-w-full h-full">
             {Array.from({ length: 35 }, (_, i) => (
               <div
                 key={i}
                 className="aspect-square rounded-sm"
                 style={{
                   backgroundColor: themeColors.chartColors[i % themeColors.chartColors.length],
-                  opacity: Math.random() * 0.8 + 0.2
+                  opacity: Math.random() * 0.8 + 0.2,
+                  minHeight: '20px'
                 }}
               />
             ))}
@@ -543,8 +482,8 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     const chartConfig = getChartConfig();
     
     return (
-      <Card className="flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
-        <CardHeader className="flex-shrink-0 pb-2 px-4 pt-4">
+      <Card className="flex flex-col h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
+        <CardHeader className={`flex-shrink-0 pb-2 px-${chartConfig.contentPadding / 4} pt-${chartConfig.contentPadding / 4}`}>
           <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : 'Scatter Plot'}
           </CardTitle>
@@ -552,19 +491,17 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
             {linkedVisual ? linkedVisual.description || 'Scatter plot visualization' : 'Data point correlation'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col min-h-0 p-4">
-          <div className="flex-1 min-h-0" style={{ height: chartConfig.contentHeight }}>
+        <CardContent className={`flex-1 flex flex-col min-h-0 p-${chartConfig.contentPadding / 4}`}>
+          <div className="flex-1 min-h-0">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={mockData.chartData} margin={chartConfig.margins}>
                 <CartesianGrid strokeDasharray={`${chartConfig.gridSpacing} ${chartConfig.gridSpacing}`} />
                 <XAxis 
                   dataKey="month" 
                   tick={{ fontSize: chartConfig.tickFontSize }} 
-                  height={chartConfig.margins.bottom}
                 />
                 <YAxis 
                   tick={{ fontSize: chartConfig.tickFontSize }} 
-                  width={chartConfig.margins.left}
                 />
                 <RechartsTooltip />
                 <Bar dataKey="value" fill={themeColors.chartColors[0]} />
@@ -580,8 +517,8 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     const chartConfig = getChartConfig();
     
     return (
-      <Card className="flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
-        <CardHeader className="flex-shrink-0 pb-2 px-4 pt-4">
+      <Card className="flex flex-col h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
+        <CardHeader className={`flex-shrink-0 pb-2 px-${chartConfig.contentPadding / 4} pt-${chartConfig.contentPadding / 4}`}>
           <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : 'Funnel Chart'}
           </CardTitle>
@@ -589,14 +526,8 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
             {linkedVisual ? linkedVisual.description ||'Funnel visualization' : 'Conversion funnel analysis'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col justify-center p-4">
-          <div 
-            className="space-y-3"
-            style={{ 
-              height: chartConfig.contentHeight,
-              maxHeight: chartConfig.contentHeight
-            }}
-          >
+        <CardContent className={`flex-1 flex flex-col justify-center p-${chartConfig.contentPadding / 4}`}>
+          <div className="space-y-4 h-full flex flex-col justify-center">
             {['Visitors', 'Leads', 'Opportunities', 'Customers'].map((stage, index) => {
               const width = 100 - (index * 20);
               return (
@@ -604,7 +535,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                   <div className="w-20 text-sm font-medium" style={{ color: themeColors.textPrimary }}>{stage}</div>
                   <div className="flex-1">
                     <div
-                      className="h-8 flex items-center justify-center rounded text-sm font-bold transition-all"
+                      className="h-10 flex items-center justify-center rounded text-sm font-bold transition-all"
                       style={{
                         width: `${width}%`,
                         backgroundColor: themeColors.chartColors[index % themeColors.chartColors.length],
@@ -626,7 +557,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
 
   const renderDefaultComponent = () => {
     return (
-      <Card className="flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
+      <Card className="flex flex-col h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
         <CardContent className="p-4 flex items-center justify-center flex-1">
           <div className="text-center" style={{ color: themeColors.textSecondary }}>
             <LayoutGrid className="w-8 h-8 mx-auto mb-3" />
