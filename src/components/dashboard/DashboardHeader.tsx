@@ -13,10 +13,10 @@ const DashboardHeader = ({ currentPage, componentCount, themeColors, onExport }:
   return (
     <div className="flex justify-between items-start">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight" style={{ color: themeColors.textPrimary }}>
+        <h1 className="text-2xl font-bold tracking-tight" style={{ color: themeColors.textPrimary }}>
           Page {currentPage + 1}
         </h1>
-        <p style={{ color: themeColors.textSecondary }}>
+        <p className="text-sm" style={{ color: themeColors.textSecondary }}>
           {componentCount} component{componentCount !== 1 ? 's' : ''} configured
         </p>
       </div>

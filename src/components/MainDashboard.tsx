@@ -1,3 +1,4 @@
+
 import { LayoutGrid, Lightbulb, DollarSign, Users, TrendingDown, User, TrendingUp, ShoppingCart } from "lucide-react";
 import { optimizeLayout, generateLayoutSuggestions } from "../utils/smartLayoutOptimizer";
 import DashboardHeader from "./dashboard/DashboardHeader";
@@ -158,8 +159,8 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
         color: themeColors.textPrimary 
       }}
     >
-      {/* Header - Fixed height */}
-      <div className="flex-shrink-0 p-4">
+      {/* Compact Header - Minimal height */}
+      <div className="flex-shrink-0 px-4 pt-3 pb-1">
         <DashboardHeader 
           currentPage={currentPage}
           componentCount={optimizedLayout.components.length}
@@ -167,12 +168,16 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
           onExport={onExport}
         />
         
-        {/* Layout Suggestions */}
-        <LayoutSuggestions suggestions={optimizedLayout.suggestions} />
+        {/* Layout Suggestions - Only show if available */}
+        {optimizedLayout.suggestions.length > 0 && (
+          <div className="mt-1">
+            <LayoutSuggestions suggestions={optimizedLayout.suggestions} />
+          </div>
+        )}
       </div>
 
-      {/* Main Content Area - 16:9 Canvas */}
-      <div className="flex-1 overflow-hidden">
+      {/* Main Content Area - Full remaining space for 16:9 Canvas */}
+      <div className="flex-1 overflow-hidden px-4 pb-4">
         <DashboardGrid 
           components={optimizedLayout.components}
           visuals={visuals}
