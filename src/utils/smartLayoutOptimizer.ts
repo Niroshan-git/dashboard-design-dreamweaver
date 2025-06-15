@@ -78,6 +78,17 @@ const shouldForceSameRow = (components: LayoutComponent[], currentIndex: number)
 };
 
 export const optimizeLayout = (components: LayoutComponent[]): OptimizedLayout => {
+  // If components already have positions from the layout builder, respect them.
+  // This ensures the main preview exactly matches the layout preview.
+  if (components && components.length > 0 && components.every(c => c.position)) {
+    const totalRows = Math.max(0, ...components.map(c => (c.position!.row || 0) + (c.position!.rowSpan || 1) - 1));
+    return {
+      components: components,
+      suggestions: [], // No suggestions needed as layout is manually configured
+      totalRows: totalRows,
+    };
+  }
+
   const optimizedComponents: LayoutComponent[] = [];
   const suggestions: string[] = [];
   let currentRow = 1;

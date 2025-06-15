@@ -30,16 +30,20 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     const kpiData = getKPIData();
     const kpisToShow = kpiData.slice(0, kpiCount);
     
-    // Use the exact same grid calculation as layout preview - force horizontal layout for multiple KPIs
-    const colSpan = component.position?.colSpan || component.span;
-    const gridCols = kpiCount > 1 ? Math.min(kpiCount, 4) : 1; // Max 4 KPIs per row like layout preview
+    // For multiple KPIs, decide layout based on component aspect ratio from layout builder
+    const rowSpan = component.position?.rowSpan || 1;
+    const colSpan = component.position?.colSpan || component.span || 3;
+    const isVerticalLayout = rowSpan > colSpan && kpiCount > 1;
+
+    const gridCols = isVerticalLayout ? 1 : Math.min(kpiCount, 4);
+    const gridRows = isVerticalLayout ? kpiCount : 1;
     
     return (
       <div 
         className="grid gap-2 h-full w-full" 
         style={{ 
           gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
-          gridTemplateRows: '1fr'
+          gridTemplateRows: `repeat(${gridRows}, 1fr)`
         }}
       >
         {kpisToShow.map((kpi, index) => {
