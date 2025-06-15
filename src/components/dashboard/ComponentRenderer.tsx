@@ -47,41 +47,20 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     return '180px';
   };
 
-  // Function to determine if chart should use compact height (next to KPI) or enhanced height (standalone)
-  const getChartContextualHeight = () => {
-    if (dynamicHeight) {
-      // Use dynamic height calculation - check if sharing row with KPI
-      const currentRow = component.position?.row || 1;
-      const hasAdjacentKPI = allComponents.some(comp => 
-        comp.id !== component.id && 
-        comp.type === 'kpi' && 
-        comp.position?.row === currentRow
-      );
-      
-      return hasAdjacentKPI ? 'compact' : 'enhanced';
-    }
+  // Check if KPI should be enhanced (when it comes after a chart)
+  const shouldEnhanceKPI = () => {
+    if (!dynamicHeight || component.type !== 'kpi') return false;
     
-    // Fallback to original logic
     const currentRow = component.position?.row || 1;
     const currentCol = component.position?.col || 1;
-    const currentColSpan = component.position?.colSpan || component.span || 6;
-    const currentRowSpan = component.position?.rowSpan || 1;
     
-    const hasAdjacentKPI = allComponents.some(comp => {
-      if (comp.id === component.id || comp.type !== 'kpi' || comp.position?.row !== currentRow) {
-        return false;
-      }
-      
-      const compCol = comp.position?.col || 1;
-      const compColSpan = comp.position?.colSpan || comp.span || 3;
-      
-      const isLeftAdjacent = compCol + compColSpan === currentCol;
-      const isRightAdjacent = currentCol + currentColSpan === compCol;
-      
-      return isLeftAdjacent || isRightAdjacent;
-    });
+    // Find components in the same row that come before this KPI
+    const componentsInRow = allComponents.filter(comp => 
+      comp.position?.row === currentRow && (comp.position?.col || 1) < currentCol
+    );
     
-    return hasAdjacentKPI ? 'compact' : 'enhanced';
+    // Check if any preceding component is a chart
+    return componentsInRow.some(comp => comp.type !== 'kpi');
   };
 
   const renderKPIComponent = () => {
@@ -89,6 +68,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     const kpiCount = linkedVisual?.kpiCount || component.kpiCount || linkedVisual?.count || 1;
     const kpiData = getKPIData();
     const kpisToShow = kpiData.slice(0, kpiCount);
+    const isEnhanced = shouldEnhanceKPI();
 
     // For single KPI, just show one card
     if (kpiCount === 1) {
@@ -106,19 +86,34 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
           }}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4 flex-shrink-0">
-            <CardTitle className="text-sm font-medium" style={{ color: themeColors.textSecondary }}>
+            <CardTitle className={`font-medium ${isEnhanced ? 'text-base' : 'text-sm'}`} style={{ color: themeColors.textSecondary }}>
               {linkedVisual ? linkedVisual.name : kpi.label}
             </CardTitle>
-            <IconComponent className={`h-4 w-4 ${kpi.color}`} />
+            <IconComponent className={`${isEnhanced ? 'h-6 w-6' : 'h-4 w-4'} ${kpi.color}`} />
           </CardHeader>
           <CardContent className="flex-1 flex flex-col justify-center px-4 pb-4">
-            <div className="text-2xl font-bold mb-2" style={{ color: themeColors.textPrimary }}>{kpi.value}</div>
-            <div className="flex items-center">
-              <Badge variant={kpi.trend === 'up' ? "secondary" : "destructive"} className="text-xs">
+            <div className={`font-bold mb-2 ${isEnhanced ? 'text-4xl' : 'text-2xl'}`} style={{ color: themeColors.textPrimary }}>
+              {kpi.value}
+            </div>
+            <div className="flex items-center mb-2">
+              <Badge variant={kpi.trend === 'up' ? "secondary" : "destructive"} className={isEnhanced ? 'text-sm' : 'text-xs'}>
                 {kpi.change}
               </Badge>
-              <span className="text-xs ml-2" style={{ color: themeColors.textSecondary }}>vs last period</span>
+              <span className={`ml-2 ${isEnhanced ? 'text-sm' : 'text-xs'}`} style={{ color: themeColors.textSecondary }}>
+                vs last period
+              </span>
             </div>
+            {isEnhanced && (
+              <div className="mt-2 text-sm" style={{ color: themeColors.textSecondary }}>
+                <div className="flex justify-between mb-1">
+                  <span>Target: $3.0M</span>
+                  <span>80%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="bg-green-500 h-2 rounded-full" style={{ width: '80%' }}></div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       );

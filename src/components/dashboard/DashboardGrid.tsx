@@ -13,83 +13,96 @@ const DashboardGrid = ({ components, visuals, themeColors, mockData, config }: D
   // Calculate exact grid layout to match layout preview
   const gridRows = Math.max(...components.map(c => (c.position?.row || 1) + (c.position?.rowSpan || 1) - 1), 4);
   
-  // Calculate available canvas height and distribute to components
-  const calculateDynamicHeights = () => {
+  // Advanced height calculation system
+  const calculateAdvancedHeights = () => {
     if (components.length === 0) return {};
     
-    // Calculate total available height (viewport minus header/padding)
+    // Total available canvas height
     const totalCanvasHeight = 'calc(100vh - 120px)';
     
-    // Group components by row to calculate row heights
+    // Group components by row and analyze positioning
     const rowGroups: { [key: number]: any[] } = {};
-    const rowHeights: { [key: number]: string } = {};
+    const componentHeights: { [key: string]: string } = {};
     
+    // Group components by row
     components.forEach(component => {
       const row = component.position?.row || 1;
       if (!rowGroups[row]) rowGroups[row] = [];
       rowGroups[row].push(component);
     });
     
-    // Calculate base height per row
+    // Sort components in each row by column position
+    Object.keys(rowGroups).forEach(rowStr => {
+      const row = parseInt(rowStr);
+      rowGroups[row].sort((a, b) => (a.position?.col || 1) - (b.position?.col || 1));
+    });
+    
+    // Calculate base row height
     const baseRowHeight = `calc(${totalCanvasHeight} / ${gridRows})`;
     
-    // First pass: Calculate row heights based on content
+    // Analyze each row for component relationships and sizing
     Object.entries(rowGroups).forEach(([rowStr, rowComponents]) => {
       const row = parseInt(rowStr);
-      const hasKPI = rowComponents.some(comp => comp.type === 'kpi');
       
-      if (hasKPI) {
-        // Rows with KPIs use standard height
-        rowHeights[row] = baseRowHeight;
+      // Find KPI and non-KPI components in this row
+      const kpiComponents = rowComponents.filter(comp => comp.type === 'kpi');
+      const nonKpiComponents = rowComponents.filter(comp => comp.type !== 'kpi');
+      
+      if (kpiComponents.length === 0) {
+        // Row with no KPIs - components can use enhanced height
+        const enhancedHeight = `calc(${baseRowHeight} * 1.8)`;
+        rowComponents.forEach(comp => {
+          const rowSpan = comp.position?.rowSpan || 1;
+          componentHeights[comp.id] = rowSpan > 1 ? `calc(${enhancedHeight} * ${rowSpan})` : enhancedHeight;
+        });
       } else {
-        // Rows without KPIs can use enhanced height to fill gaps
-        rowHeights[row] = `calc(${baseRowHeight} * 1.2)`;
+        // Row with KPIs - apply complex logic
+        rowComponents.forEach((comp, index) => {
+          if (comp.type === 'kpi') {
+            // Check if KPI comes after a chart in the same row
+            const hasChartBefore = rowComponents.slice(0, index).some(c => c.type !== 'kpi');
+            
+            if (hasChartBefore) {
+              // KPI after chart - match chart height and enhance KPI content
+              const chartHeight = `calc(${baseRowHeight} * 1.5)`;
+              componentHeights[comp.id] = chartHeight;
+            } else {
+              // Standard KPI height
+              componentHeights[comp.id] = baseRowHeight;
+            }
+          } else {
+            // Non-KPI component in row with KPIs
+            const hasKpiBefore = rowComponents.slice(0, index).some(c => c.type === 'kpi');
+            
+            if (hasKpiBefore) {
+              // Chart after KPI - use KPI height
+              componentHeights[comp.id] = baseRowHeight;
+            } else {
+              // Chart before KPI - use enhanced height
+              const enhancedHeight = `calc(${baseRowHeight} * 1.5)`;
+              componentHeights[comp.id] = enhancedHeight;
+            }
+          }
+        });
       }
     });
     
-    // Second pass: Redistribute remaining space to non-KPI rows
-    const kpiRows = Object.keys(rowGroups).filter(row => 
-      rowGroups[parseInt(row)].some(comp => comp.type === 'kpi')
-    ).length;
-    
-    const nonKpiRows = gridRows - kpiRows;
-    
-    if (nonKpiRows > 0) {
-      // Enhanced height for non-KPI rows to fill empty spaces
-      const enhancedRowHeight = `calc((${totalCanvasHeight} - (${baseRowHeight} * ${kpiRows})) / ${nonKpiRows})`;
+    // Check for rows that need vertical expansion to fill canvas
+    const usedRows = Object.keys(rowGroups).length;
+    if (usedRows < gridRows) {
+      // Redistribute extra space to existing components
+      const extraSpacePerRow = `calc((${totalCanvasHeight} - (${baseRowHeight} * ${usedRows})) / ${usedRows})`;
       
-      Object.entries(rowGroups).forEach(([rowStr, rowComponents]) => {
-        const row = parseInt(rowStr);
-        const hasKPI = rowComponents.some(comp => comp.type === 'kpi');
-        
-        if (!hasKPI) {
-          rowHeights[row] = enhancedRowHeight;
-        }
+      Object.keys(componentHeights).forEach(compId => {
+        const currentHeight = componentHeights[compId];
+        componentHeights[compId] = `calc(${currentHeight} + ${extraSpacePerRow})`;
       });
     }
-    
-    // Final pass: Assign heights to individual components
-    const componentHeights: { [key: string]: string } = {};
-    
-    Object.entries(rowGroups).forEach(([rowStr, rowComponents]) => {
-      const row = parseInt(rowStr);
-      const rowHeight = rowHeights[row];
-      
-      rowComponents.forEach(comp => {
-        const rowSpan = comp.position?.rowSpan || 1;
-        if (rowSpan > 1) {
-          // Multi-row components get proportional height
-          componentHeights[comp.id] = `calc(${rowHeight} * ${rowSpan})`;
-        } else {
-          componentHeights[comp.id] = rowHeight;
-        }
-      });
-    });
     
     return componentHeights;
   };
   
-  const dynamicHeights = calculateDynamicHeights();
+  const dynamicHeights = calculateAdvancedHeights();
   
   return (
     <div className="w-full h-full flex items-center justify-center">
