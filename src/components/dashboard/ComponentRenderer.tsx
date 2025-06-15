@@ -12,9 +12,10 @@ interface ComponentRendererProps {
   mockData: any;
   config: any;
   allComponents?: any[];
+  dynamicHeight?: string;
 }
 
-const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, config, allComponents = [] }: ComponentRendererProps) => {
+const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, config, allComponents = [], dynamicHeight }: ComponentRendererProps) => {
   // Use exact same KPI data as layout preview but prioritize linked visual
   const getKPIData = () => [
     { label: 'Total Revenue', value: '$2.4M', change: '+12.5%', trend: 'up', icon: DollarSign, color: 'text-green-600' },
@@ -27,12 +28,24 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
 
   // Function to determine if chart should use compact height (next to KPI) or enhanced height (standalone)
   const getChartContextualHeight = () => {
+    if (dynamicHeight) {
+      // Use dynamic height calculation - check if sharing row with KPI
+      const currentRow = component.position?.row || 1;
+      const hasAdjacentKPI = allComponents.some(comp => 
+        comp.id !== component.id && 
+        comp.type === 'kpi' && 
+        comp.position?.row === currentRow
+      );
+      
+      return hasAdjacentKPI ? 'compact' : 'enhanced';
+    }
+    
+    // Fallback to original logic
     const currentRow = component.position?.row || 1;
     const currentCol = component.position?.col || 1;
     const currentColSpan = component.position?.colSpan || component.span || 6;
     const currentRowSpan = component.position?.rowSpan || 1;
     
-    // Check if there are KPI cards that are truly adjacent (sharing column boundaries)
     const hasAdjacentKPI = allComponents.some(comp => {
       if (comp.id === component.id || comp.type !== 'kpi' || comp.position?.row !== currentRow) {
         return false;
@@ -41,15 +54,21 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
       const compCol = comp.position?.col || 1;
       const compColSpan = comp.position?.colSpan || comp.span || 3;
       
-      // Check if components are truly adjacent (one ends where another begins)
       const isLeftAdjacent = compCol + compColSpan === currentCol;
       const isRightAdjacent = currentCol + currentColSpan === compCol;
       
       return isLeftAdjacent || isRightAdjacent;
     });
     
-    // Only use compact height if there's a truly adjacent KPI
     return hasAdjacentKPI ? 'compact' : 'enhanced';
+  };
+
+  // Get dynamic container height
+  const getContainerHeight = () => {
+    if (dynamicHeight) {
+      return { minHeight: dynamicHeight, height: dynamicHeight };
+    }
+    return { height: '100%' };
   };
 
   const renderKPIComponent = () => {
@@ -65,11 +84,12 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
       
       const cardContent = (
         <Card 
-          className="hover:shadow-md transition-shadow h-full flex flex-col"
+          className="hover:shadow-md transition-shadow flex flex-col"
           style={{ 
             backgroundColor: themeColors.cardBackground,
             borderColor: themeColors.borderColor,
-            color: themeColors.textPrimary
+            color: themeColors.textPrimary,
+            ...getContainerHeight()
           }}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4 flex-shrink-0">
@@ -112,7 +132,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     const maxKpisPerRow = Math.min(kpiCount, 4);
     
     return (
-      <div className="grid gap-2 h-full w-full" style={{ gridTemplateColumns: `repeat(${maxKpisPerRow}, 1fr)` }}>
+      <div className="grid gap-2 w-full" style={{ gridTemplateColumns: `repeat(${maxKpisPerRow}, 1fr)`, ...getContainerHeight() }}>
         {kpisToShow.map((kpi, index) => {
           const IconComponent = kpi.icon;
           
@@ -169,15 +189,18 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     const chartType = linkedVisual?.chartType || component.chartType || 'bar';
     const contextualHeight = getChartContextualHeight();
     
-    // Determine chart container height based on context
-    const chartHeight = contextualHeight === 'compact' ? '120px' : '180px'; // Enhanced = 1.5x KPI height
+    // Use dynamic height for chart content area
+    const chartContentHeight = dynamicHeight ? 
+      `calc(${dynamicHeight} - 60px)` : // Subtract header height
+      (contextualHeight === 'compact' ? '120px' : '180px');
+    
     const cardPadding = contextualHeight === 'compact' ? 'p-1' : 'p-2';
     const headerPadding = contextualHeight === 'compact' ? 'px-2 pt-2 pb-1' : 'px-3 pt-3 pb-2';
     const titleSize = contextualHeight === 'compact' ? 'text-xs' : 'text-sm';
     const descriptionSize = contextualHeight === 'compact' ? 'text-xs' : 'text-xs';
     
     return (
-      <Card className="h-full w-full flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+      <Card className="flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
         <CardHeader className={`flex-shrink-0 ${headerPadding}`}>
           <CardTitle className={`${titleSize} truncate`} style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : `${chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart`}
@@ -187,7 +210,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
           </CardDescription>
         </CardHeader>
         <CardContent className={`flex-1 flex flex-col min-h-0 ${cardPadding}`}>
-          <div className="flex-1 min-h-0" style={{ minHeight: chartHeight }}>
+          <div className="flex-1 min-h-0" style={{ minHeight: chartContentHeight }}>
             <ResponsiveContainer width="100%" height="100%">
               {chartType === 'pie' ? (
                 <PieChart>
@@ -252,7 +275,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     ];
 
     return (
-      <Card className="h-full w-full flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+      <Card className="flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
         <CardHeader className="flex-shrink-0 pb-1 px-3 pt-3">
           <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : 'Data Table'}
@@ -292,9 +315,6 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
   };
 
   const renderProgressComponent = () => {
-    const contextualHeight = getChartContextualHeight();
-    const progressHeight = contextualHeight === 'compact' ? '120px' : '180px'; // Enhanced = 1.5x KPI height
-    
     const progressData = [
       { label: 'Sales Target', value: 85, color: 'bg-blue-500' },
       { label: 'Customer Satisfaction', value: 92, color: 'bg-green-500' },
@@ -303,7 +323,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     ];
 
     return (
-      <Card className="h-full w-full flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+      <Card className="flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
         <CardHeader className="flex-shrink-0 pb-1 px-3 pt-3">
           <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : 'Progress Indicators'}
@@ -312,7 +332,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
             {linkedVisual ? linkedVisual.description || 'Goal completion tracking' : 'Goal completion tracking'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col justify-center px-3 pb-3" style={{ minHeight: progressHeight }}>
+        <CardContent className="flex-1 flex flex-col justify-center px-3 pb-3">
           <div className="space-y-4">
             {progressData.map((item, index) => (
               <div key={item.label} className="space-y-2">
@@ -337,8 +357,8 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     const textContent = linkedVisual?.textContent || component.textContent || 'Welcome to your Dashboard! This is your central hub for monitoring key metrics and insights. Navigate through different sections to explore your data and make informed decisions.';
     
     return (
-      <Card className="h-full w-full flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-        <CardContent className="p-4 h-full flex flex-col justify-center">
+      <Card className="flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
+        <CardContent className="p-4 flex flex-col justify-center flex-1">
           <div style={{ color: themeColors.textPrimary }} className="prose max-w-none">
             <h3 className="text-base font-semibold mb-2">
               {linkedVisual ? linkedVisual.name : 'Dashboard Welcome Message'}
@@ -354,7 +374,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
 
   const renderImageComponent = () => {
     return (
-      <Card className="h-full w-full flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+      <Card className="flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
         <CardContent className="p-4 flex items-center justify-center flex-1">
           <div className="text-center" style={{ color: themeColors.textSecondary }}>
             <Image className="w-12 h-12 mx-auto mb-3" />
@@ -372,7 +392,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
 
   const renderHeatmapComponent = () => {
     return (
-      <Card className="h-full w-full flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+      <Card className="flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
         <CardHeader className="flex-shrink-0 pb-1 px-3 pt-3">
           <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : 'Heatmap Visualization'}
@@ -401,7 +421,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
 
   const renderScatterComponent = () => {
     return (
-      <Card className="h-full w-full flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+      <Card className="flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
         <CardHeader className="flex-shrink-0 pb-1 px-3 pt-3">
           <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : 'Scatter Plot'}
@@ -430,13 +450,13 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
 
   const renderFunnelComponent = () => {
     return (
-      <Card className="h-full w-full flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+      <Card className="flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
         <CardHeader className="flex-shrink-0 pb-1 px-3 pt-3">
           <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
             {linkedVisual ? linkedVisual.name : 'Funnel Chart'}
           </CardTitle>
           <CardDescription className="text-xs" style={{ color: themeColors.textSecondary }}>
-            {linkedVisual ? linkedVisual.description || 'Funnel visualization' : 'Conversion funnel analysis'}
+            {linkedVisual ? linkedVisual.description ||'Funnel visualization' : 'Conversion funnel analysis'}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center p-2">
@@ -469,7 +489,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
 
   const renderDefaultComponent = () => {
     return (
-      <Card className="h-full w-full flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+      <Card className="flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
         <CardContent className="p-4 flex items-center justify-center flex-1">
           <div className="text-center" style={{ color: themeColors.textSecondary }}>
             <LayoutGrid className="w-8 h-8 mx-auto mb-3" />

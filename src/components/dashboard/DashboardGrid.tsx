@@ -13,6 +13,58 @@ const DashboardGrid = ({ components, visuals, themeColors, mockData, config }: D
   // Calculate exact grid layout to match layout preview
   const gridRows = Math.max(...components.map(c => (c.position?.row || 1) + (c.position?.rowSpan || 1) - 1), 4);
   
+  // Calculate available canvas height and distribute to components
+  const calculateDynamicHeights = () => {
+    if (components.length === 0) return {};
+    
+    // Group components by row to calculate row heights
+    const rowGroups: { [key: number]: any[] } = {};
+    components.forEach(component => {
+      const row = component.position?.row || 1;
+      if (!rowGroups[row]) rowGroups[row] = [];
+      rowGroups[row].push(component);
+    });
+    
+    const componentHeights: { [key: string]: string } = {};
+    
+    Object.entries(rowGroups).forEach(([rowStr, rowComponents]) => {
+      const row = parseInt(rowStr);
+      
+      // Check if this row has KPI cards
+      const hasKPI = rowComponents.some(comp => comp.type === 'kpi');
+      const hasNonKPI = rowComponents.some(comp => comp.type !== 'kpi');
+      
+      // Calculate height based on row content and canvas utilization
+      let baseHeight = `calc((100vh - 120px) / ${gridRows})`;  // Distribute available height
+      
+      if (hasKPI && hasNonKPI) {
+        // Mixed row: charts/other components match KPI height
+        rowComponents.forEach(comp => {
+          if (comp.type === 'kpi') {
+            componentHeights[comp.id] = baseHeight;
+          } else {
+            componentHeights[comp.id] = baseHeight; // Match KPI height in mixed rows
+          }
+        });
+      } else if (hasKPI && !hasNonKPI) {
+        // Only KPIs: use standard height
+        rowComponents.forEach(comp => {
+          componentHeights[comp.id] = baseHeight;
+        });
+      } else {
+        // No KPIs: components can use enhanced height
+        const enhancedHeight = `calc(${baseHeight} * 1.5)`;
+        rowComponents.forEach(comp => {
+          componentHeights[comp.id] = gridRows > 3 ? baseHeight : enhancedHeight;
+        });
+      }
+    });
+    
+    return componentHeights;
+  };
+  
+  const dynamicHeights = calculateDynamicHeights();
+  
   return (
     <div className="w-full h-full flex items-center justify-center">
       {/* 16:9 Canvas Container - Full utilization */}
@@ -58,6 +110,7 @@ const DashboardGrid = ({ components, visuals, themeColors, mockData, config }: D
                   mockData={mockData}
                   config={config}
                   allComponents={components}
+                  dynamicHeight={dynamicHeights[component.id]}
                 />
               </div>
             );
