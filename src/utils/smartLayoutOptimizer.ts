@@ -1,3 +1,4 @@
+
 export interface LayoutComponent {
   id: string;
   type: string;
@@ -23,20 +24,41 @@ export interface OptimizedLayout {
 
 const GRID_COLUMNS = 12;
 
-const getComponentMinSpan = (type: string): number => {
-  switch (type) {
-    case 'kpi': return 3;
-    case 'chart': return 4;
-    case 'table': return 6;
-    case 'text': return 3;
-    case 'progress': return 4;
-    case 'image': return 4;
-    case 'heatmap': return 6;
-    case 'funnel': return 4;
-    case 'scatter': return 4;
-    default: return 3;
+export const optimizeLayout = (components: LayoutComponent[]): OptimizedLayout => {
+  // If components already have valid positions from the layout builder, use them exactly
+  if (components && components.length > 0) {
+    // Check if all components have valid positions (not all at 0,0)
+    const hasValidPositions = components.some(c => 
+      c.position && (c.position.row > 0 || c.position.col > 0)
+    );
+    
+    if (hasValidPositions) {
+      // Use exact positions from layout builder
+      const positionedComponents = components.map(component => ({
+        ...component,
+        position: {
+          row: (component.position?.row || 0) + 1, // Convert 0-based to 1-based
+          col: (component.position?.col || 0) + 1, // Convert 0-based to 1-based
+          rowSpan: component.position?.rowSpan || 1,
+          colSpan: component.position?.colSpan || component.span || getComponentPreferredSpan(component.type, component.kpiCount)
+        }
+      }));
+      
+      const totalRows = Math.max(1, ...positionedComponents.map(c => 
+        (c.position!.row) + (c.position!.rowSpan || 1) - 1
+      ));
+      
+      return {
+        components: positionedComponents,
+        suggestions: [], // No suggestions needed as layout is manually configured
+        totalRows: totalRows,
+      };
+    }
   }
-};
+
+  // Fallback to auto-optimization if no valid positions
+  return autoOptimizeLayout(components);
+}
 
 const getComponentPreferredSpan = (type: string, kpiCount?: number): number => {
   switch (type) {
@@ -57,49 +79,18 @@ const getComponentPreferredSpan = (type: string, kpiCount?: number): number => {
   }
 };
 
-const canComponentsShareRow = (type1: string, type2: string): boolean => {
-  const exclusiveTypes = ['table'];
-  return !exclusiveTypes.includes(type1) && !exclusiveTypes.includes(type2);
-};
-
-const shouldForceSameRow = (components: LayoutComponent[], currentIndex: number): boolean => {
-  const current = components[currentIndex];
-  if (currentIndex === 0) return false;
-  
-  const previous = components[currentIndex - 1];
-  
-  // Force KPIs and text components to be on the same row if they can fit
-  if ((current.type === 'kpi' || current.type === 'text') && 
-      (previous.type === 'kpi' || previous.type === 'text')) {
-    return true;
-  }
-  
-  return false;
-};
-
-export const optimizeLayout = (components: LayoutComponent[]): OptimizedLayout => {
-  // If components already have positions from the layout builder, respect them.
-  // This ensures the main preview exactly matches the layout preview.
-  if (components && components.length > 0 && components.every(c => c.position)) {
-    const totalRows = Math.max(0, ...components.map(c => (c.position!.row || 0) + (c.position!.rowSpan || 1) - 1));
-    return {
-      components: components,
-      suggestions: [], // No suggestions needed as layout is manually configured
-      totalRows: totalRows,
-    };
-  }
-
+const autoOptimizeLayout = (components: LayoutComponent[]): OptimizedLayout => {
   const optimizedComponents: LayoutComponent[] = [];
   const suggestions: string[] = [];
   let currentRow = 1;
   let currentCol = 1;
   let remainingCols = GRID_COLUMNS;
 
-  // Sort components by priority but keep similar types together
+  // Sort components by priority
   const sortedComponents = [...components].sort((a, b) => {
     const priority = { 
       kpi: 1, 
-      text: 1,  // Same priority as KPI to keep them together
+      text: 1,
       chart: 2, 
       progress: 3, 
       image: 4,
@@ -113,48 +104,18 @@ export const optimizeLayout = (components: LayoutComponent[]): OptimizedLayout =
 
   for (let i = 0; i < sortedComponents.length; i++) {
     const component = sortedComponents[i];
-    const minSpan = getComponentMinSpan(component.type);
     const preferredSpan = getComponentPreferredSpan(component.type, component.kpiCount);
     
-    // Check if we should force this component to be on the same row
-    const forceSameRow = shouldForceSameRow(sortedComponents, i);
-    
-    // Calculate optimal span based on remaining space
     let optimalSpan = Math.min(preferredSpan, remainingCols);
     
-    // Special handling for text components - adjust based on content length
-    if (component.type === 'text' && component.textContent) {
-      const contentLength = component.textContent.length;
-      if (contentLength < 50) {
-        optimalSpan = Math.min(6, remainingCols);
-      } else if (contentLength > 200) {
-        optimalSpan = 12;
-      }
-    }
-    
-    // If this component can't fit in the current row and we're not forcing same row
-    if (remainingCols < minSpan && !forceSameRow) {
-      // Move to next row
+    // If component can't fit in current row, move to next row
+    if (remainingCols < 3) {
       currentRow++;
       currentCol = 1;
       remainingCols = GRID_COLUMNS;
       optimalSpan = Math.min(preferredSpan, GRID_COLUMNS);
-    } else if (forceSameRow && remainingCols < minSpan) {
-      // If we're forcing same row but can't fit, use remaining space
-      optimalSpan = remainingCols;
     }
     
-    // For the last component in a row, fill remaining space if it makes sense
-    const nextComponent = sortedComponents[i + 1];
-    const isLastInRow = !nextComponent || 
-                       !canComponentsShareRow(component.type, nextComponent.type) ||
-                       remainingCols - optimalSpan < getComponentMinSpan(nextComponent.type);
-    
-    if (isLastInRow && component.type !== 'kpi') {
-      // Fill remaining space for non-KPI components
-      optimalSpan = remainingCols;
-    }
-
     // Add optimized component
     optimizedComponents.push({
       ...component,
@@ -171,47 +132,11 @@ export const optimizeLayout = (components: LayoutComponent[]): OptimizedLayout =
     currentCol += optimalSpan;
     remainingCols -= optimalSpan;
 
-    // Move to next row if needed
-    if (remainingCols === 0 || isLastInRow) {
+    // Move to next row if no space left
+    if (remainingCols === 0) {
       currentRow++;
       currentCol = 1;
       remainingCols = GRID_COLUMNS;
-    }
-  }
-
-  // Generate layout suggestions
-  if (components.length === 0) {
-    suggestions.push("Add some components to get started with your dashboard layout");
-  } else {
-    // Check for common layout improvements
-    const hasKPIs = components.some(c => c.type === 'kpi');
-    const hasCharts = components.some(c => c.type === 'chart');
-    const hasTables = components.some(c => c.type === 'table');
-    const hasText = components.some(c => c.type === 'text');
-
-    if (!hasKPIs && hasCharts) {
-      suggestions.push("Consider adding KPI cards at the top for quick metrics overview");
-    }
-    if (hasKPIs && !hasCharts) {
-      suggestions.push("Add charts to visualize your data trends and patterns");
-    }
-    if (hasCharts && !hasTables && components.length > 3) {
-      suggestions.push("Consider adding a data table for detailed information");
-    }
-    if (!hasText && components.length > 1) {
-      suggestions.push("Add a text component to provide context or welcome message");
-    }
-
-    // Check for layout balance
-    const topRowComponents = optimizedComponents.filter(c => c.position?.row === 1);
-    if (topRowComponents.length === 1 && topRowComponents[0].span < 8) {
-      suggestions.push("Consider adding more components to the top row for better balance");
-    }
-    
-    // Suggest improvements for component distribution
-    const totalRows = Math.max(...optimizedComponents.map(c => c.position?.row || 1));
-    if (totalRows > 4 && components.length < 6) {
-      suggestions.push("Your layout is quite tall - consider adjusting component sizes for better proportions");
     }
   }
 
@@ -226,7 +151,6 @@ export const generateLayoutSuggestions = (currentComponents: LayoutComponent[], 
   const suggestions: string[] = [];
   const componentTypes = currentComponents.map(c => c.type);
 
-  // Suggest missing essential components
   if (!componentTypes.includes('kpi')) {
     suggestions.push("Add KPI cards to show key metrics at a glance");
   }
@@ -235,33 +159,6 @@ export const generateLayoutSuggestions = (currentComponents: LayoutComponent[], 
   }
   if (currentComponents.length > 3 && !componentTypes.includes('table')) {
     suggestions.push("Consider adding a data table for detailed information");
-  }
-  if (!componentTypes.includes('text')) {
-    suggestions.push("Add a text component for welcome messages or explanations");
-  }
-
-  // Suggest layout improvements based on current structure
-  if (currentComponents.length === 1) {
-    suggestions.push("Add 2-3 more components to create a comprehensive dashboard");
-  }
-  if (currentComponents.length > 8) {
-    suggestions.push("Consider splitting components across multiple pages for better organization");
-  }
-
-  // Suggest based on available visuals
-  const unusedVisuals = availableVisuals.filter(v => 
-    !currentComponents.some(c => c.visualId === v.id)
-  );
-  if (unusedVisuals.length > 0) {
-    suggestions.push(`You have ${unusedVisuals.length} unused visuals that could enhance your dashboard`);
-  }
-
-  // Suggest specific layout patterns
-  const hasTopRowSpace = currentComponents.filter(c => c.position?.row === 1)
-    .reduce((sum, c) => sum + (c.span || 0), 0) < 12;
-  
-  if (hasTopRowSpace && currentComponents.length > 2) {
-    suggestions.push("Consider moving smaller components to the top row for better space utilization");
   }
 
   return suggestions;

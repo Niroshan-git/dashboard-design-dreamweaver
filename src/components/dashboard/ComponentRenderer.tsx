@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -30,34 +31,72 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     const kpiData = getKPIData();
     const kpisToShow = kpiData.slice(0, kpiCount);
 
-    // Use layout grid to define KPI stacking (match DashboardGrid)
-    // Show all KPIs in one row unless builder assigns colSpan=1 (vertical) or splits KPIs
+    // For single KPI, just show one card
+    if (kpiCount === 1) {
+      const kpi = kpisToShow[0];
+      const IconComponent = kpi.icon;
+      
+      const cardContent = (
+        <Card 
+          className="hover:shadow-md transition-shadow h-full flex flex-col"
+          style={{ 
+            backgroundColor: themeColors.cardBackground,
+            borderColor: themeColors.borderColor,
+            color: themeColors.textPrimary
+          }}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4 flex-shrink-0">
+            <CardTitle className="text-sm font-medium" style={{ color: themeColors.textSecondary }}>
+              {linkedVisual ? linkedVisual.name : kpi.label}
+            </CardTitle>
+            <IconComponent className={`h-4 w-4 ${kpi.color}`} />
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col justify-center px-4 pb-4">
+            <div className="text-2xl font-bold mb-2" style={{ color: themeColors.textPrimary }}>{kpi.value}</div>
+            <div className="flex items-center">
+              <Badge variant={kpi.trend === 'up' ? "secondary" : "destructive"} className="text-xs">
+                {kpi.change}
+              </Badge>
+              <span className="text-xs ml-2" style={{ color: themeColors.textSecondary }}>vs last period</span>
+            </div>
+          </CardContent>
+        </Card>
+      );
+
+      if (config.tooltipsEnabled) {
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                {cardContent}
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                <p className="text-sm">{linkedVisual ? linkedVisual.description || 'KPI Card' : kpi.label}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      }
+
+      return cardContent;
+    }
+
+    // For multiple KPIs, arrange them in a simple grid
+    // The DashboardGrid handles the overall positioning
     const colSpan = component.position?.colSpan || component.span || 1;
     const rowSpan = component.position?.rowSpan || 1;
-
-    // Layout builder: usually sets colSpan=3 and rowSpan=1 for 4 KPIs horizontally in 12 cols grid
-    // So for single horizontal row: gridCols = colSpan (typically 3 per KPI), gridRows = 1
-    // For vertical stack: colSpan=1, rowSpan=4
-
-    // Calculate # of columns: for normal horizontal row, fill up colSpan or kpiCount (whichever is less)
-    // If builder has set up each KPI in their own grid cell, treat each as 1-col individually. So default to 1 col.
-    // For most layouts, arrange them using `1fr` for each KPI in the row
-    const isRowLayout = rowSpan === 1; // If rowSpan is 1, display in row
-    const gridCols = isRowLayout ? 1 : kpiCount; // default: 1 col => vertical stack; else all KPIs spread out
-    const gridRows = isRowLayout ? kpiCount : 1; // if row, put in multiple rows; else, just 1 row
-
-    // Correction: All KPIs in the same row (rowSpan = 1), gridCols = kpiCount, gridRows = 1
-    // All KPIs stacked vertically (colSpan = 1 and rowSpan > 1), gridCols = 1, gridRows = kpiCount
-    const useRow = rowSpan === 1;
-    const actualGridCols = useRow ? kpiCount : 1;
-    const actualGridRows = useRow ? 1 : kpiCount;
+    
+    // Determine layout: if colSpan > rowSpan, arrange horizontally; otherwise vertically
+    const isHorizontal = colSpan >= rowSpan;
+    const gridCols = isHorizontal ? Math.min(kpiCount, 4) : 1;
+    const gridRows = isHorizontal ? Math.ceil(kpiCount / gridCols) : kpiCount;
 
     return (
       <div 
         className="grid gap-2 h-full w-full" 
         style={{ 
-          gridTemplateColumns: `repeat(${actualGridCols}, 1fr)`,
-          gridTemplateRows: `repeat(${actualGridRows}, 1fr)`
+          gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
+          gridTemplateRows: `repeat(${gridRows}, 1fr)`
         }}
       >
         {kpisToShow.map((kpi, index) => {
