@@ -24,7 +24,7 @@ export interface OptimizedLayout {
 
 const GRID_COLUMNS = 12;
 
-export const optimizeLayout = (components: LayoutComponent[]): OptimizedLayout => {
+export const optimizeLayout = (components: LayoutComponent[], config?: any): OptimizedLayout => {
   // If components already have valid positions from the layout builder, use them exactly
   if (components && components.length > 0) {
     // Check if all components have valid positions (not all at 0,0)
@@ -33,16 +33,15 @@ export const optimizeLayout = (components: LayoutComponent[]): OptimizedLayout =
     );
     
     if (hasValidPositions) {
-      // Use exact positions from layout builder
-      const positionedComponents = components.map(component => ({
-        ...component,
-        position: {
-          row: (component.position?.row || 0) + 1, // Convert 0-based to 1-based
-          col: (component.position?.col || 0) + 1, // Convert 0-based to 1-based
-          rowSpan: component.position?.rowSpan || 1,
-          colSpan: component.position?.colSpan || component.span || getComponentPreferredSpan(component.type, component.kpiCount)
-        }
-      }));
+      // Use exact positions from layout builder but adjust for navigation space
+      const positionedComponents = components.map(component => {
+        const adjustedPosition = adjustPositionForNavigation(component.position!, config);
+        
+        return {
+          ...component,
+          position: adjustedPosition
+        };
+      });
       
       const totalRows = Math.max(1, ...positionedComponents.map(c => 
         (c.position!.row) + (c.position!.rowSpan || 1) - 1
@@ -57,16 +56,56 @@ export const optimizeLayout = (components: LayoutComponent[]): OptimizedLayout =
   }
 
   // Fallback to auto-optimization if no valid positions
-  return autoOptimizeLayout(components);
+  return autoOptimizeLayout(components, config);
 }
+
+const adjustPositionForNavigation = (position: any, config?: any) => {
+  if (!position) return position;
+  
+  const navigationStyle = config?.navigationStyle || config?.navigationPosition;
+  const layoutDimension = config?.layoutDimension || '16:9';
+  
+  // Calculate available canvas space based on navigation
+  let adjustedColSpan = position.colSpan || position.span || 3;
+  let adjustedRowSpan = position.rowSpan || 1;
+  
+  // For left navigation, reduce horizontal space utilization
+  if (navigationStyle === 'left' || navigationStyle === 'left-full' || navigationStyle === 'left-collapsible') {
+    // Account for left sidebar - reduce effective canvas width
+    const effectiveColumns = Math.floor(GRID_COLUMNS * 0.85); // 85% of width available
+    adjustedColSpan = Math.min(adjustedColSpan, effectiveColumns);
+  }
+  
+  // For top navigation, account for height reduction
+  if (navigationStyle === 'top' || navigationStyle?.startsWith('top-')) {
+    // Top nav reduces vertical space, might need taller components
+    if (layoutDimension === '16:9') {
+      adjustedRowSpan = Math.max(adjustedRowSpan, 1);
+    }
+  }
+  
+  // Ensure KPIs fit properly - max 4 KPIs vertically for optimal display
+  if (position.type === 'kpi') {
+    const maxKpiRows = 4;
+    adjustedRowSpan = Math.min(adjustedRowSpan, Math.ceil(12 / maxKpiRows));
+  }
+  
+  return {
+    row: position.row,
+    col: position.col,
+    rowSpan: adjustedRowSpan,
+    colSpan: adjustedColSpan
+  };
+};
 
 const getComponentPreferredSpan = (type: string, kpiCount?: number): number => {
   switch (type) {
     case 'kpi': 
       if (kpiCount) {
-        return Math.min(12, Math.max(6, kpiCount * 3));
+        // Ensure max 4 KPIs can fit vertically
+        return Math.min(12, Math.max(3, Math.floor(12 / Math.min(kpiCount, 4))));
       }
-      return 6;
+      return 3; // Smaller default for better vertical stacking
     case 'chart': return 6;
     case 'table': return 12;
     case 'text': return 8;
@@ -79,12 +118,18 @@ const getComponentPreferredSpan = (type: string, kpiCount?: number): number => {
   }
 };
 
-const autoOptimizeLayout = (components: LayoutComponent[]): OptimizedLayout => {
+const autoOptimizeLayout = (components: LayoutComponent[], config?: any): OptimizedLayout => {
   const optimizedComponents: LayoutComponent[] = [];
   const suggestions: string[] = [];
   let currentRow = 1;
   let currentCol = 1;
   let remainingCols = GRID_COLUMNS;
+
+  // Adjust for navigation space
+  const navigationStyle = config?.navigationStyle || config?.navigationPosition;
+  if (navigationStyle === 'left' || navigationStyle === 'left-full' || navigationStyle === 'left-collapsible') {
+    remainingCols = Math.floor(GRID_COLUMNS * 0.85);
+  }
 
   // Sort components by priority
   const sortedComponents = [...components].sort((a, b) => {
@@ -112,8 +157,8 @@ const autoOptimizeLayout = (components: LayoutComponent[]): OptimizedLayout => {
     if (remainingCols < 3) {
       currentRow++;
       currentCol = 1;
-      remainingCols = GRID_COLUMNS;
-      optimalSpan = Math.min(preferredSpan, GRID_COLUMNS);
+      remainingCols = navigationStyle === 'left' ? Math.floor(GRID_COLUMNS * 0.85) : GRID_COLUMNS;
+      optimalSpan = Math.min(preferredSpan, remainingCols);
     }
     
     // Add optimized component
@@ -136,7 +181,7 @@ const autoOptimizeLayout = (components: LayoutComponent[]): OptimizedLayout => {
     if (remainingCols === 0) {
       currentRow++;
       currentCol = 1;
-      remainingCols = GRID_COLUMNS;
+      remainingCols = navigationStyle === 'left' ? Math.floor(GRID_COLUMNS * 0.85) : GRID_COLUMNS;
     }
   }
 

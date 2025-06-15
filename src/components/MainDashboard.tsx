@@ -1,4 +1,3 @@
-
 import { LayoutGrid, Lightbulb, DollarSign, Users, TrendingDown, User, TrendingUp, ShoppingCart } from "lucide-react";
 import { optimizeLayout, generateLayoutSuggestions } from "../utils/smartLayoutOptimizer";
 import DashboardHeader from "./dashboard/DashboardHeader";
@@ -25,8 +24,8 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
   const currentLayout = getCurrentPageLayout();
   const visuals = config.visuals || [];
 
-  // Optimize layout using smart optimizer - this ensures exact match with layout preview
-  const optimizedLayout = optimizeLayout(currentLayout.components || []);
+  // Optimize layout using smart optimizer - pass config for navigation awareness
+  const optimizedLayout = optimizeLayout(currentLayout.components || [], config);
   const layoutSuggestions = generateLayoutSuggestions(currentLayout.components || [], visuals);
 
   console.log('MainDashboard - Optimized layout:', optimizedLayout);
@@ -164,7 +163,7 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
       {/* Layout Suggestions */}
       <LayoutSuggestions suggestions={optimizedLayout.suggestions} />
 
-      {/* Optimized Layout Grid - This now matches the layout preview exactly */}
+      {/* Optimized Layout Grid - Now accounts for navigation space */}
       <DashboardGrid 
         components={optimizedLayout.components}
         visuals={visuals}
