@@ -10,44 +10,47 @@ interface DashboardGridProps {
 }
 
 const DashboardGrid = ({ components, visuals, themeColors, mockData, config }: DashboardGridProps) => {
-  // Calculate the exact same grid layout as the layout preview
-  const gridRows = Math.max(...components.map(c => (c.position?.row || 1) + (c.position?.rowSpan || 1) - 1), 1);
+  // Calculate exact grid layout to match layout preview
+  const gridRows = Math.max(...components.map(c => (c.position?.row || 1) + (c.position?.rowSpan || 1) - 1), 4);
   
-  // Navigation style configuration
+  // Navigation configuration
   const navigationStyle = config?.navigationStyle || config?.navigationPosition;
   const isLeftNav = navigationStyle === 'left' || navigationStyle === 'left-full' || navigationStyle === 'left-collapsible';
   const isTopNav = navigationStyle === 'top' || navigationStyle?.startsWith('top-');
   
-  // Calculate canvas dimensions to maintain 16:9 aspect ratio
+  // Fixed canvas dimensions for 16:9 aspect ratio
   const getCanvasDimensions = () => {
-    let canvasWidth = '100%';
-    let canvasHeight = 'auto';
-    
     if (isLeftNav) {
-      // Left navigation reduces available width
-      canvasWidth = '100%';
-      canvasHeight = `calc(100vh - 120px)`; // Account for header and padding
+      return {
+        width: '100%',
+        height: 'calc(100vh - 120px)',
+        maxWidth: '100%',
+        maxHeight: 'calc(100vh - 120px)'
+      };
     } else if (isTopNav) {
-      // Top navigation reduces available height
-      canvasWidth = '100%';
-      canvasHeight = `calc(100vh - 160px)`; // Account for top nav and header
+      return {
+        width: '100%',
+        height: 'calc(100vh - 160px)',
+        maxWidth: '100%',
+        maxHeight: 'calc(100vh - 160px)'
+      };
     } else {
-      canvasWidth = '100%';
-      canvasHeight = `calc(100vh - 120px)`;
+      return {
+        width: '100%',
+        height: 'calc(100vh - 120px)',
+        maxWidth: '100%',
+        maxHeight: 'calc(100vh - 120px)'
+      };
     }
-    
-    return { canvasWidth, canvasHeight };
   };
 
-  const { canvasWidth, canvasHeight } = getCanvasDimensions();
+  const canvasDimensions = getCanvasDimensions();
   
-  // Calculate row height to fit 16:9 aspect ratio
+  // Calculate row height to maintain proportions and fit all components
   const calculateRowHeight = () => {
-    if (isTopNav) {
-      return `max(120px, calc((100vh - 160px) / ${Math.max(gridRows, 4)}))`;
-    } else {
-      return `max(140px, calc((100vh - 120px) / ${Math.max(gridRows, 4)}))`;
-    }
+    const minRowHeight = isTopNav ? 120 : 140;
+    const availableHeight = isTopNav ? 'calc((100vh - 160px)' : 'calc((100vh - 120px)';
+    return `max(${minRowHeight}px, ${availableHeight} / ${Math.max(gridRows, 4)}))`;
   };
 
   const rowHeight = calculateRowHeight();
@@ -56,9 +59,10 @@ const DashboardGrid = ({ components, visuals, themeColors, mockData, config }: D
     <div 
       className="w-full overflow-hidden"
       style={{ 
-        width: canvasWidth,
-        height: canvasHeight,
-        maxHeight: isTopNav ? 'calc(100vh - 160px)' : 'calc(100vh - 120px)'
+        width: canvasDimensions.width,
+        height: canvasDimensions.height,
+        maxWidth: canvasDimensions.maxWidth,
+        maxHeight: canvasDimensions.maxHeight
       }}
     >
       <div 
@@ -67,14 +71,14 @@ const DashboardGrid = ({ components, visuals, themeColors, mockData, config }: D
           gridTemplateColumns: 'repeat(12, 1fr)',
           gridTemplateRows: `repeat(${Math.max(gridRows, 4)}, ${rowHeight})`,
           padding: isLeftNav ? '0 1rem' : '1rem',
-          maxWidth: '100%',
-          maxHeight: '100%'
+          width: '100%',
+          height: '100%'
         }}
       >
         {components.map((component: any, index: number) => {
           const linkedVisual = visuals.find((v: any) => v.id === component.visualId);
           
-          // Use exact positioning from optimizer
+          // Use exact positioning from layout builder to match layout preview
           const colStart = component.position?.col || 1;
           const colSpan = component.position?.colSpan || component.span || 3;
           const rowStart = component.position?.row || 1;
