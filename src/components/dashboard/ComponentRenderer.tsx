@@ -1,9 +1,10 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, Area, AreaChart } from "recharts";
-import { DollarSign, Users, TrendingDown, User, TrendingUp, ShoppingCart, LayoutGrid } from "lucide-react";
+import { DollarSign, Users, TrendingDown, User, TrendingUp, ShoppingCart, LayoutGrid, Image } from "lucide-react";
 
 interface ComponentRendererProps {
   component: any;
@@ -276,6 +277,24 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     );
   };
 
+  const renderImageComponent = () => {
+    return (
+      <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+        <CardContent className="p-6 flex items-center justify-center min-h-[200px]">
+          <div className="text-center" style={{ color: themeColors.textSecondary }}>
+            <Image className="w-16 h-16 mx-auto mb-4" />
+            <h4 className="font-medium mb-2" style={{ color: themeColors.textPrimary }}>
+              {linkedVisual ? linkedVisual.name : 'Image Component'}
+            </h4>
+            <p className="text-sm">
+              {linkedVisual ? linkedVisual.description || 'Image placeholder' : 'Image visualization placeholder'}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   const renderDefaultComponent = () => {
     return (
       <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
@@ -303,6 +322,8 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
       return renderProgressComponent();
     case 'text':
       return renderTextComponent();
+    case 'image':
+      return renderImageComponent();
     default:
       return renderDefaultComponent();
   }
