@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,9 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   LayoutGrid, Plus, Minus, BarChart3, PieChart, TrendingUp, 
-  Table, Filter, Type, Image, Layers, Move, Maximize2, X, Edit3
+  Table, Filter, Type, Image, Layers, Move, Maximize2, X, Edit3,
+  Target, Users, DollarSign, Activity, Map, Grid3X3, Clock
 } from "lucide-react";
 
 interface LayoutBuilderProps {
@@ -21,24 +22,28 @@ interface LayoutBuilderProps {
 
 interface Visual {
   id: string;
-  type: 'kpi' | 'chart' | 'table' | 'filter' | 'text' | 'image';
+  type: 'kpi' | 'chart' | 'table' | 'filter' | 'text' | 'image' | 'heatmap' | 'funnel' | 'scatter' | 'progress';
   name: string;
   chartType?: 'bar' | 'line' | 'pie' | 'area' | 'map';
   description?: string;
   dataSource?: string;
   filters?: string[];
   metrics?: string[];
+  textContent?: string;
+  kpiCount?: number;
 }
 
 interface PageComponent {
   id: string;
-  type: 'kpi' | 'chart' | 'table' | 'filter' | 'text' | 'image' | 'tabs';
+  type: 'kpi' | 'chart' | 'table' | 'filter' | 'text' | 'image' | 'tabs' | 'heatmap' | 'funnel' | 'scatter' | 'progress';
   count?: number;
   chartType?: 'bar' | 'line' | 'pie' | 'area' | 'map';
   span: number;
   position: { row: number; col: number };
   visualId?: string;
   name?: string;
+  textContent?: string;
+  kpiCount?: number;
 }
 
 interface PageLayout {
@@ -91,12 +96,16 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
   const visuals = config.visuals || [];
 
   const componentTypes = [
-    { type: 'kpi', label: 'KPI Cards', icon: LayoutGrid, color: 'bg-blue-50 border-blue-200' },
+    { type: 'kpi', label: 'KPI Cards', icon: Target, color: 'bg-blue-50 border-blue-200' },
     { type: 'chart', label: 'Charts', icon: BarChart3, color: 'bg-green-50 border-green-200' },
     { type: 'table', label: 'Tables', icon: Table, color: 'bg-purple-50 border-purple-200' },
     { type: 'filter', label: 'Filters', icon: Filter, color: 'bg-orange-50 border-orange-200' },
     { type: 'text', label: 'Text Block', icon: Type, color: 'bg-gray-50 border-gray-200' },
-    { type: 'image', label: 'Image/Logo', icon: Image, color: 'bg-yellow-50 border-yellow-200' }
+    { type: 'image', label: 'Image/Logo', icon: Image, color: 'bg-yellow-50 border-yellow-200' },
+    { type: 'heatmap', label: 'Heatmaps', icon: Grid3X3, color: 'bg-red-50 border-red-200' },
+    { type: 'funnel', label: 'Funnel Charts', icon: TrendingUp, color: 'bg-indigo-50 border-indigo-200' },
+    { type: 'scatter', label: 'Scatter Plots', icon: Target, color: 'bg-pink-50 border-pink-200' },
+    { type: 'progress', label: 'Progress Bars', icon: Activity, color: 'bg-cyan-50 border-cyan-200' }
   ];
 
   const chartTypes = [
@@ -104,7 +113,7 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
     { value: 'line', label: 'Line Chart', icon: TrendingUp },
     { value: 'pie', label: 'Pie Chart', icon: PieChart },
     { value: 'area', label: 'Area Chart', icon: TrendingUp },
-    { value: 'map', label: 'Map Chart', icon: LayoutGrid }
+    { value: 'map', label: 'Map Chart', icon: Map }
   ];
 
   const navigationStyles = [
@@ -144,10 +153,12 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
     const newComponent: PageComponent = {
       id: `${type}-${Date.now()}`,
       type: type as any,
-      count: type === 'kpi' ? 4 : type === 'chart' ? 1 : 1,
+      count: type === 'kpi' ? 1 : type === 'chart' ? 1 : 1,
       chartType: type === 'chart' ? 'bar' : undefined,
-      span: type === 'kpi' ? 12 : type === 'chart' ? 6 : type === 'table' ? 12 : 4,
-      position: { row: 0, col: 0 }
+      span: type === 'kpi' ? 3 : type === 'chart' ? 6 : type === 'table' ? 12 : 6,
+      position: { row: 0, col: 0 },
+      kpiCount: type === 'kpi' ? 1 : undefined,
+      textContent: type === 'text' ? 'Welcome to Dashboard' : undefined
     };
 
     const updatedLayouts = [...layouts];
@@ -191,7 +202,9 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
       description: '',
       dataSource: '',
       filters: [],
-      metrics: []
+      metrics: [],
+      textContent: type === 'text' ? 'Welcome to our Dashboard' : undefined,
+      kpiCount: type === 'kpi' ? 1 : undefined
     };
 
     setConfig(prev => ({
@@ -263,9 +276,9 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                 >
                   <IconComponent className="w-4 h-4 mb-1" />
                   <span className="text-xs font-medium">{componentType?.label}</span>
-                  {component.count && component.count > 1 && (
+                  {component.kpiCount && component.kpiCount > 1 && (
                     <Badge variant="secondary" className="text-xs mt-1">
-                      {component.count}
+                      {component.kpiCount} KPIs
                     </Badge>
                   )}
                   {component.chartType && (
@@ -372,7 +385,7 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
               {/* Component Palette */}
               <div>
                 <Label className="font-semibold mb-3 block">Add Components to Page {currentPageIndex + 1}</Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
                   {componentTypes.map((componentType) => {
                     const IconComponent = componentType.icon;
                     return (
@@ -404,15 +417,15 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                           <div>
                             <Label>Number of KPI Cards</Label>
                             <Select
-                              value={component.count?.toString() || "4"}
-                              onValueChange={(value) => updateComponent(selectedComponent, { count: parseInt(value) })}
+                              value={component.kpiCount?.toString() || "1"}
+                              onValueChange={(value) => updateComponent(selectedComponent, { kpiCount: parseInt(value) })}
                             >
                               <SelectTrigger>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                {[2, 3, 4, 5, 6, 8, 10].map(num => (
-                                  <SelectItem key={num} value={num.toString()}>{num} Cards</SelectItem>
+                                {[1, 2, 3, 4, 5, 6, 8, 10].map(num => (
+                                  <SelectItem key={num} value={num.toString()}>{num} Card{num > 1 ? 's' : ''}</SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
@@ -456,6 +469,18 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                           </>
                         )}
 
+                        {component.type === 'text' && (
+                          <div className="col-span-2">
+                            <Label>Text Content</Label>
+                            <Textarea
+                              value={component.textContent || ''}
+                              onChange={(e) => updateComponent(selectedComponent, { textContent: e.target.value })}
+                              placeholder="Enter your text content..."
+                              rows={3}
+                            />
+                          </div>
+                        )}
+
                         <div>
                           <Label>Width (Grid Columns)</Label>
                           <Select
@@ -485,9 +510,9 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="none">No Link</SelectItem>
-                              {visuals.map((visual: Visual) => (
+                              {visuals.filter((visual: Visual) => visual.type === component.type).map((visual: Visual) => (
                                 <SelectItem key={visual.id} value={visual.id}>
-                                  {visual.type} - {visual.name}
+                                  {visual.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -512,7 +537,7 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                     className="flex-1"
                   />
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
                   {componentTypes.map((type) => {
                     const IconComponent = type.icon;
                     return (
@@ -545,42 +570,87 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
                       const IconComponent = typeInfo?.icon || LayoutGrid;
                       
                       return (
-                        <div key={visual.id} className={`p-3 border rounded-lg ${typeInfo?.color} flex items-center justify-between`}>
-                          <div className="flex items-center gap-3">
-                            <IconComponent className="w-5 h-5" />
-                            <div>
-                              {editingVisual === visual.id ? (
-                                <Input
-                                  value={visual.name}
-                                  onChange={(e) => updateVisual(visual.id, { name: e.target.value })}
-                                  className="h-6 text-sm"
-                                  onBlur={() => setEditingVisual(null)}
-                                  onKeyDown={(e) => e.key === 'Enter' && setEditingVisual(null)}
-                                  autoFocus
-                                />
-                              ) : (
-                                <div className="font-medium text-sm">{visual.name}</div>
-                              )}
-                              <div className="text-xs text-gray-600 capitalize">{visual.type}{visual.chartType && ` - ${visual.chartType}`}</div>
+                        <div key={visual.id} className={`p-3 border rounded-lg ${typeInfo?.color} space-y-2`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <IconComponent className="w-5 h-5" />
+                              <div>
+                                {editingVisual === visual.id ? (
+                                  <Input
+                                    value={visual.name}
+                                    onChange={(e) => updateVisual(visual.id, { name: e.target.value })}
+                                    className="h-6 text-sm"
+                                    onBlur={() => setEditingVisual(null)}
+                                    onKeyDown={(e) => e.key === 'Enter' && setEditingVisual(null)}
+                                    autoFocus
+                                  />
+                                ) : (
+                                  <div className="font-medium text-sm">{visual.name}</div>
+                                )}
+                                <div className="text-xs text-gray-600 capitalize">{visual.type}{visual.chartType && ` - ${visual.chartType}`}</div>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                onClick={() => setEditingVisual(visual.id)}
+                              >
+                                <Edit3 className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                                onClick={() => removeVisual(visual.id)}
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={() => setEditingVisual(visual.id)}
-                            >
-                              <Edit3 className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                              onClick={() => removeVisual(visual.id)}
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
+                          
+                          {/* Visual Properties */}
+                          {visual.type === 'kpi' && (
+                            <div>
+                              <Label className="text-xs">KPI Count</Label>
+                              <Select
+                                value={visual.kpiCount?.toString() || "1"}
+                                onValueChange={(value) => updateVisual(visual.id, { kpiCount: parseInt(value) })}
+                              >
+                                <SelectTrigger className="h-6 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {[1, 2, 3, 4, 5, 6].map(num => (
+                                    <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                          
+                          {visual.type === 'text' && (
+                            <div>
+                              <Label className="text-xs">Text Content</Label>
+                              <Textarea
+                                value={visual.textContent || ''}
+                                onChange={(e) => updateVisual(visual.id, { textContent: e.target.value })}
+                                placeholder="Enter text content..."
+                                rows={2}
+                                className="text-xs"
+                              />
+                            </div>
+                          )}
+                          
+                          <div>
+                            <Label className="text-xs">Description</Label>
+                            <Input
+                              value={visual.description || ''}
+                              onChange={(e) => updateVisual(visual.id, { description: e.target.value })}
+                              placeholder="Visual description..."
+                              className="h-6 text-xs"
+                            />
                           </div>
                         </div>
                       );

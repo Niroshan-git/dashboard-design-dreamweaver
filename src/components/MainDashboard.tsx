@@ -1,10 +1,10 @@
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, Area, AreaChart } from "recharts";
-import { CircleDot, TrendingUp, TrendingDown, MoreHorizontal, User, Calendar, DollarSign, Activity, ChevronRight, ChevronDown, Filter, Download, Users, ShoppingCart, Package, Clock, LayoutGrid, Table, Type, Image } from "lucide-react";
+import { CircleDot, TrendingUp, TrendingDown, MoreHorizontal, User, Calendar, DollarSign, Activity, ChevronRight, ChevronDown, Filter, Download, Users, ShoppingCart, Package, Clock, LayoutGrid, Table, Type, Image, Target, Grid3X3, Map } from "lucide-react";
 
 interface MainDashboardProps {
   config: any;
@@ -120,15 +120,14 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
   const mockData = getMockData();
 
   const renderKPIComponent = (component: any, linkedVisual: any) => {
-    const kpiCount = component.count || 4;
+    const kpiCount = linkedVisual?.kpiCount || component.kpiCount || 1;
     const kpisToShow = mockData.kpiData.slice(0, kpiCount);
     
-    // Calculate grid for KPIs - distribute evenly within the component's span
     const getKpiGridCols = (count: number, span: number) => {
-      if (span >= 12) return Math.min(count, 6); // Max 6 columns for full width
-      if (span >= 8) return Math.min(count, 4);  // Max 4 columns for large
-      if (span >= 6) return Math.min(count, 3);  // Max 3 columns for medium
-      return Math.min(count, 2);                  // Max 2 columns for small
+      if (span >= 12) return Math.min(count, 6);
+      if (span >= 8) return Math.min(count, 4);
+      if (span >= 6) return Math.min(count, 3);
+      return Math.min(count, 2);
     };
 
     const gridCols = getKpiGridCols(kpiCount, component.span);
@@ -316,6 +315,146 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
     );
   };
 
+  const renderHeatmapComponent = (component: any, linkedVisual: any) => {
+    const heatmapData = Array.from({ length: 7 }, (_, week) =>
+      Array.from({ length: 5 }, (_, day) => ({
+        week,
+        day,
+        value: Math.floor(Math.random() * 100)
+      }))
+    ).flat();
+
+    return (
+      <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+        <CardHeader>
+          <CardTitle style={{ color: themeColors.textPrimary }}>
+            {linkedVisual ? linkedVisual.name : 'Activity Heatmap'}
+          </CardTitle>
+          <CardDescription style={{ color: themeColors.textSecondary }}>
+            {linkedVisual ? linkedVisual.description || 'Activity patterns visualization' : 'Weekly activity patterns'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-7 gap-1">
+            {heatmapData.map((item, index) => (
+              <div
+                key={index}
+                className="aspect-square rounded-sm"
+                style={{
+                  backgroundColor: `rgba(${themeColors.chartColors[0].replace('#', '')}, ${item.value / 100})`
+                }}
+                title={`Week ${item.week + 1}, Day ${item.day + 1}: ${item.value}%`}
+              />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderFunnelComponent = (component: any, linkedVisual: any) => {
+    const funnelData = [
+      { stage: 'Visitors', value: 10000, percentage: 100 },
+      { stage: 'Leads', value: 5000, percentage: 50 },
+      { stage: 'Prospects', value: 2500, percentage: 25 },
+      { stage: 'Customers', value: 1000, percentage: 10 }
+    ];
+
+    return (
+      <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+        <CardHeader>
+          <CardTitle style={{ color: themeColors.textPrimary }}>
+            {linkedVisual ? linkedVisual.name : 'Conversion Funnel'}
+          </CardTitle>
+          <CardDescription style={{ color: themeColors.textSecondary }}>
+            {linkedVisual ? linkedVisual.description || 'Conversion tracking' : 'Sales funnel analysis'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {funnelData.map((stage, index) => (
+              <div key={stage.stage} className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span style={{ color: themeColors.textPrimary }}>{stage.stage}</span>
+                  <span className="text-sm" style={{ color: themeColors.textSecondary }}>
+                    {stage.value.toLocaleString()} ({stage.percentage}%)
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-4" style={{ width: `${100 - index * 15}%` }}>
+                  <div
+                    className="h-4 rounded-full"
+                    style={{
+                      backgroundColor: themeColors.chartColors[index % themeColors.chartColors.length],
+                      width: `${stage.percentage}%`
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderProgressComponent = (component: any, linkedVisual: any) => {
+    const progressData = [
+      { label: 'Sales Target', value: 85, color: 'bg-blue-500' },
+      { label: 'Customer Satisfaction', value: 92, color: 'bg-green-500' },
+      { label: 'Project Completion', value: 67, color: 'bg-yellow-500' },
+      { label: 'Team Performance', value: 78, color: 'bg-purple-500' }
+    ];
+
+    return (
+      <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+        <CardHeader>
+          <CardTitle style={{ color: themeColors.textPrimary }}>
+            {linkedVisual ? linkedVisual.name : 'Progress Indicators'}
+          </CardTitle>
+          <CardDescription style={{ color: themeColors.textSecondary }}>
+            {linkedVisual ? linkedVisual.description || 'Goal completion tracking' : 'Goal completion tracking'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {progressData.map((item, index) => (
+              <div key={item.label} className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium" style={{ color: themeColors.textPrimary }}>
+                    {item.label}
+                  </span>
+                  <span className="text-sm font-bold" style={{ color: themeColors.textPrimary }}>
+                    {item.value}%
+                  </span>
+                </div>
+                <Progress value={item.value} className="h-2" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderTextComponent = (component: any, linkedVisual: any) => {
+    const textContent = linkedVisual?.textContent || component.textContent || 'Welcome to Dashboard';
+    
+    return (
+      <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+        <CardContent className="p-6">
+          <div style={{ color: themeColors.textPrimary }} className="prose max-w-none">
+            <h3 className="text-lg font-semibold mb-3">
+              {linkedVisual ? linkedVisual.name : 'Welcome Message'}
+            </h3>
+            <div className="whitespace-pre-wrap text-sm leading-relaxed">
+              {textContent}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   const renderComponent = (component: any, index: number) => {
     const linkedVisual = visuals.find((v: any) => v.id === component.visualId);
     
@@ -328,6 +467,33 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
         return renderChartComponent(component, linkedVisual);
       case 'table':
         return renderTableComponent(component, linkedVisual);
+      case 'heatmap':
+        return renderHeatmapComponent(component, linkedVisual);
+      case 'funnel':
+        return renderFunnelComponent(component, linkedVisual);
+      case 'progress':
+        return renderProgressComponent(component, linkedVisual);
+      case 'scatter':
+        return (
+          <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
+            <CardHeader>
+              <CardTitle style={{ color: themeColors.textPrimary }}>
+                {linkedVisual ? linkedVisual.name : 'Scatter Plot'}
+              </CardTitle>
+              <CardDescription style={{ color: themeColors.textSecondary }}>
+                {linkedVisual ? linkedVisual.description || 'Correlation analysis' : 'Data correlation visualization'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64 flex items-center justify-center" style={{ color: themeColors.textSecondary }}>
+                <div className="text-center">
+                  <Target className="w-12 h-12 mx-auto mb-2" />
+                  <p className="text-sm">Scatter plot visualization</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
       case 'filter':
         return (
           <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
@@ -347,20 +513,7 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
           </Card>
         );
       case 'text':
-        return (
-          <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
-            <CardContent className="p-6">
-              <div style={{ color: themeColors.textPrimary }} className="prose max-w-none">
-                <h3 className="text-lg font-semibold mb-3">
-                  {linkedVisual ? linkedVisual.name : 'Text Block'}
-                </h3>
-                <p>
-                  {linkedVisual?.description || 'This is a sample text block that can contain important information, descriptions, announcements, or any other textual content. You can customize this content through the visual configuration.'}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        );
+        return renderTextComponent(component, linkedVisual);
       case 'image':
         return (
           <Card className="h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor }}>
@@ -434,10 +587,8 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
 
       {/* Dynamic Layout Grid - 12 Column System */}
       <div className="grid grid-cols-12 gap-6 auto-rows-min">
-        {/* Sort components by their creation order to maintain layout sequence */}
         {currentLayout.components
           .sort((a: any, b: any) => {
-            // Sort by position first, then by ID to maintain order
             if (a.position && b.position) {
               if (a.position.row !== b.position.row) {
                 return a.position.row - b.position.row;
@@ -449,7 +600,7 @@ const MainDashboard = ({ config, currentPage = 0, onExport }: MainDashboardProps
           .map((component: any, index: number) => (
             <div
               key={component.id}
-              className={`col-span-12 md:col-span-${Math.min(component.span, 12)} flex flex-col`}
+              className="flex flex-col"
               style={{ 
                 gridColumn: `span ${Math.min(component.span, 12)} / span ${Math.min(component.span, 12)}`,
                 minHeight: component.type === 'kpi' ? 'auto' : '300px'
