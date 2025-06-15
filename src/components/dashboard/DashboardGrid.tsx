@@ -57,6 +57,7 @@ const DashboardGrid = ({ components, visuals, themeColors, mockData, config }: D
                   themeColors={themeColors}
                   mockData={mockData}
                   config={config}
+                  allComponents={components}
                 />
               </div>
             );
