@@ -9,10 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { FileDown, Eye, Palette, BarChart3, TrendingUp, Map, Grid3X3, Clock, Filter, Zap, Navigation, Monitor, Tablet, Smartphone } from "lucide-react";
+import { FileDown, Eye, Palette, BarChart3, TrendingUp, Map, Grid3X3, Clock, Filter, Zap, Navigation, Monitor, Tablet, Smartphone, LayoutGrid } from "lucide-react";
 import DashboardPreview from "@/components/DashboardPreview";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import VisualSelector from "@/components/VisualSelector";
+import LayoutBuilder from "@/components/LayoutBuilder";
 
 const Dashboard = () => {
   const [config, setConfig] = useState({
@@ -24,9 +25,10 @@ const Dashboard = () => {
     themeStyle: "",
     colorPalette: ["#2563eb", "#7c3aed", "#059669"],
     exportFormats: [],
-    navigationPosition: "left", // New navigation position setting
-    tooltipsEnabled: true, // New tooltip setting
-    layoutDimension: "16:9" // Moved layout dimension to config
+    navigationPosition: "left",
+    tooltipsEnabled: true,
+    layoutDimension: "16:9",
+    layouts: [] // Add layouts to config
   });
 
   const [activeTab, setActiveTab] = useState("configure");
@@ -120,10 +122,14 @@ const Dashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8">
+          <TabsList className="grid w-full grid-cols-5 mb-8">
             <TabsTrigger value="configure" className="flex items-center gap-2">
               <Grid3X3 className="w-4 h-4" />
               Configure
+            </TabsTrigger>
+            <TabsTrigger value="layout" className="flex items-center gap-2">
+              <LayoutGrid className="w-4 h-4" />
+              Layout
             </TabsTrigger>
             <TabsTrigger value="theme" className="flex items-center gap-2">
               <Palette className="w-4 h-4" />
@@ -343,6 +349,13 @@ const Dashboard = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="layout">
+            <LayoutBuilder 
+              config={config} 
+              setConfig={setConfig}
+            />
           </TabsContent>
 
           <TabsContent value="theme">
