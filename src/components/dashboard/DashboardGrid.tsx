@@ -10,8 +10,18 @@ interface DashboardGridProps {
 }
 
 const DashboardGrid = ({ components, visuals, themeColors, mockData, config }: DashboardGridProps) => {
+  // Calculate the exact same grid layout as the layout preview
+  const gridRows = Math.max(...components.map(c => (c.position?.row || 1) + (c.position?.rowSpan || 1) - 1));
+  
   return (
-    <div className="grid grid-cols-12 gap-4">
+    <div 
+      className="grid gap-4 w-full"
+      style={{ 
+        gridTemplateColumns: 'repeat(12, 1fr)',
+        gridTemplateRows: `repeat(${gridRows}, minmax(200px, auto))`,
+        minHeight: `${gridRows * 220}px`
+      }}
+    >
       {components.map((component: any, index: number) => {
         const linkedVisual = visuals.find((v: any) => v.id === component.visualId);
         
@@ -20,9 +30,9 @@ const DashboardGrid = ({ components, visuals, themeColors, mockData, config }: D
             key={component.id}
             className="flex flex-col"
             style={{ 
-              gridColumn: `span ${component.span} / span ${component.span}`,
-              gridRow: `span ${component.position?.rowSpan || 1} / span ${component.position?.rowSpan || 1}`,
-              minHeight: component.type === 'kpi' ? '150px' : '300px'
+              gridColumn: `${component.position?.col || 1} / span ${component.position?.colSpan || component.span}`,
+              gridRow: `${component.position?.row || 1} / span ${component.position?.rowSpan || 1}`,
+              minHeight: component.type === 'kpi' ? '180px' : component.type === 'table' ? '400px' : '300px'
             }}
           >
             <ComponentRenderer 
