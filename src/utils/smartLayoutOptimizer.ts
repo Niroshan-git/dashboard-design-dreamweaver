@@ -24,6 +24,7 @@ export interface OptimizedLayout {
 
 const GRID_COLUMNS = 12;
 const MAX_HORIZONTAL_KPIS = 4; // Maximum KPIs per row
+const CANVAS_ASPECT_RATIO = 16 / 9; // Default 16:9 aspect ratio
 
 export const optimizeLayout = (components: LayoutComponent[], config?: any): OptimizedLayout => {
   // If components already have valid positions from the layout builder, use them exactly
@@ -34,8 +35,11 @@ export const optimizeLayout = (components: LayoutComponent[], config?: any): Opt
     );
     
     if (hasValidPositions) {
-      // Use exact positions from layout builder - convert from 0-based to 1-based for display
-      const positionedComponents = components.map(component => {
+      // Process components to group consecutive KPIs horizontally
+      const processedComponents = groupConsecutiveKPIs(components);
+      
+      // Use exact positions from layout builder but ensure they fit 16:9 canvas
+      const positionedComponents = processedComponents.map(component => {
         if (!component.position) return component;
         
         return {
@@ -53,10 +57,13 @@ export const optimizeLayout = (components: LayoutComponent[], config?: any): Opt
         (c.position!.row) + (c.position!.rowSpan || 1) - 1
       ));
       
+      // Ensure canvas fits 16:9 ratio by adjusting component heights if needed
+      const adjustedComponents = adjustForCanvasRatio(positionedComponents, totalRows, config);
+      
       return {
-        components: positionedComponents,
+        components: adjustedComponents,
         suggestions: [], // No suggestions needed as layout is manually configured
-        totalRows: totalRows,
+        totalRows: Math.max(totalRows, calculateMinRowsFor16x9(config)),
       };
     }
   }
@@ -65,12 +72,95 @@ export const optimizeLayout = (components: LayoutComponent[], config?: any): Opt
   return autoOptimizeLayout(components, config);
 }
 
+const groupConsecutiveKPIs = (components: LayoutComponent[]): LayoutComponent[] => {
+  const result: LayoutComponent[] = [];
+  let i = 0;
+  
+  while (i < components.length) {
+    const component = components[i];
+    
+    if (component.type === 'kpi') {
+      // Look for consecutive KPIs in the same row
+      const consecutiveKPIs = [component];
+      let j = i + 1;
+      
+      while (j < components.length && 
+             components[j].type === 'kpi' && 
+             components[j].position?.row === component.position?.row) {
+        consecutiveKPIs.push(components[j]);
+        j++;
+      }
+      
+      if (consecutiveKPIs.length > 1) {
+        // Create a single KPI component that represents multiple KPIs
+        const groupedKPI = {
+          ...component,
+          kpiCount: consecutiveKPIs.length,
+          span: 12, // Take full width for horizontal arrangement
+          position: {
+            ...component.position!,
+            colSpan: 12
+          }
+        };
+        result.push(groupedKPI);
+        i = j; // Skip the processed KPIs
+      } else {
+        result.push(component);
+        i++;
+      }
+    } else {
+      result.push(component);
+      i++;
+    }
+  }
+  
+  return result;
+};
+
+const calculateMinRowsFor16x9 = (config?: any): number => {
+  // Calculate minimum rows needed to maintain 16:9 aspect ratio
+  const navigationStyle = config?.navigationStyle || 'left-full';
+  const isLeftNav = navigationStyle === 'left' || navigationStyle === 'left-full' || navigationStyle === 'left-collapsible';
+  const isTopNav = navigationStyle === 'top' || navigationStyle?.startsWith('top-');
+  
+  // Adjust for navigation space
+  if (isLeftNav) {
+    return 4; // Minimum 4 rows for left navigation
+  } else if (isTopNav) {
+    return 5; // Minimum 5 rows for top navigation
+  }
+  
+  return 4; // Default minimum rows
+};
+
+const adjustForCanvasRatio = (components: LayoutComponent[], totalRows: number, config?: any): LayoutComponent[] => {
+  const minRows = calculateMinRowsFor16x9(config);
+  
+  if (totalRows < minRows) {
+    // Adjust component heights to fill the canvas properly
+    return components.map(component => {
+      if (component.type === 'kpi' && component.kpiCount && component.kpiCount > 1) {
+        // KPI groups should be compact
+        return {
+          ...component,
+          position: {
+            ...component.position!,
+            rowSpan: 1 // Keep KPIs compact
+          }
+        };
+      }
+      return component;
+    });
+  }
+  
+  return components;
+};
+
 const getComponentPreferredSpan = (type: string, kpiCount?: number): number => {
   switch (type) {
     case 'kpi': 
-      if (kpiCount) {
-        // Ensure max 4 KPIs horizontally - divide available columns by KPI count
-        return Math.min(12, Math.max(3, Math.floor(12 / Math.min(kpiCount, MAX_HORIZONTAL_KPIS))));
+      if (kpiCount && kpiCount > 1) {
+        return 12; // Full width for multiple KPIs arranged horizontally
       }
       return 3; // Default span for single KPI
     case 'chart': return 6;
@@ -78,7 +168,7 @@ const getComponentPreferredSpan = (type: string, kpiCount?: number): number => {
     case 'text': return 8;
     case 'progress': return 8;
     case 'image': return 6;
-    case 'heatmap': return 8;
+    case 'heatmap': return 6;
     case 'funnel': return 6;
     case 'scatter': return 6;
     default: return 6;
@@ -92,60 +182,29 @@ const autoOptimizeLayout = (components: LayoutComponent[], config?: any): Optimi
   let currentCol = 1;
   let remainingCols = GRID_COLUMNS;
 
-  // Sort components by priority - KPIs first for horizontal arrangement
-  const sortedComponents = [...components].sort((a, b) => {
-    const priority = { 
-      kpi: 1, 
-      text: 2,
-      chart: 3, 
-      progress: 4, 
-      image: 5,
-      table: 6, 
-      heatmap: 7, 
-      funnel: 8, 
-      scatter: 9 
-    };
-    return (priority[a.type as keyof typeof priority] || 10) - (priority[b.type as keyof typeof priority] || 10);
-  });
+  // Group consecutive KPIs first
+  const processedComponents = groupConsecutiveComponentsByType(components);
 
-  for (let i = 0; i < sortedComponents.length; i++) {
-    const component = sortedComponents[i];
+  for (let i = 0; i < processedComponents.length; i++) {
+    const component = processedComponents[i];
     const preferredSpan = getComponentPreferredSpan(component.type, component.kpiCount);
     
     let optimalSpan = Math.min(preferredSpan, remainingCols);
     
-    // Special handling for KPIs to ensure horizontal arrangement
-    if (component.type === 'kpi') {
-      const kpiCount = component.kpiCount || 1;
+    // Special handling for KPI groups
+    if (component.type === 'kpi' && component.kpiCount && component.kpiCount > 1) {
+      optimalSpan = 12; // Full width for horizontal KPI arrangement
       
-      // For multiple KPIs, ensure they fit horizontally (max 4 per row)
-      if (kpiCount > 1) {
-        const kpisPerRow = Math.min(kpiCount, MAX_HORIZONTAL_KPIS);
-        optimalSpan = Math.floor(12 / kpisPerRow);
-        
-        // If we can't fit all KPIs in current row, start new row
-        if (remainingCols < optimalSpan * kpisPerRow) {
-          currentRow++;
-          currentCol = 1;
-          remainingCols = GRID_COLUMNS;
-        }
-      } else {
-        // Single KPI - use preferred span or fit in remaining space
-        if (remainingCols < optimalSpan && remainingCols < 3) {
-          currentRow++;
-          currentCol = 1;
-          remainingCols = GRID_COLUMNS;
-          optimalSpan = Math.min(preferredSpan, remainingCols);
-        }
-      }
-    } else {
-      // Non-KPI components
-      if (remainingCols < 3) {
+      if (remainingCols < 12) {
         currentRow++;
         currentCol = 1;
         remainingCols = GRID_COLUMNS;
-        optimalSpan = Math.min(preferredSpan, remainingCols);
       }
+    } else if (remainingCols < 3) {
+      currentRow++;
+      currentCol = 1;
+      remainingCols = GRID_COLUMNS;
+      optimalSpan = Math.min(preferredSpan, remainingCols);
     }
     
     // Add optimized component
@@ -172,11 +231,52 @@ const autoOptimizeLayout = (components: LayoutComponent[], config?: any): Optimi
     }
   }
 
+  const finalRows = Math.max(currentRow, calculateMinRowsFor16x9(config));
+
   return {
     components: optimizedComponents,
     suggestions,
-    totalRows: currentRow
+    totalRows: finalRows
   };
+};
+
+const groupConsecutiveComponentsByType = (components: LayoutComponent[]): LayoutComponent[] => {
+  const result: LayoutComponent[] = [];
+  let i = 0;
+  
+  while (i < components.length) {
+    const component = components[i];
+    
+    if (component.type === 'kpi') {
+      // Look for consecutive KPIs
+      const consecutiveKPIs = [component];
+      let j = i + 1;
+      
+      while (j < components.length && components[j].type === 'kpi') {
+        consecutiveKPIs.push(components[j]);
+        j++;
+      }
+      
+      if (consecutiveKPIs.length > 1) {
+        // Create a grouped KPI component
+        const groupedKPI = {
+          ...component,
+          kpiCount: Math.min(consecutiveKPIs.length, MAX_HORIZONTAL_KPIS),
+          span: 12
+        };
+        result.push(groupedKPI);
+        i = j;
+      } else {
+        result.push(component);
+        i++;
+      }
+    } else {
+      result.push(component);
+      i++;
+    }
+  }
+  
+  return result;
 };
 
 export const generateLayoutSuggestions = (currentComponents: LayoutComponent[], availableVisuals: any[]): string[] => {
