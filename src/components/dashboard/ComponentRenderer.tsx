@@ -17,8 +17,11 @@ interface ComponentRendererProps {
 }
 
 const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, config, allComponents = [], containerHeight, gridStructure }: ComponentRendererProps) => {
-  // Get interactivity level from config
-  const interactivityLevel = config?.interactivityLevel || 'basic';
+  // Get interactivity level from config - ensure proper fallback
+  const interactivityLevel = config?.interactivityLevel || config?.interactivity || 'basic';
+  
+  console.log('ComponentRenderer - Interactivity Level:', interactivityLevel);
+  console.log('ComponentRenderer - Full Config:', config);
 
   // Use exact same KPI data as layout preview but prioritize linked visual
   const getKPIData = () => [
@@ -147,7 +150,9 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
       
       const cardContent = (
         <Card 
-          className={`hover:shadow-md transition-shadow flex flex-col h-full ${
+          className={`flex flex-col h-full transition-shadow ${
+            interactivityLevel === 'basic' ? '' : 'hover:shadow-md'
+          } ${
             interactivityLevel === 'highly-interactive' ? 'hover:scale-105 transition-transform duration-200' : ''
           }`}
           style={{ 
@@ -176,8 +181,8 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
               </span>
             </div>
             
-            {/* Progress bar for advanced level */}
-            {interactivityLevel === 'advanced' && (
+            {/* Progress bar for advanced and highly-interactive levels */}
+            {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
               <div className="space-y-1">
                 <div className="flex justify-between text-xs" style={{ color: themeColors.textSecondary }}>
                   <span>Target Progress</span>
@@ -187,7 +192,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
               </div>
             )}
             
-            {/* Sparkline for highly interactive level */}
+            {/* Sparkline for highly interactive level only */}
             {interactivityLevel === 'highly-interactive' && kpi.sparklineData && (
               <div className="mt-2">
                 <div className="text-xs mb-1" style={{ color: themeColors.textSecondary }}>7-day trend</div>
@@ -208,7 +213,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
         </Card>
       );
 
-      // Add tooltip for highly interactive mode
+      // Add tooltip for highly interactive mode only
       if (interactivityLevel === 'highly-interactive') {
         return (
           <TooltipProvider>
@@ -243,7 +248,9 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
           const cardContent = (
             <Card 
               key={index} 
-              className={`hover:shadow-md transition-shadow h-full flex flex-col ${
+              className={`h-full flex flex-col transition-shadow ${
+                interactivityLevel === 'basic' ? '' : 'hover:shadow-md'
+              } ${
                 interactivityLevel === 'highly-interactive' ? 'hover:scale-105 transition-transform duration-200' : ''
               }`}
               style={{ 
@@ -267,8 +274,8 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                   <span className="text-xs ml-1" style={{ color: themeColors.textSecondary }}>vs last</span>
                 </div>
                 
-                {/* Progress bar for advanced level */}
-                {interactivityLevel === 'advanced' && (
+                {/* Progress bar for advanced and highly-interactive levels */}
+                {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
                   <div className="space-y-1">
                     <Progress value={kpi.progress} className="h-1" />
                     <div className="text-xs text-center" style={{ color: themeColors.textMuted }}>
@@ -277,7 +284,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                   </div>
                 )}
                 
-                {/* Mini bar chart or sparkline for highly interactive - vary by index */}
+                {/* Mini bar chart or sparkline for highly interactive only - vary by index */}
                 {interactivityLevel === 'highly-interactive' && (
                   <div className="mt-1">
                     <ResponsiveContainer width="100%" height={25}>
@@ -307,7 +314,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
             </Card>
           );
 
-          // Add tooltip for highly interactive mode
+          // Add tooltip for highly interactive mode only
           if (interactivityLevel === 'highly-interactive') {
             return (
               <TooltipProvider key={index}>
@@ -341,7 +348,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     return (
       <Card 
         className={`flex flex-col overflow-hidden ${
-          interactivityLevel !== 'basic' ? 'hover:shadow-lg transition-shadow duration-300' : ''
+          interactivityLevel === 'basic' ? '' : 'hover:shadow-lg transition-shadow duration-300'
         }`}
         style={{ 
           backgroundColor: themeColors.cardBackground, 
@@ -379,7 +386,8 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                       <Cell key={`cell-${i}`} fill={themeColors.chartColors[i]} />
                     ))}
                   </Pie>
-                  {interactivityLevel !== 'basic' && (
+                  {/* Show tooltip for advanced and highly-interactive levels only */}
+                  {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
                     <RechartsTooltip 
                       contentStyle={{ 
                         backgroundColor: themeColors.cardBackground,
@@ -410,7 +418,8 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                       <Cell key={`cell-${i}`} fill={themeColors.chartColors[i]} />
                     ))}
                   </Pie>
-                  {interactivityLevel !== 'basic' && (
+                  {/* Show tooltip for advanced and highly-interactive levels only */}
+                  {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
                     <RechartsTooltip 
                       contentStyle={{ 
                         backgroundColor: themeColors.cardBackground,
@@ -435,7 +444,8 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                     axisLine={{ stroke: themeColors.borderColor }}
                     width={40}
                   />
-                  {interactivityLevel !== 'basic' && (
+                  {/* Show tooltip for advanced and highly-interactive levels only */}
+                  {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
                     <RechartsTooltip 
                       contentStyle={{ 
                         backgroundColor: themeColors.cardBackground,
@@ -468,7 +478,8 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                     axisLine={{ stroke: themeColors.borderColor }}
                     width={40}
                   />
-                  {interactivityLevel !== 'basic' && (
+                  {/* Show tooltip for advanced and highly-interactive levels only */}
+                  {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
                     <RechartsTooltip 
                       contentStyle={{ 
                         backgroundColor: themeColors.cardBackground,
@@ -501,7 +512,8 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                     axisLine={{ stroke: themeColors.borderColor }}
                     width={40}
                   />
-                  {interactivityLevel !== 'basic' && (
+                  {/* Show tooltip for advanced and highly-interactive levels only */}
+                  {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
                     <RechartsTooltip 
                       contentStyle={{ 
                         backgroundColor: themeColors.cardBackground,
@@ -710,7 +722,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                   tick={{ fontSize: chartConfig.tickFontSize, fill: themeColors.textSecondary }} 
                   width={40}
                 />
-                {interactivityLevel !== 'basic' && (
+                {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
                   <RechartsTooltip 
                     contentStyle={{ 
                       backgroundColor: themeColors.cardBackground,
