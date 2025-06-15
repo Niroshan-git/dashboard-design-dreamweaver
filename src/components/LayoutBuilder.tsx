@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { 
   LayoutGrid, Plus, Minus, BarChart3, PieChart, TrendingUp, 
   Table, Filter, Type, Image, Layers, Move, Maximize2, X, Edit3,
-  Target, Users, DollarSign, Activity, Map, Grid3X3, Clock
+  Target, Users, DollarSign, Activity, Map, Grid3X3, Clock, ChartArea, ChartLine, ChartPie, Donut
 } from "lucide-react";
 
 interface LayoutBuilderProps {
@@ -110,9 +111,10 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
 
   const chartTypes = [
     { value: 'bar', label: 'Bar Chart', icon: BarChart3 },
-    { value: 'line', label: 'Line Chart', icon: TrendingUp },
-    { value: 'pie', label: 'Pie Chart', icon: PieChart },
-    { value: 'area', label: 'Area Chart', icon: TrendingUp },
+    { value: 'line', label: 'Line Chart', icon: ChartLine },
+    { value: 'area', label: 'Area Chart', icon: ChartArea },
+    { value: 'pie', label: 'Pie Chart', icon: ChartPie },
+    { value: 'donut', label: 'Donut Chart', icon: Donut },
     { value: 'map', label: 'Map Chart', icon: Map }
   ];
 
