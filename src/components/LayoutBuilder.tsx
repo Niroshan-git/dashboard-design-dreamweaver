@@ -24,7 +24,7 @@ interface Visual {
   id: string;
   type: 'kpi' | 'chart' | 'table' | 'filter' | 'text' | 'image' | 'heatmap' | 'funnel' | 'scatter' | 'progress';
   name: string;
-  chartType?: 'bar' | 'line' | 'pie' | 'area' | 'map';
+  chartType?: 'bar' | 'line' | 'pie' | 'area' | 'map' | 'donut';
   description?: string;
   dataSource?: string;
   filters?: string[];
@@ -37,7 +37,7 @@ interface PageComponent {
   id: string;
   type: 'kpi' | 'chart' | 'table' | 'filter' | 'text' | 'image' | 'tabs' | 'heatmap' | 'funnel' | 'scatter' | 'progress';
   count?: number;
-  chartType?: 'bar' | 'line' | 'pie' | 'area' | 'map';
+  chartType?: 'bar' | 'line' | 'pie' | 'area' | 'map' | 'donut';
   span: number;
   position: { row: number; col: number };
   visualId?: string;
@@ -121,6 +121,50 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
     { value: 'donut' as const, label: 'Donut Chart', icon: Donut },
     { value: 'map' as const, label: 'Map Chart', icon: Map }
   ];
+
+  // Filter navigation styles based on selected navigation position
+  const getFilteredNavigationStyles = () => {
+    const allNavigationStyles = [
+      { 
+        value: 'left-full', 
+        label: 'Full Left Sidebar', 
+        description: 'Fixed full-height sidebar with navigation',
+        preview: 'bg-gradient-to-r from-blue-50 to-white',
+        position: 'left'
+      },
+      { 
+        value: 'left-collapsible', 
+        label: 'Collapsible Left Bar', 
+        description: 'Icon-only collapsible sidebar',
+        preview: 'bg-gradient-to-r from-gray-50 to-white',
+        position: 'left'
+      },
+      { 
+        value: 'top-wide', 
+        label: 'Wide Top Navigation', 
+        description: 'Full-width top bar with logo and menu',
+        preview: 'bg-gradient-to-r from-purple-50 to-white',
+        position: 'top'
+      },
+      { 
+        value: 'top-tabs', 
+        label: 'Tabbed Top Navigation', 
+        description: 'Tab-based navigation with dropdowns',
+        preview: 'bg-gradient-to-r from-green-50 to-white',
+        position: 'top'
+      },
+      { 
+        value: 'top-minimal', 
+        label: 'Minimal Top Bar', 
+        description: 'Clean minimal navigation',
+        preview: 'bg-gradient-to-r from-yellow-50 to-white',
+        position: 'top'
+      }
+    ];
+
+    // Filter based on selected navigation position from config
+    return allNavigationStyles.filter(style => style.position === config.navigationPosition);
+  };
 
   const navigationStyles = [
     { 
@@ -354,11 +398,14 @@ const LayoutBuilder = ({ config, setConfig }: LayoutBuilderProps) => {
 
           <Separator />
 
-          {/* Navigation Style Selection */}
+          {/* Navigation Style Selection - Filtered based on navigation position */}
           <div className="space-y-3">
             <Label className="font-semibold">Navigation Style</Label>
+            <p className="text-sm text-muted-foreground">
+              Showing styles for {config.navigationPosition === 'left' ? 'Left Sidebar' : 'Top Navigation'} position
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {navigationStyles.map((style) => (
+              {getFilteredNavigationStyles().map((style) => (
                 <Card 
                   key={style.value}
                   className={`cursor-pointer transition-all hover:shadow-md ${
