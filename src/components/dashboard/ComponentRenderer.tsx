@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -81,24 +80,12 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
       return cardContent;
     }
 
-    // For multiple KPIs, arrange them in a simple grid
-    // The DashboardGrid handles the overall positioning
-    const colSpan = component.position?.colSpan || component.span || 1;
-    const rowSpan = component.position?.rowSpan || 1;
+    // For multiple KPIs, arrange them horizontally (max 4 per row)
+    // The layout builder positioning handles this, so we just render in a simple horizontal grid
+    const maxKpisPerRow = Math.min(kpiCount, 4);
     
-    // Determine layout: if colSpan > rowSpan, arrange horizontally; otherwise vertically
-    const isHorizontal = colSpan >= rowSpan;
-    const gridCols = isHorizontal ? Math.min(kpiCount, 4) : 1;
-    const gridRows = isHorizontal ? Math.ceil(kpiCount / gridCols) : kpiCount;
-
     return (
-      <div 
-        className="grid gap-2 h-full w-full" 
-        style={{ 
-          gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
-          gridTemplateRows: `repeat(${gridRows}, 1fr)`
-        }}
-      >
+      <div className="grid gap-2 h-full w-full" style={{ gridTemplateColumns: `repeat(${maxKpisPerRow}, 1fr)` }}>
         {kpisToShow.map((kpi, index) => {
           const IconComponent = kpi.icon;
           
