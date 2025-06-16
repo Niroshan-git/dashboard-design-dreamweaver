@@ -54,7 +54,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
   // Enhanced KPI tooltip for highly interactive mode
   const KPITooltip = ({ kpi }: { kpi: any }) => (
     <div 
-      className="absolute z-50 p-8 rounded-xl shadow-2xl border backdrop-blur-sm min-w-[400px] max-w-[500px] -top-4 left-1/2 transform -translate-x-1/2 -translate-y-full"
+      className="absolute z-50 p-8 rounded-xl shadow-2xl border backdrop-blur-sm min-w-[400px] max-w-[500px] -top-4 left-1/2 transform -translate-x-1/2 -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
       style={{ 
         backgroundColor: currentTheme.tooltipBackground,
         borderColor: currentTheme.tooltipBorder,
@@ -116,7 +116,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
     switch (type) {
       case 'sparkline':
         return (
-          <div className="w-full h-12">
+          <div className="w-full h-8">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data}>
                 <Line 
@@ -132,7 +132,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
         );
       case 'minibar':
         return (
-          <div className="w-full h-12">
+          <div className="w-full h-8">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data}>
                 <Bar dataKey="value" fill={colors[1]} />
@@ -142,7 +142,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
         );
       case 'lollipop':
         return (
-          <div className="w-full h-12">
+          <div className="w-full h-8">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data}>
                 <Line 
@@ -158,7 +158,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
         );
       case 'area':
         return (
-          <div className="w-full h-12">
+          <div className="w-full h-8">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data}>
                 <Area 
@@ -185,7 +185,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
 
     return (
       <div 
-        className="flex flex-col justify-between h-full relative"
+        className="flex flex-col justify-between h-full relative group"
         style={{ color: currentTheme.textPrimary }}
       >
         <div>
@@ -241,14 +241,12 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
         
         {/* Enhanced Interaction - Tooltip on Hover */}
         {interactivityLevel === 'highly-interactive' && (
-          <div className="relative group mt-2">
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-              <KPITooltip kpi={kpi} />
-            </div>
-            <div className="text-sm cursor-pointer" style={{ color: currentTheme.textMuted }}>
+          <>
+            <KPITooltip kpi={kpi} />
+            <div className="text-sm cursor-pointer mt-2" style={{ color: currentTheme.textMuted }}>
               Hover for detailed insights
             </div>
-          </div>
+          </>
         )}
       </div>
     );
@@ -279,7 +277,10 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       }
     };
 
-    switch (visual?.type) {
+    // Determine chart type from component or visual
+    const chartType = component.visualType || visual?.type || component.type;
+
+    switch (chartType) {
       case 'bar':
         return (
           <ResponsiveContainer {...chartProps}>
@@ -348,6 +349,9 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
     }
   };
 
+  // Determine if this is a chart component
+  const isChart = component.type === 'chart' || component.visualType === 'bar' || component.visualType === 'line' || component.visualType === 'area' || visual?.type;
+
   return (
     <Card 
       className="h-full transition-all duration-200 hover:shadow-lg"
@@ -357,7 +361,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       }}
     >
       <CardContent className="p-6 h-full">
-        {component.type === 'chart' ? renderChart() : renderKPI()}
+        {isChart ? renderChart() : renderKPI()}
       </CardContent>
     </Card>
   );
