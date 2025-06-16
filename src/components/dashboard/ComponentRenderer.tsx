@@ -277,11 +277,19 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       }
     };
 
-    // Determine chart type from component or visual
-    const chartType = component.visualType || visual?.type || component.type;
+    // Determine chart type - prioritize visual type over component type
+    const chartType = visual?.type || component.visualType || component.type;
+
+    console.log('Chart Type Detection:', {
+      visualType: visual?.type,
+      componentVisualType: component.visualType,
+      componentType: component.type,
+      finalChartType: chartType
+    });
 
     switch (chartType) {
       case 'bar':
+      case 'bar-charts':
         return (
           <ResponsiveContainer {...chartProps}>
             <BarChart data={mockData.chartData} style={{ backgroundColor: currentTheme.chartBackground }}>
@@ -301,6 +309,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
         );
       
       case 'line':
+      case 'line-charts':
         return (
           <ResponsiveContainer {...chartProps}>
             <LineChart data={mockData.chartData} style={{ backgroundColor: currentTheme.chartBackground }}>
@@ -323,6 +332,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
         );
       
       case 'area':
+      case 'area-charts':
         return (
           <ResponsiveContainer {...chartProps}>
             <AreaChart data={mockData.chartData} style={{ backgroundColor: currentTheme.chartBackground }}>
@@ -344,13 +354,52 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
           </ResponsiveContainer>
         );
       
+      case 'heatmaps':
+      case 'heatmap':
+        return (
+          <div className="flex items-center justify-center h-full text-center" style={{ color: currentTheme.textPrimary }}>
+            <div>
+              <div className="text-2xl font-bold mb-2">Heatmap Chart</div>
+              <div className="text-sm" style={{ color: currentTheme.textSecondary }}>
+                Heatmap visualization will be rendered here
+              </div>
+            </div>
+          </div>
+        );
+      
       default:
-        return <div className="text-center py-8" style={{ color: currentTheme.textMuted }}>Chart preview</div>;
+        return (
+          <div className="flex items-center justify-center h-full text-center" style={{ color: currentTheme.textMuted }}>
+            <div>
+              <div className="text-lg font-medium mb-2">Chart Preview</div>
+              <div className="text-sm">Type: {chartType || 'Unknown'}</div>
+            </div>
+          </div>
+        );
     }
   };
 
-  // Determine if this is a chart component
-  const isChart = component.type === 'chart' || component.visualType === 'bar' || component.visualType === 'line' || component.visualType === 'area' || visual?.type;
+  // Improved chart detection logic
+  const isChart = () => {
+    const visualType = visual?.type;
+    const componentType = component.type;
+    const componentVisualType = component.visualType;
+    
+    // Chart types that should render as charts
+    const chartTypes = [
+      'bar', 'bar-charts',
+      'line', 'line-charts', 
+      'area', 'area-charts',
+      'pie', 'pie-charts',
+      'heatmap', 'heatmaps',
+      'scatter', 'scatter-charts'
+    ];
+    
+    return chartTypes.includes(visualType) || 
+           chartTypes.includes(componentType) || 
+           chartTypes.includes(componentVisualType) ||
+           componentType === 'chart';
+  };
 
   return (
     <Card 
@@ -361,7 +410,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       }}
     >
       <CardContent className="p-6 h-full">
-        {isChart ? renderChart() : renderKPI()}
+        {isChart() ? renderChart() : renderKPI()}
       </CardContent>
     </Card>
   );
