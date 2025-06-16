@@ -1,1024 +1,259 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, Area, AreaChart } from "recharts";
-import { DollarSign, Users, TrendingDown, User, TrendingUp, ShoppingCart, LayoutGrid, Image } from "lucide-react";
+import React from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts';
+import { DollarSign, Users, TrendingDown, User, TrendingUp, ShoppingCart } from "lucide-react";
+import { AdvancedThemeColors, advancedThemes } from "@/utils/advancedThemeSystem";
 
 interface ComponentRendererProps {
   component: any;
-  linkedVisual: any;
-  themeColors: any;
+  visual: any;
+  themeColors: AdvancedThemeColors;
   mockData: any;
   config: any;
-  allComponents?: any[];
-  containerHeight?: string;
-  gridStructure?: any;
 }
 
-const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, config, allComponents = [], containerHeight, gridStructure }: ComponentRendererProps) => {
-  // Get interactivity level from config - ensure proper fallback
-  const interactivityLevel = config?.interactivityLevel || config?.interactivity || 'basic';
+const ComponentRenderer = ({ component, visual, themeColors, mockData, config }: ComponentRendererProps) => {
+  const interactivityLevel = config?.interactivity || 'basic';
+  const currentTheme = advancedThemes[config?.themeStyle] || advancedThemes.minimal;
   
-  console.log('ComponentRenderer - Interactivity Level:', interactivityLevel);
-  console.log('ComponentRenderer - Full Config:', config);
-
-  // Use exact same KPI data as layout preview but prioritize linked visual
-  const getKPIData = () => [
-    { 
-      label: 'Total Revenue', 
-      value: '$2.4M', 
-      change: '+12.5%', 
-      trend: 'up', 
-      icon: DollarSign, 
-      color: 'text-green-600',
-      progress: 85,
-      target: '$3M',
-      sparklineData: [
-        { value: 400 }, { value: 300 }, { value: 500 }, { value: 280 }, { value: 590 }, { value: 320 }, { value: 400 }
-      ]
-    },
-    { 
-      label: 'Active Users', 
-      value: '45.2K', 
-      change: '+8.3%', 
-      trend: 'up', 
-      icon: Users, 
-      color: 'text-blue-600',
-      progress: 72,
-      target: '50K',
-      sparklineData: [
-        { value: 200 }, { value: 400 }, { value: 300 }, { value: 500 }, { value: 280 }, { value: 400 }, { value: 450 }
-      ]
-    },
-    { 
-      label: 'Conversion Rate', 
-      value: '3.24%', 
-      change: '-2.1%', 
-      trend: 'down', 
-      icon: TrendingDown, 
-      color: 'text-red-600',
-      progress: 45,
-      target: '5%',
-      sparklineData: [
-        { value: 100 }, { value: 80 }, { value: 120 }, { value: 90 }, { value: 70 }, { value: 85 }, { value: 75 }
-      ]
-    },
-    { 
-      label: 'Customer Satisfaction', 
-      value: '94.2%', 
-      change: '+5.7%', 
-      trend: 'up', 
-      icon: User, 
-      color: 'text-purple-600',
-      progress: 94,
-      target: '95%',
-      sparklineData: [
-        { value: 350 }, { value: 370 }, { value: 390 }, { value: 360 }, { value: 410 }, { value: 400 }, { value: 420 }
-      ]
-    },
-    { 
-      label: 'Sales Growth', 
-      value: '18.4%', 
-      change: '+3.2%', 
-      trend: 'up', 
-      icon: TrendingUp, 
-      color: 'text-orange-600',
-      progress: 78,
-      target: '25%',
-      sparklineData: [
-        { value: 150 }, { value: 180 }, { value: 220 }, { value: 190 }, { value: 240 }, { value: 210 }, { value: 260 }
-      ]
-    },
-    { 
-      label: 'Monthly Orders', 
-      value: '1,284', 
-      change: '+15.8%', 
-      trend: 'up', 
-      icon: ShoppingCart, 
-      color: 'text-indigo-600',
-      progress: 88,
-      target: '1,500',
-      sparklineData: [
-        { value: 80 }, { value: 120 }, { value: 100 }, { value: 140 }, { value: 110 }, { value: 130 }, { value: 128 }
-      ]
-    }
-  ];
-
-  // Get container height - ensure full utilization
-  const getContainerHeight = () => {
-    return { height: '100%', minHeight: '100%', maxHeight: '100%' };
-  };
-
-  // Calculate chart configuration based on component type and available space
-  const getChartConfig = () => {
-    if (component.type === 'kpi') {
-      return null; // KPIs don't use chart config
-    }
-
-    const currentRow = component.position?.row || 1;
-    const currentRowHeight = gridStructure?.rowHeights?.[currentRow];
-    
-    // Check if this is an enhanced row (has increased height)
-    const isEnhancedRow = currentRowHeight && (currentRowHeight.includes('1.2') || currentRowHeight.includes('1.4'));
-    
-    // Base configuration for different chart types
-    const baseConfig = {
-      margins: { top: 10, right: 15, left: 20, bottom: 25 },
-      tickFontSize: 11,
-      gridSpacing: 3,
-      contentPadding: 12
-    };
-
-    if (isEnhancedRow) {
-      // Enhanced charts get more generous spacing
-      return {
-        margins: { top: 15, right: 25, left: 30, bottom: 35 },
-        tickFontSize: 12,
-        gridSpacing: 4,
-        contentPadding: 16
-      };
-    }
-    
-    return baseConfig;
-  };
-
-  const renderProgressBar = (kpi: any, index: number, isMultiple: boolean) => {
-    if (!isMultiple) {
-      // Single KPI - standard progress bar
+  // Enhanced tooltip content with theme colors
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
       return (
-        <div className="space-y-1">
-          <div className="flex justify-between text-xs" style={{ color: themeColors.textSecondary }}>
-            <span>Target Progress</span>
-            <span>{kpi.progress}%</span>
-          </div>
-          <Progress value={kpi.progress} className="h-2" />
+        <div 
+          className="p-4 rounded-lg shadow-lg border backdrop-blur-sm"
+          style={{ 
+            backgroundColor: currentTheme.tooltipBackground,
+            borderColor: currentTheme.tooltipBorder,
+            color: currentTheme.tooltipText
+          }}
+        >
+          <p className="font-semibold mb-2" style={{ color: currentTheme.tooltipText }}>
+            {label}
+          </p>
+          {payload.map((entry: any, index: number) => (
+            <div key={index} className="flex items-center gap-2 mb-1">
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: entry.color }}
+              />
+              <span className="text-sm font-medium">{entry.name}:</span>
+              <span className="text-sm font-bold">{entry.value}</span>
+            </div>
+          ))}
         </div>
       );
     }
-
-    // Multiple KPIs - varied progress bar styles
-    const progressStyles = [
-      // Gradient progress bar
-      <div key="gradient" className="space-y-1">
-        <div className="flex justify-between text-xs" style={{ color: themeColors.textSecondary }}>
-          <span>Progress</span>
-          <span>{kpi.progress}%</span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
-            className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all"
-            style={{ width: `${kpi.progress}%` }}
-          />
-        </div>
-      </div>,
-      // Segmented progress bar
-      <div key="segmented" className="space-y-1">
-        <div className="flex justify-between text-xs" style={{ color: themeColors.textSecondary }}>
-          <span>Achievement</span>
-          <span>{kpi.progress}%</span>
-        </div>
-        <div className="flex gap-1">
-          {Array.from({ length: 10 }, (_, i) => (
-            <div
-              key={i}
-              className={`h-2 flex-1 rounded-sm ${
-                i < Math.floor(kpi.progress / 10) ? 'bg-green-500' : 'bg-gray-200'
-              }`}
-            />
-          ))}
-        </div>
-      </div>,
-      // Circular progress indicator
-      <div key="circular" className="flex items-center justify-between">
-        <span className="text-xs" style={{ color: themeColors.textSecondary }}>Target</span>
-        <div className="relative w-8 h-8">
-          <svg className="w-8 h-8 transform -rotate-90" viewBox="0 0 32 32">
-            <circle
-              cx="16"
-              cy="16"
-              r="14"
-              stroke="currentColor"
-              strokeWidth="3"
-              fill="transparent"
-              className="text-gray-200"
-            />
-            <circle
-              cx="16"
-              cy="16"
-              r="14"
-              stroke="currentColor"
-              strokeWidth="3"
-              fill="transparent"
-              strokeDasharray={`${2 * Math.PI * 14 * (kpi.progress / 100)} ${2 * Math.PI * 14}`}
-              className="text-orange-500"
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-xs font-bold" style={{ color: themeColors.textPrimary }}>
-              {kpi.progress}%
-            </span>
-          </div>
-        </div>
-      </div>,
-      // Stepped progress bar
-      <div key="stepped" className="space-y-1">
-        <div className="flex justify-between text-xs" style={{ color: themeColors.textSecondary }}>
-          <span>Milestone</span>
-          <span>{kpi.progress}%</span>
-        </div>
-        <div className="relative">
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="h-2 rounded-full bg-gradient-to-r from-yellow-400 to-red-500 transition-all"
-              style={{ width: `${kpi.progress}%` }}
-            />
-          </div>
-          <div className="flex justify-between mt-1">
-            {[25, 50, 75, 100].map((step) => (
-              <div
-                key={step}
-                className={`w-1 h-1 rounded-full ${
-                  kpi.progress >= step ? 'bg-red-500' : 'bg-gray-300'
-                }`}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    ];
-
-    return progressStyles[index % progressStyles.length];
+    return null;
   };
 
-  const renderMiniChart = (kpi: any, index: number) => {
-    const chartTypes = ['sparkline', 'miniBar', 'lollipop', 'area'];
-    const chartType = chartTypes[index % chartTypes.length];
-    
-    switch (chartType) {
-      case 'sparkline':
-        return (
-          <div className="mt-1">
-            <div className="text-xs mb-1" style={{ color: themeColors.textSecondary }}>7-day trend</div>
-            <ResponsiveContainer width="100%" height={30}>
-              <LineChart data={kpi.sparklineData}>
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke={themeColors.chartColors[index % themeColors.chartColors.length]} 
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        );
-      
-      case 'miniBar':
-        return (
-          <div className="mt-1">
-            <div className="text-xs mb-1" style={{ color: themeColors.textSecondary }}>Weekly data</div>
-            <ResponsiveContainer width="100%" height={30}>
-              <BarChart data={kpi.sparklineData}>
-                <Bar 
-                  dataKey="value" 
-                  fill={themeColors.chartColors[index % themeColors.chartColors.length]}
-                  radius={[1, 1, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        );
-      
-      case 'lollipop':
-        return (
-          <div className="mt-1">
-            <div className="text-xs mb-1" style={{ color: themeColors.textSecondary }}>Performance</div>
-            <div className="flex items-end justify-between h-6 gap-1">
-              {kpi.sparklineData.map((item: any, i: number) => (
-                <div key={i} className="flex flex-col items-center flex-1">
-                  <div
-                    className="w-2 h-2 rounded-full mb-1"
-                    style={{ 
-                      backgroundColor: themeColors.chartColors[index % themeColors.chartColors.length],
-                      opacity: item.value / 600
-                    }}
-                  />
-                  <div
-                    className="w-0.5 bg-gray-300"
-                    style={{ height: `${(item.value / 600) * 16}px` }}
-                  />
-                </div>
-              ))}
+  // Enhanced KPI tooltip for highly interactive mode
+  const KPITooltip = ({ kpi }: { kpi: any }) => (
+    <div 
+      className="p-6 rounded-xl shadow-xl border backdrop-blur-sm min-w-[280px]"
+      style={{ 
+        backgroundColor: currentTheme.tooltipBackground,
+        borderColor: currentTheme.tooltipBorder,
+        color: currentTheme.tooltipText
+      }}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold">{kpi.label}</h3>
+        <div 
+          className="p-2 rounded-lg"
+          style={{ backgroundColor: `${kpi.color.replace('text-', '').replace('-600', '')}20` }}
+        >
+          <kpi.icon size={20} style={{ color: kpi.color.includes('green') ? currentTheme.positive : 
+                                              kpi.color.includes('red') ? currentTheme.negative :
+                                              kpi.color.includes('blue') ? currentTheme.info : currentTheme.warning }} />
+        </div>
+      </div>
+      <div className="space-y-3">
+        <div>
+          <span className="text-2xl font-bold">{kpi.value}</span>
+          <span 
+            className={`ml-2 text-sm font-medium ${kpi.trend === 'up' ? 'text-green-400' : 'text-red-400'}`}
+            style={{ color: kpi.trend === 'up' ? currentTheme.positive : currentTheme.negative }}
+          >
+            {kpi.change}
+          </span>
+        </div>
+        <div className="text-sm opacity-80">
+          <p>Performance Insight:</p>
+          <p className="mt-1">
+            {kpi.trend === 'up' ? 'Showing positive growth trend' : 'Needs attention for improvement'}
+          </p>
+        </div>
+        <div className="pt-2 border-t" style={{ borderColor: currentTheme.tooltipBorder }}>
+          <p className="text-xs opacity-60">Updated: {new Date().toLocaleString()}</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderKPI = () => {
+    const kpi = mockData.kpiData[0]; // Get the first KPI for simplicity
+
+    return (
+      <div 
+        className="flex flex-col justify-between h-full"
+        style={{ color: currentTheme.textPrimary }}
+      >
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold">{kpi.label}</h3>
+            <div 
+              className="p-2 rounded-md"
+              style={{ backgroundColor: `${kpi.color.replace('text-', '').replace('-600', '')}20` }}
+            >
+              <kpi.icon size={20} style={{ color: kpi.color.includes('green') ? currentTheme.positive : 
+                                                  kpi.color.includes('red') ? currentTheme.negative :
+                                                  kpi.color.includes('blue') ? currentTheme.info : currentTheme.warning }} />
             </div>
           </div>
+          <div className="text-3xl font-bold">{kpi.value}</div>
+          <div 
+            className={`text-sm font-medium ${kpi.trend === 'up' ? 'text-green-500' : 'text-red-500'}`}
+            style={{ color: kpi.trend === 'up' ? currentTheme.positive : currentTheme.negative }}
+          >
+            {kpi.change}
+          </div>
+        </div>
+        
+        {/* Enhanced Interaction - Tooltip on Hover */}
+        {interactivityLevel === 'highly-interactive' && (
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+              <KPITooltip kpi={kpi} />
+            </div>
+            <div className="text-sm text-muted-foreground mt-2">
+              Hover for more insights
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderChart = () => {
+    const chartProps = {
+      data: mockData.chartData,
+      width: "100%",
+      height: 300,
+      style: { backgroundColor: currentTheme.chartBackground }
+    };
+
+    const commonChartStyles = {
+      cartesianGrid: { 
+        strokeDasharray: "3 3", 
+        stroke: currentTheme.chartGridLines,
+        strokeOpacity: 0.3
+      },
+      xAxis: { 
+        stroke: currentTheme.chartAxes,
+        fontSize: 12,
+        fontWeight: 500
+      },
+      yAxis: { 
+        stroke: currentTheme.chartAxes,
+        fontSize: 12,
+        fontWeight: 500
+      }
+    };
+
+    // Apply hover effects based on interactivity level
+    const hoverProps = interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive' ? {
+      onMouseEnter: (data: any, index: number) => {
+        // Chart hover effects
+      },
+      cursor: 'pointer'
+    } : {};
+
+    switch (visual?.type) {
+      case 'bar':
+        return (
+          <ResponsiveContainer {...chartProps}>
+            <BarChart data={mockData.chartData}>
+              <CartesianGrid {...commonChartStyles.cartesianGrid} />
+              <XAxis {...commonChartStyles.xAxis} dataKey="month" />
+              <YAxis {...commonChartStyles.yAxis} />
+              {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
+                <Tooltip content={<CustomTooltip />} />
+              )}
+              <Bar 
+                dataKey="value" 
+                fill={currentTheme.chartColors[0]}
+                radius={[4, 4, 0, 0]}
+                {...hoverProps}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+      
+      case 'line':
+        return (
+          <ResponsiveContainer {...chartProps}>
+            <LineChart data={mockData.chartData}>
+              <CartesianGrid {...commonChartStyles.cartesianGrid} />
+              <XAxis {...commonChartStyles.xAxis} dataKey="month" />
+              <YAxis {...commonChartStyles.yAxis} />
+              {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
+                <Tooltip content={<CustomTooltip />} />
+              )}
+              <Line 
+                type="monotone" 
+                dataKey="value" 
+                stroke={currentTheme.chartColors[1]}
+                strokeWidth={3}
+                dot={{ fill: currentTheme.chartColors[1], strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, stroke: currentTheme.chartColors[1], strokeWidth: 2 }}
+                {...hoverProps}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         );
       
       case 'area':
         return (
-          <div className="mt-1">
-            <div className="text-xs mb-1" style={{ color: themeColors.textSecondary }}>Trend area</div>
-            <ResponsiveContainer width="100%" height={30}>
-              <AreaChart data={kpi.sparklineData}>
-                <Area 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke={themeColors.chartColors[index % themeColors.chartColors.length]} 
-                  fill={themeColors.chartColors[index % themeColors.chartColors.length]}
-                  fillOpacity={0.3}
-                  strokeWidth={1.5}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          <ResponsiveContainer {...chartProps}>
+            <AreaChart data={mockData.chartData}>
+              <CartesianGrid {...commonChartStyles.cartesianGrid} />
+              <XAxis {...commonChartStyles.xAxis} dataKey="month" />
+              <YAxis {...commonChartStyles.yAxis} />
+              {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
+                <Tooltip content={<CustomTooltip />} />
+              )}
+              <Area 
+                type="monotone" 
+                dataKey="value" 
+                stroke={currentTheme.chartColors[2]}
+                fill={currentTheme.chartColors[2]}
+                fillOpacity={0.3}
+                strokeWidth={2}
+                {...hoverProps}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
         );
       
       default:
-        return null;
+        return <div className="text-center py-8" style={{ color: currentTheme.textMuted }}>Chart preview</div>;
     }
   };
 
-  const renderKPIComponent = () => {
-    // Prioritize linked visual count over component count
-    const kpiCount = linkedVisual?.kpiCount || component.kpiCount || linkedVisual?.count || 1;
-    const kpiData = getKPIData();
-    const kpisToShow = kpiData.slice(0, kpiCount);
-
-    // For single KPI, just show one card
-    if (kpiCount === 1) {
-      const kpi = kpisToShow[0];
-      const IconComponent = kpi.icon;
-      
-      const cardContent = (
-        <Card 
-          className={`flex flex-col h-full transition-shadow ${
-            interactivityLevel === 'basic' ? '' : 'hover:shadow-md'
-          } ${
-            interactivityLevel === 'highly-interactive' ? 'hover:scale-105 transition-transform duration-200' : ''
-          }`}
-          style={{ 
-            backgroundColor: themeColors.cardBackground,
-            borderColor: themeColors.borderColor,
-            color: themeColors.textPrimary,
-            ...getContainerHeight()
-          }}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4 flex-shrink-0">
-            <CardTitle className="font-medium text-sm" style={{ color: themeColors.textSecondary }}>
-              {linkedVisual ? linkedVisual.name : kpi.label}
-            </CardTitle>
-            <IconComponent className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent className="flex-1 flex flex-col justify-center px-4 pb-4 space-y-3">
-            <div className="font-bold mb-2 text-2xl" style={{ color: themeColors.textPrimary }}>
-              {kpi.value}
-            </div>
-            <div className="flex items-center mb-2">
-              <Badge variant={kpi.trend === 'up' ? "secondary" : "destructive"} className="text-xs">
-                {kpi.change}
-              </Badge>
-              <span className="ml-2 text-xs" style={{ color: themeColors.textSecondary }}>
-                vs last period
-              </span>
-            </div>
-            
-            {/* Progress bar for advanced level only */}
-            {interactivityLevel === 'advanced' && renderProgressBar(kpi, 0, false)}
-            
-            {/* Mini chart for highly interactive level only */}
-            {interactivityLevel === 'highly-interactive' && renderMiniChart(kpi, 0)}
-          </CardContent>
-        </Card>
-      );
-
-      // Add enhanced tooltip for highly interactive mode only
-      if (interactivityLevel === 'highly-interactive') {
-        return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                {cardContent}
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-sm p-4 bg-white border-2 shadow-xl">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <IconComponent className="h-5 w-5 text-blue-600" />
-                    <p className="text-base font-semibold text-gray-900">{linkedVisual ? linkedVisual.name : kpi.label}</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <p className="text-gray-500 text-xs">Current Value</p>
-                      <p className="font-bold text-gray-900">{kpi.value}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 text-xs">Change</p>
-                      <p className={`font-bold ${kpi.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>{kpi.change}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 text-xs">Target</p>
-                      <p className="font-bold text-gray-900">{kpi.target}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 text-xs">Progress</p>
-                      <p className="font-bold text-blue-600">{kpi.progress}%</p>
-                    </div>
-                  </div>
-                  <div className="pt-2 border-t">
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
-                        style={{ width: `${kpi.progress}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        );
-      }
-
-      return cardContent;
-    }
-
-    // For multiple KPIs, arrange them horizontally (max 4 per row)
-    const maxKpisPerRow = Math.min(kpiCount, 4);
-    
-    return (
-      <div className="grid gap-2 w-full h-full" style={{ gridTemplateColumns: `repeat(${maxKpisPerRow}, 1fr)` }}>
-        {kpisToShow.map((kpi, index) => {
-          const IconComponent = kpi.icon;
-          
-          const cardContent = (
-            <Card 
-              key={index} 
-              className={`h-full flex flex-col transition-shadow ${
-                interactivityLevel === 'basic' ? '' : 'hover:shadow-md'
-              } ${
-                interactivityLevel === 'highly-interactive' ? 'hover:scale-105 transition-transform duration-200' : ''
-              }`}
-              style={{ 
-                backgroundColor: themeColors.cardBackground,
-                borderColor: themeColors.borderColor,
-                color: themeColors.textPrimary
-              }}
-            >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-3 pt-3 flex-shrink-0">
-                <CardTitle className="text-xs font-medium truncate" style={{ color: themeColors.textSecondary }}>
-                  {linkedVisual ? linkedVisual.name : kpi.label}
-                </CardTitle>
-                <IconComponent className={`h-3 w-3 flex-shrink-0 ${kpi.color}`} />
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col justify-center px-3 pb-3 space-y-2">
-                <div className="text-lg font-bold mb-1" style={{ color: themeColors.textPrimary }}>{kpi.value}</div>
-                <div className="flex items-center mb-1">
-                  <Badge variant={kpi.trend === 'up' ? "secondary" : "destructive"} className="text-xs px-1 py-0">
-                    {kpi.change}
-                  </Badge>
-                  <span className="text-xs ml-1" style={{ color: themeColors.textSecondary }}>vs last</span>
-                </div>
-                
-                {/* Progress bar for advanced level - varied styles */}
-                {interactivityLevel === 'advanced' && renderProgressBar(kpi, index, true)}
-                
-                {/* Mini charts for highly interactive level - varied types */}
-                {interactivityLevel === 'highly-interactive' && renderMiniChart(kpi, index)}
-              </CardContent>
-            </Card>
-          );
-
-          // Add enhanced tooltip for highly interactive mode only
-          if (interactivityLevel === 'highly-interactive') {
-            return (
-              <TooltipProvider key={index}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    {cardContent}
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-sm p-4 bg-white border-2 shadow-xl">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <IconComponent className="h-5 w-5 text-blue-600" />
-                        <p className="text-base font-semibold text-gray-900">{linkedVisual ? linkedVisual.name : kpi.label}</p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <p className="text-gray-500 text-xs">Current Value</p>
-                          <p className="font-bold text-gray-900">{kpi.value}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500 text-xs">Change</p>
-                          <p className={`font-bold ${kpi.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>{kpi.change}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500 text-xs">Target</p>
-                          <p className="font-bold text-gray-900">{kpi.target}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500 text-xs">Progress</p>
-                          <p className="font-bold text-blue-600">{kpi.progress}%</p>
-                        </div>
-                      </div>
-                      <div className="pt-2 border-t">
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
-                            style={{ width: `${kpi.progress}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            );
-          }
-
-          return cardContent;
-        })}
-      </div>
-    );
-  };
-
-  const renderChartComponent = () => {
-    const chartType = linkedVisual?.chartType || component.chartType || 'bar';
-    const chartConfig = getChartConfig();
-    
-    return (
-      <Card 
-        className={`flex flex-col overflow-hidden ${
-          interactivityLevel === 'basic' ? '' : 'hover:shadow-lg transition-shadow duration-300'
-        }`}
-        style={{ 
-          backgroundColor: themeColors.cardBackground, 
-          borderColor: themeColors.borderColor, 
-          ...getContainerHeight() 
-        }}
-      >
-        <CardHeader className="flex-shrink-0 px-3 pt-3 pb-2">
-          <CardTitle className="text-sm font-medium truncate" style={{ color: themeColors.textPrimary }}>
-            {linkedVisual ? linkedVisual.name : `${chartType.charAt(0).toUpperCase() + chartType.slice(1)} Chart`}
-          </CardTitle>
-          <CardDescription className="text-xs truncate" style={{ color: themeColors.textSecondary }}>
-            {linkedVisual ? linkedVisual.description || 'Chart visualization' : 'Performance metrics over time'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 p-2 min-h-0 overflow-hidden">
-          <div className="w-full h-full min-h-0">
-            <ResponsiveContainer width="100%" height="100%">
-              {chartType === 'pie' ? (
-                <PieChart margin={chartConfig.margins}>
-                  <Pie
-                    data={[
-                      { name: 'Category A', value: 45, color: themeColors.chartColors[0] },
-                      { name: 'Category B', value: 30, color: themeColors.chartColors[1] },
-                      { name: 'Category C', value: 25, color: themeColors.chartColors[2] }
-                    ]}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius="70%"
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {[0, 1, 2].map((entry, i) => (
-                      <Cell key={`cell-${i}`} fill={themeColors.chartColors[i]} />
-                    ))}
-                  </Pie>
-                  {/* Show tooltip for advanced and highly-interactive levels only */}
-                  {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
-                    <RechartsTooltip 
-                      contentStyle={{ 
-                        backgroundColor: themeColors.cardBackground,
-                        border: `1px solid ${themeColors.borderColor}`,
-                        borderRadius: '6px',
-                        boxShadow: interactivityLevel === 'highly-interactive' ? '0 10px 25px rgba(0,0,0,0.15)' : '0 4px 6px rgba(0,0,0,0.1)'
-                      }}
-                    />
-                  )}
-                </PieChart>
-              ) : chartType === 'donut' ? (
-                <PieChart margin={chartConfig.margins}>
-                  <Pie
-                    data={[
-                      { name: 'Category A', value: 45, color: themeColors.chartColors[0] },
-                      { name: 'Category B', value: 30, color: themeColors.chartColors[1] },
-                      { name: 'Category C', value: 25, color: themeColors.chartColors[2] }
-                    ]}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius="40%"
-                    outerRadius="70%"
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {[0, 1, 2].map((entry, i) => (
-                      <Cell key={`cell-${i}`} fill={themeColors.chartColors[i]} />
-                    ))}
-                  </Pie>
-                  {/* Show tooltip for advanced and highly-interactive levels only */}
-                  {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
-                    <RechartsTooltip 
-                      contentStyle={{ 
-                        backgroundColor: themeColors.cardBackground,
-                        border: `1px solid ${themeColors.borderColor}`,
-                        borderRadius: '6px',
-                        boxShadow: interactivityLevel === 'highly-interactive' ? '0 10px 25px rgba(0,0,0,0.15)' : '0 4px 6px rgba(0,0,0,0.1)'
-                      }}
-                    />
-                  )}
-                </PieChart>
-              ) : chartType === 'line' ? (
-                <LineChart data={mockData.chartData} margin={chartConfig.margins}>
-                  <CartesianGrid strokeDasharray={`${chartConfig.gridSpacing} ${chartConfig.gridSpacing}`} stroke={themeColors.borderColor} />
-                  <XAxis 
-                    dataKey="month" 
-                    tick={{ fontSize: chartConfig.tickFontSize, fill: themeColors.textSecondary }} 
-                    axisLine={{ stroke: themeColors.borderColor }}
-                    height={30}
-                  />
-                  <YAxis 
-                    tick={{ fontSize: chartConfig.tickFontSize, fill: themeColors.textSecondary }}
-                    axisLine={{ stroke: themeColors.borderColor }}
-                    width={40}
-                  />
-                  {/* Show tooltip for advanced and highly-interactive levels only */}
-                  {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
-                    <RechartsTooltip 
-                      contentStyle={{ 
-                        backgroundColor: themeColors.cardBackground,
-                        border: `1px solid ${themeColors.borderColor}`,
-                        borderRadius: '6px',
-                        boxShadow: interactivityLevel === 'highly-interactive' ? '0 10px 25px rgba(0,0,0,0.15)' : '0 4px 6px rgba(0,0,0,0.1)'
-                      }}
-                    />
-                  )}
-                  <Line 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke={themeColors.chartColors[0]} 
-                    strokeWidth={2} 
-                    dot={{ r: 3, fill: themeColors.chartColors[0] }}
-                    activeDot={{ r: interactivityLevel === 'highly-interactive' ? 6 : 5, fill: themeColors.chartColors[0] }}
-                  />
-                </LineChart>
-              ) : chartType === 'area' ? (
-                <AreaChart data={mockData.chartData} margin={chartConfig.margins}>
-                  <CartesianGrid strokeDasharray={`${chartConfig.gridSpacing} ${chartConfig.gridSpacing}`} stroke={themeColors.borderColor} />
-                  <XAxis 
-                    dataKey="month" 
-                    tick={{ fontSize: chartConfig.tickFontSize, fill: themeColors.textSecondary }}
-                    axisLine={{ stroke: themeColors.borderColor }}
-                    height={30}
-                  />
-                  <YAxis 
-                    tick={{ fontSize: chartConfig.tickFontSize, fill: themeColors.textSecondary }}
-                    axisLine={{ stroke: themeColors.borderColor }}
-                    width={40}
-                  />
-                  {/* Show tooltip for advanced and highly-interactive levels only */}
-                  {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
-                    <RechartsTooltip 
-                      contentStyle={{ 
-                        backgroundColor: themeColors.cardBackground,
-                        border: `1px solid ${themeColors.borderColor}`,
-                        borderRadius: '6px',
-                        boxShadow: interactivityLevel === 'highly-interactive' ? '0 10px 25px rgba(0,0,0,0.15)' : '0 4px 6px rgba(0,0,0,0.1)'
-                      }}
-                    />
-                  )}
-                  <Area 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke={themeColors.chartColors[0]} 
-                    fill={themeColors.chartColors[0]} 
-                    fillOpacity={0.3}
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              ) : (
-                <BarChart data={mockData.chartData} margin={chartConfig.margins}>
-                  <CartesianGrid strokeDasharray={`${chartConfig.gridSpacing} ${chartConfig.gridSpacing}`} stroke={themeColors.borderColor} />
-                  <XAxis 
-                    dataKey="month" 
-                    tick={{ fontSize: chartConfig.tickFontSize, fill: themeColors.textSecondary }}
-                    axisLine={{ stroke: themeColors.borderColor }}
-                    height={30}
-                  />
-                  <YAxis 
-                    tick={{ fontSize: chartConfig.tickFontSize, fill: themeColors.textSecondary }}
-                    axisLine={{ stroke: themeColors.borderColor }}
-                    width={40}
-                  />
-                  {/* Show tooltip for advanced and highly-interactive levels only */}
-                  {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
-                    <RechartsTooltip 
-                      contentStyle={{ 
-                        backgroundColor: themeColors.cardBackground,
-                        border: `1px solid ${themeColors.borderColor}`,
-                        borderRadius: '6px',
-                        boxShadow: interactivityLevel === 'highly-interactive' ? '0 10px 25px rgba(0,0,0,0.15)' : '0 4px 6px rgba(0,0,0,0.1)'
-                      }}
-                    />
-                  )}
-                  <Bar 
-                    dataKey="value" 
-                    fill={themeColors.chartColors[0]}
-                    radius={[3, 3, 0, 0]}
-                  />
-                </BarChart>
-              )}
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const renderTableComponent = () => {
-    const sampleData = [
-      { id: 1, name: 'Product A', value: '$1,234', status: 'Active', date: '2024-01-15' },
-      { id: 2, name: 'Product B', value: '$2,456', status: 'Pending', date: '2024-01-14' },
-      { id: 3, name: 'Product C', value: '$789', status: 'Active', date: '2024-01-13' },
-      { id: 4, name: 'Product D', value: '$3,456', status: 'Active', date: '2024-01-12' },
-      { id: 5, name: 'Product E', value: '$567', status: 'Pending', date: '2024-01-11' },
-    ];
-
-    return (
-      <Card className="flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
-        <CardHeader className="flex-shrink-0 pb-1 px-3 pt-3">
-          <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
-            {linkedVisual ? linkedVisual.name : 'Data Table'}
-          </CardTitle>
-          <CardDescription className="text-xs" style={{ color: themeColors.textSecondary }}>
-            {linkedVisual ? linkedVisual.description || 'Table data' : 'Tabular data representation'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex flex-col min-h-0 p-2">
-          <div className="flex-1 overflow-auto border rounded" style={{ borderColor: themeColors.borderColor }}>
-            <table className="w-full text-xs">
-              <thead className="sticky top-0" style={{ backgroundColor: themeColors.cardBackground }}>
-                <tr className="border-b" style={{ borderColor: themeColors.borderColor }}>
-                  <th className="text-left p-2 font-medium" style={{ color: themeColors.textPrimary }}>Name</th>
-                  <th className="text-left p-2 font-medium" style={{ color: themeColors.textPrimary }}>Value</th>
-                  <th className="text-left p-2 font-medium" style={{ color: themeColors.textPrimary }}>Status</th>
-                  <th className="text-left p-2 font-medium" style={{ color: themeColors.textPrimary }}>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sampleData.map((row) => (
-                  <tr key={row.id} className="border-b hover:bg-gray-50" style={{ borderColor: themeColors.borderColor }}>
-                    <td className="p-2" style={{ color: themeColors.textPrimary }}>{row.name}</td>
-                    <td className="p-2" style={{ color: themeColors.textPrimary }}>{row.value}</td>
-                    <td className="p-2">
-                      <Badge variant={row.status === 'Active' ? 'secondary' : 'outline'} className="text-xs">{row.status}</Badge>
-                    </td>
-                    <td className="p-2 text-xs" style={{ color: themeColors.textSecondary }}>{row.date}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const renderProgressComponent = () => {
-    const progressData = [
-      { label: 'Sales Target', value: 85, color: 'bg-blue-500' },
-      { label: 'Customer Satisfaction', value: 92, color: 'bg-green-500' },
-      { label: 'Project Completion', value: 67, color: 'bg-yellow-500' },
-      { label: 'Team Performance', value: 78, color: 'bg-purple-500' }
-    ];
-
-    return (
-      <Card className="flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
-        <CardHeader className="flex-shrink-0 pb-1 px-3 pt-3">
-          <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
-            {linkedVisual ? linkedVisual.name : 'Progress Indicators'}
-          </CardTitle>
-          <CardDescription className="text-xs" style={{ color: themeColors.textSecondary }}>
-            {linkedVisual ? linkedVisual.description || 'Goal completion tracking' : 'Goal completion tracking'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex flex-col justify-center px-3 pb-3">
-          <div className="space-y-4">
-            {progressData.map((item, index) => (
-              <div key={item.label} className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium" style={{ color: themeColors.textPrimary }}>
-                    {item.label}
-                  </span>
-                  <span className="text-sm font-bold" style={{ color: themeColors.textPrimary }}>
-                    {item.value}%
-                  </span>
-                </div>
-                <Progress value={item.value} className="h-2" />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const renderTextComponent = () => {
-    const textContent = linkedVisual?.textContent || component.textContent || 'Welcome to your Dashboard! This is your central hub for monitoring key metrics and insights. Navigate through different sections to explore your data and make informed decisions.';
-    
-    return (
-      <Card className="flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
-        <CardContent className="p-4 flex flex-col justify-center flex-1">
-          <div style={{ color: themeColors.textPrimary }} className="prose max-w-none">
-            <h3 className="text-base font-semibold mb-2">
-              {linkedVisual ? linkedVisual.name : 'Dashboard Welcome Message'}
-            </h3>
-            <div className="whitespace-pre-wrap text-sm leading-relaxed">
-              {textContent}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const renderImageComponent = () => {
-    return (
-      <Card className="flex flex-col" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
-        <CardContent className="p-4 flex items-center justify-center flex-1">
-          <div className="text-center" style={{ color: themeColors.textSecondary }}>
-            <Image className="w-12 h-12 mx-auto mb-3" />
-            <h4 className="font-medium mb-1 text-sm" style={{ color: themeColors.textPrimary }}>
-              {linkedVisual ? linkedVisual.name : 'Image Component'}
-            </h4>
-            <p className="text-xs">
-              {linkedVisual ? linkedVisual.description || 'Image placeholder' : 'Image visualization placeholder'}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const renderHeatmapComponent = () => {
-    const chartConfig = getChartConfig();
-    
-    return (
-      <Card className="flex flex-col overflow-hidden" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
-        <CardHeader className="flex-shrink-0 pb-2 px-3 pt-3">
-          <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
-            {linkedVisual ? linkedVisual.name : 'Heatmap Visualization'}
-          </CardTitle>
-          <CardDescription className="text-xs" style={{ color: themeColors.textSecondary }}>
-            {linkedVisual ? linkedVisual.description || 'Heatmap data visualization' : 'Interactive heatmap display'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center p-3 min-h-0">
-          <div className="grid grid-cols-7 gap-1 w-full h-full max-w-full">
-            {Array.from({ length: 35 }, (_, i) => (
-              <div
-                key={i}
-                className="aspect-square rounded-sm min-h-0"
-                style={{
-                  backgroundColor: themeColors.chartColors[i % themeColors.chartColors.length],
-                  opacity: Math.random() * 0.8 + 0.2,
-                  height: 'auto',
-                  minHeight: '15px'
-                }}
-              />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const renderScatterComponent = () => {
-    const chartConfig = getChartConfig();
-    
-    return (
-      <Card className="flex flex-col overflow-hidden" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
-        <CardHeader className="flex-shrink-0 pb-2 px-3 pt-3">
-          <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
-            {linkedVisual ? linkedVisual.name : 'Scatter Plot'}
-          </CardTitle>
-          <CardDescription className="text-xs" style={{ color: themeColors.textSecondary }}>
-            {linkedVisual ? linkedVisual.description || 'Scatter plot visualization' : 'Data point correlation'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex flex-col min-h-0 p-2 overflow-hidden">
-          <div className="flex-1 min-h-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={mockData.chartData} margin={chartConfig.margins}>
-                <CartesianGrid strokeDasharray={`${chartConfig.gridSpacing} ${chartConfig.gridSpacing}`} stroke={themeColors.borderColor} />
-                <XAxis 
-                  dataKey="month" 
-                  tick={{ fontSize: chartConfig.tickFontSize, fill: themeColors.textSecondary }} 
-                  height={30}
-                />
-                <YAxis 
-                  tick={{ fontSize: chartConfig.tickFontSize, fill: themeColors.textSecondary }} 
-                  width={40}
-                />
-                {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
-                  <RechartsTooltip 
-                    contentStyle={{ 
-                      backgroundColor: themeColors.cardBackground,
-                      border: `1px solid ${themeColors.borderColor}`,
-                      borderRadius: '6px'
-                    }}
-                  />
-                )}
-                <Bar dataKey="value" fill={themeColors.chartColors[0]} radius={[2, 2, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const renderFunnelComponent = () => {
-    const chartConfig = getChartConfig();
-    
-    return (
-      <Card className="flex flex-col overflow-hidden" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
-        <CardHeader className="flex-shrink-0 pb-2 px-3 pt-3">
-          <CardTitle className="text-sm" style={{ color: themeColors.textPrimary }}>
-            {linkedVisual ? linkedVisual.name : 'Funnel Chart'}
-          </CardTitle>
-          <CardDescription className="text-xs" style={{ color: themeColors.textSecondary }}>
-            {linkedVisual ? linkedVisual.description ||'Funnel visualization' : 'Conversion funnel analysis'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex flex-col justify-center p-3 min-h-0 overflow-hidden">
-          <div className="space-y-3 h-full flex flex-col justify-center">
-            {['Visitors', 'Leads', 'Opportunities', 'Customers'].map((stage, index) => {
-              const width = 100 - (index * 20);
-              return (
-                <div key={stage} className="flex items-center gap-3">
-                  <div className="w-20 text-sm font-medium flex-shrink-0" style={{ color: themeColors.textPrimary }}>{stage}</div>
-                  <div className="flex-1 min-w-0">
-                    <div
-                      className="h-8 flex items-center justify-center rounded text-sm font-bold transition-all"
-                      style={{
-                        width: `${width}%`,
-                        backgroundColor: themeColors.chartColors[index % themeColors.chartColors.length],
-                        color: 'white',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                      }}
-                    >
-                      {1000 - (index * 200)}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const renderDefaultComponent = () => {
-    return (
-      <Card className="flex flex-col h-full" style={{ backgroundColor: themeColors.cardBackground, borderColor: themeColors.borderColor, ...getContainerHeight() }}>
-        <CardContent className="p-4 flex items-center justify-center flex-1">
-          <div className="text-center" style={{ color: themeColors.textSecondary }}>
-            <LayoutGrid className="w-8 h-8 mx-auto mb-3" />
-            <h4 className="font-medium mb-1 text-sm" style={{ color: themeColors.textPrimary }}>
-              {component.type.charAt(0).toUpperCase() + component.type.slice(1)} Component
-            </h4>
-            <p className="text-xs">Component preview</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  switch (component.type) {
-    case 'kpi':
-      return renderKPIComponent();
-    case 'chart':
-      return renderChartComponent();
-    case 'table':
-      return renderTableComponent();
-    case 'progress':
-      return renderProgressComponent();
-    case 'text':
-      return renderTextComponent();
-    case 'image':
-      return renderImageComponent();
-    case 'heatmap':
-      return renderHeatmapComponent();
-    case 'scatter':
-      return renderScatterComponent();
-    case 'funnel':
-      return renderFunnelComponent();
-    default:
-      return renderDefaultComponent();
-  }
+  return (
+    <Card 
+      className="h-full transition-all duration-200 hover:shadow-lg"
+      style={{ 
+        backgroundColor: currentTheme.cardBackground,
+        borderColor: currentTheme.cardBorder
+      }}
+    >
+      <CardContent className="p-6 h-full">
+        {component.type === 'chart' ? renderChart() : renderKPI()}
+      </CardContent>
+    </Card>
+  );
 };
 
 export default ComponentRenderer;

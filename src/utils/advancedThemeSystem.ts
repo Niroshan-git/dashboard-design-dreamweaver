@@ -22,12 +22,24 @@ export interface AdvancedThemeColors {
   active: string;
   focus: string;
   
+  // Navigation specific
+  navigationBackground: string;
+  navigationBorder: string;
+  navigationText: string;
+  navigationTextSecondary: string;
+  navigationHover: string;
+  navigationActive: string;
+  
   // Component specific
   cardBackground: string;
   cardBorder: string;
   chartColors: string[];
+  chartBackground: string;
+  chartGridLines: string;
+  chartAxes: string;
   tooltipBackground: string;
   tooltipBorder: string;
+  tooltipText: string;
   progressBackground: string;
   progressFill: string;
 }
@@ -48,11 +60,21 @@ export const advancedThemes: Record<string, AdvancedThemeColors> = {
     hover: '#f1f5f9',
     active: '#e2e8f0',
     focus: '#3b82f6',
+    navigationBackground: '#ffffff',
+    navigationBorder: '#e2e8f0',
+    navigationText: '#0f172a',
+    navigationTextSecondary: '#64748b',
+    navigationHover: '#f8fafc',
+    navigationActive: '#e2e8f0',
     cardBackground: '#ffffff',
     cardBorder: '#e2e8f0',
     chartColors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'],
+    chartBackground: '#ffffff',
+    chartGridLines: '#f1f5f9',
+    chartAxes: '#94a3b8',
     tooltipBackground: '#1f2937',
     tooltipBorder: '#374151',
+    tooltipText: '#ffffff',
     progressBackground: '#e5e7eb',
     progressFill: '#3b82f6'
   },
@@ -71,11 +93,21 @@ export const advancedThemes: Record<string, AdvancedThemeColors> = {
     hover: '#1e293b',
     active: '#334155',
     focus: '#60a5fa',
+    navigationBackground: '#0f172a',
+    navigationBorder: '#1e293b',
+    navigationText: '#f8fafc',
+    navigationTextSecondary: '#94a3b8',
+    navigationHover: '#1e293b',
+    navigationActive: '#334155',
     cardBackground: '#1e293b',
     cardBorder: '#334155',
     chartColors: ['#60a5fa', '#34d399', '#fbbf24', '#f87171', '#a78bfa', '#22d3ee'],
+    chartBackground: '#1e293b',
+    chartGridLines: '#334155',
+    chartAxes: '#64748b',
     tooltipBackground: '#374151',
     tooltipBorder: '#4b5563',
+    tooltipText: '#f9fafb',
     progressBackground: '#374151',
     progressFill: '#60a5fa'
   },
@@ -94,11 +126,21 @@ export const advancedThemes: Record<string, AdvancedThemeColors> = {
     hover: '#eff6ff',
     active: '#dbeafe',
     focus: '#3b82f6',
+    navigationBackground: '#ffffff',
+    navigationBorder: '#e2e8f0',
+    navigationText: '#1e40af',
+    navigationTextSecondary: '#64748b',
+    navigationHover: '#eff6ff',
+    navigationActive: '#dbeafe',
     cardBackground: '#ffffff',
     cardBorder: '#e2e8f0',
     chartColors: ['#1e40af', '#059669', '#d97706', '#dc2626', '#7c2d12', '#0284c7'],
+    chartBackground: '#ffffff',
+    chartGridLines: '#f1f5f9',
+    chartAxes: '#64748b',
     tooltipBackground: '#1f2937',
     tooltipBorder: '#374151',
+    tooltipText: '#ffffff',
     progressBackground: '#e5e7eb',
     progressFill: '#1e40af'
   },
@@ -117,11 +159,21 @@ export const advancedThemes: Record<string, AdvancedThemeColors> = {
     hover: 'rgba(255, 255, 255, 0.1)',
     active: 'rgba(255, 255, 255, 0.2)',
     focus: '#6bcf7f',
+    navigationBackground: 'rgba(255, 255, 255, 0.1)',
+    navigationBorder: 'rgba(255, 255, 255, 0.2)',
+    navigationText: '#ffffff',
+    navigationTextSecondary: 'rgba(255, 255, 255, 0.7)',
+    navigationHover: 'rgba(255, 255, 255, 0.15)',
+    navigationActive: 'rgba(255, 255, 255, 0.25)',
     cardBackground: 'rgba(255, 255, 255, 0.15)',
     cardBorder: 'rgba(255, 255, 255, 0.2)',
     chartColors: ['#10dcb4', '#ff6b9d', '#ffd93d', '#6bcf7f', '#a78bfa', '#22d3ee'],
+    chartBackground: 'rgba(255, 255, 255, 0.05)',
+    chartGridLines: 'rgba(255, 255, 255, 0.1)',
+    chartAxes: 'rgba(255, 255, 255, 0.4)',
     tooltipBackground: 'rgba(0, 0, 0, 0.8)',
     tooltipBorder: 'rgba(255, 255, 255, 0.2)',
+    tooltipText: '#ffffff',
     progressBackground: 'rgba(255, 255, 255, 0.2)',
     progressFill: '#10dcb4'
   },
@@ -140,11 +192,21 @@ export const advancedThemes: Record<string, AdvancedThemeColors> = {
     hover: 'rgba(255, 255, 255, 0.7)',
     active: 'rgba(255, 255, 255, 0.9)',
     focus: '#4299e1',
+    navigationBackground: 'rgba(255, 255, 255, 0.8)',
+    navigationBorder: 'rgba(255, 255, 255, 0.4)',
+    navigationText: '#2d3748',
+    navigationTextSecondary: '#718096',
+    navigationHover: 'rgba(255, 255, 255, 0.9)',
+    navigationActive: 'rgba(255, 255, 255, 0.95)',
     cardBackground: 'rgba(255, 255, 255, 0.8)',
     cardBorder: 'rgba(255, 255, 255, 0.4)',
     chartColors: ['#4299e1', '#48bb78', '#ed8936', '#f56565', '#9f7aea', '#38b2ac'],
+    chartBackground: 'rgba(255, 255, 255, 0.6)',
+    chartGridLines: 'rgba(255, 255, 255, 0.8)',
+    chartAxes: '#718096',
     tooltipBackground: 'rgba(45, 55, 72, 0.95)',
     tooltipBorder: 'rgba(255, 255, 255, 0.2)',
+    tooltipText: '#ffffff',
     progressBackground: 'rgba(255, 255, 255, 0.4)',
     progressFill: '#4299e1'
   },
@@ -163,11 +225,21 @@ export const advancedThemes: Record<string, AdvancedThemeColors> = {
     hover: '#ecf0f1',
     active: '#d5dbdb',
     focus: '#3498db',
+    navigationBackground: '#34495e',
+    navigationBorder: '#2c3e50',
+    navigationText: '#ecf0f1',
+    navigationTextSecondary: '#95a5a6',
+    navigationHover: '#4a5f7a',
+    navigationActive: '#5d6d7e',
     cardBackground: '#ffffff',
     cardBorder: '#bdc3c7',
     chartColors: ['#3498db', '#27ae60', '#f39c12', '#e74c3c', '#9b59b6', '#1abc9c'],
+    chartBackground: '#ffffff',
+    chartGridLines: '#ecf0f1',
+    chartAxes: '#7f8c8d',
     tooltipBackground: '#34495e',
     tooltipBorder: '#2c3e50',
+    tooltipText: '#ecf0f1',
     progressBackground: '#ecf0f1',
     progressFill: '#3498db'
   }

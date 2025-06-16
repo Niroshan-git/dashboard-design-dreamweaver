@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,6 +25,7 @@ import {
   LayoutDashboard, BarChart3, TrendingUp, Calendar, Users, Settings, 
   Search, Bell, ChevronDown, User, CircleDot, Layers, Filter, Download
 } from "lucide-react";
+import { advancedThemes } from "@/utils/advancedThemeSystem";
 
 interface DashboardTopNavigationProps {
   config: any;
@@ -44,6 +44,9 @@ const DashboardTopNavigation = ({
 }: DashboardTopNavigationProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  
+  // Get theme colors
+  const currentTheme = advancedThemes[config.themeStyle] || advancedThemes.minimal;
   
   const getIconForDashboardType = (type: string) => {
     switch(type) {
@@ -71,32 +74,86 @@ const DashboardTopNavigation = ({
 
   // Render different styles based on the selected navigation style
   const renderTopWideStyle = () => (
-    <div className="bg-background border-b border-border">
+    <div 
+      className="border-b"
+      style={{ 
+        backgroundColor: currentTheme.navigationBackground,
+        borderColor: currentTheme.navigationBorder
+      }}
+    >
       {/* Main Navigation Bar */}
       <div className="h-16 flex items-center justify-between px-6">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              {getIconForDashboardType(config.dashboardType)}
+            <div 
+              className="p-2 rounded-lg"
+              style={{ backgroundColor: `${currentTheme.info}20` }}
+            >
+              <div style={{ color: currentTheme.info }}>
+                {getIconForDashboardType(config.dashboardType)}
+              </div>
             </div>
             <div>
-              <h1 className="font-semibold text-lg">
+              <h1 
+                className="font-semibold text-lg"
+                style={{ color: currentTheme.navigationText }}
+              >
                 {config.dashboardType 
-                  ? config.dashboardType.charAt(0).toUpperCase() + config.dashboardType.slice(1) + " Dashboard" 
+                  ? config.dashboardType.charAt(0).toUpperCase() + config.dashboardType.slice(1) + " Dashboard"
                   : "Business Dashboard"}
               </h1>
-              <p className="text-xs text-muted-foreground">Real-time insights and analytics</p>
+              <p 
+                className="text-xs"
+                style={{ color: currentTheme.navigationTextSecondary }}
+              >
+                Real-time insights and analytics
+              </p>
             </div>
           </div>
           
-          <Separator orientation="vertical" className="h-8" />
+          <Separator 
+            orientation="vertical" 
+            className="h-8" 
+            style={{ backgroundColor: currentTheme.navigationBorder }}
+          />
           
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" className="h-8">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8 transition-all duration-200"
+              style={{ 
+                borderColor: currentTheme.navigationBorder,
+                color: currentTheme.navigationText,
+                backgroundColor: 'transparent'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = currentTheme.navigationHover;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
               <Filter className="w-4 h-4 mr-1" />
               Filter
             </Button>
-            <Button variant="outline" size="sm" className="h-8" onClick={() => onExport('pdf')}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8 transition-all duration-200" 
+              onClick={() => onExport('pdf')}
+              style={{ 
+                borderColor: currentTheme.navigationBorder,
+                color: currentTheme.navigationText,
+                backgroundColor: 'transparent'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = currentTheme.navigationHover;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
               <Download className="w-4 h-4 mr-1" />
               Export
             </Button>
@@ -106,10 +163,17 @@ const DashboardTopNavigation = ({
         <div className="flex items-center space-x-3">
           {showSearch ? (
             <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search 
+                className="absolute left-3 top-2.5 h-4 w-4"
+                style={{ color: currentTheme.navigationTextSecondary }}
+              />
               <Input
                 placeholder="Search dashboards..."
-                className="pl-9 w-64 h-9"
+                className="pl-9 w-64 h-9 border-0"
+                style={{ 
+                  backgroundColor: `${currentTheme.surface}40`,
+                  color: currentTheme.navigationText
+                }}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 autoFocus
@@ -117,19 +181,43 @@ const DashboardTopNavigation = ({
               />
             </div>
           ) : (
-            <Button variant="ghost" size="sm" onClick={() => setShowSearch(true)}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowSearch(true)}
+              style={{ color: currentTheme.navigationText }}
+              className="transition-colors duration-200"
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = currentTheme.navigationHover}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
               <Search size={16} />
             </Button>
           )}
           
-          <Button variant="ghost" size="sm" className="relative">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="relative transition-colors duration-200"
+            style={{ color: currentTheme.navigationText }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = currentTheme.navigationHover}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
             <Bell size={16} />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            <span 
+              className="absolute top-1 right-1 w-2 h-2 rounded-full"
+              style={{ backgroundColor: currentTheme.negative }}
+            ></span>
           </Button>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 h-9">
+              <Button 
+                variant="ghost" 
+                className="flex items-center gap-2 h-9 transition-colors duration-200"
+                style={{ color: currentTheme.navigationText }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = currentTheme.navigationHover}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
                 <Avatar className="h-7 w-7">
                   <AvatarImage src="/placeholder.svg" />
                   <AvatarFallback className="text-xs">JD</AvatarFallback>
@@ -138,51 +226,106 @@ const DashboardTopNavigation = ({
                 <ChevronDown size={12} />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
+            <DropdownMenuContent 
+              align="end" 
+              className="w-56"
+              style={{ 
+                backgroundColor: currentTheme.navigationBackground,
+                borderColor: currentTheme.navigationBorder
+              }}
+            >
+              <DropdownMenuLabel style={{ color: currentTheme.navigationText }}>
+                My Account
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator style={{ backgroundColor: currentTheme.navigationBorder }} />
+              <DropdownMenuItem 
+                style={{ color: currentTheme.navigationText }}
+                className="transition-colors duration-200"
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = currentTheme.navigationHover}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
                 <User size={14} className="mr-2" />
                 Profile Settings
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem 
+                style={{ color: currentTheme.navigationText }}
+                className="transition-colors duration-200"
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = currentTheme.navigationHover}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
                 <Settings size={14} className="mr-2" />
                 Dashboard Settings
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Sign Out</DropdownMenuItem>
+              <DropdownMenuSeparator style={{ backgroundColor: currentTheme.navigationBorder }} />
+              <DropdownMenuItem 
+                style={{ color: currentTheme.navigationText }}
+                className="transition-colors duration-200"
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = currentTheme.navigationHover}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                Sign Out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
-      <div className="h-12 bg-muted/30 border-t border-border">
+      <div 
+        className="h-12 border-t"
+        style={{ 
+          backgroundColor: `${currentTheme.surface}30`,
+          borderColor: currentTheme.navigationBorder
+        }}
+      >
         <div className="px-6 h-full flex items-center justify-between">
           <nav className="flex items-center space-x-1">
             {pages.map((page) => (
               <button
                 key={page.id}
                 onClick={() => handlePageSelect(page.id - 1)}
-                className={cn(
-                  "flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                  "hover:bg-background hover:shadow-sm",
-                  currentPage === page.id - 1
-                    ? "bg-background text-foreground shadow-sm border border-border" 
-                    : "text-muted-foreground hover:text-foreground"
-                )}
+                className="flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200"
+                style={{ 
+                  backgroundColor: currentPage === page.id - 1 ? currentTheme.navigationActive : 'transparent',
+                  color: currentPage === page.id - 1 ? currentTheme.navigationText : currentTheme.navigationTextSecondary,
+                  borderColor: currentPage === page.id - 1 ? currentTheme.navigationBorder : 'transparent'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = currentTheme.navigationHover;
+                  e.currentTarget.style.color = currentTheme.navigationText;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = currentPage === page.id - 1 ? currentTheme.navigationActive : 'transparent';
+                  e.currentTarget.style.color = currentPage === page.id - 1 ? currentTheme.navigationText : currentTheme.navigationTextSecondary;
+                }}
               >
                 <span>{page.icon}</span>
                 <span>{page.name}</span>
                 {currentPage === page.id - 1 && (
-                  <Badge variant="secondary" className="text-xs h-5">Active</Badge>
+                  <Badge 
+                    variant="secondary" 
+                    className="text-xs h-5"
+                    style={{ 
+                      backgroundColor: currentTheme.info,
+                      color: currentTheme.navigationBackground
+                    }}
+                  >
+                    Active
+                  </Badge>
                 )}
               </button>
             ))}
           </nav>
           
-          <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+          <div 
+            className="flex items-center space-x-2 text-xs"
+            style={{ color: currentTheme.navigationTextSecondary }}
+          >
             <span>Page {currentPage + 1} of {pages.length}</span>
-            <Separator orientation="vertical" className="h-4" />
+            <Separator 
+              orientation="vertical" 
+              className="h-4" 
+              style={{ backgroundColor: currentTheme.navigationBorder }}
+            />
             <span>Last updated: {new Date().toLocaleTimeString()}</span>
           </div>
         </div>
@@ -308,7 +451,7 @@ const DashboardTopNavigation = ({
   switch (style) {
     case 'top-tabs':
       return renderTopTabsStyle();
-    case 'top-minimal':
+    case 'top-minimal': 
       return renderTopMinimalStyle();
     case 'top-wide':
     default:
