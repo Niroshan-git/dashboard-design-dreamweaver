@@ -111,10 +111,13 @@ const DashboardGrid = ({ components, visuals, themeColors, mockData, config }: D
               >
                 <ComponentRenderer 
                   component={component}
-                  linkedVisual={linkedVisual}
+                  visual={linkedVisual}
                   themeColors={themeColors}
                   mockData={mockData}
                   config={config}
+                  allComponents={components}
+                  containerHeight={currentRowHeight}
+                  gridStructure={gridStructure}
                 />
               </div>
             );
