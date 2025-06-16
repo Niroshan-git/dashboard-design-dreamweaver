@@ -33,6 +33,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
       icon: DollarSign, 
       color: 'text-green-600',
       progress: 85,
+      target: '$3M',
       sparklineData: [
         { value: 400 }, { value: 300 }, { value: 500 }, { value: 280 }, { value: 590 }, { value: 320 }, { value: 400 }
       ]
@@ -45,6 +46,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
       icon: Users, 
       color: 'text-blue-600',
       progress: 72,
+      target: '50K',
       sparklineData: [
         { value: 200 }, { value: 400 }, { value: 300 }, { value: 500 }, { value: 280 }, { value: 400 }, { value: 450 }
       ]
@@ -57,6 +59,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
       icon: TrendingDown, 
       color: 'text-red-600',
       progress: 45,
+      target: '5%',
       sparklineData: [
         { value: 100 }, { value: 80 }, { value: 120 }, { value: 90 }, { value: 70 }, { value: 85 }, { value: 75 }
       ]
@@ -69,6 +72,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
       icon: User, 
       color: 'text-purple-600',
       progress: 94,
+      target: '95%',
       sparklineData: [
         { value: 350 }, { value: 370 }, { value: 390 }, { value: 360 }, { value: 410 }, { value: 400 }, { value: 420 }
       ]
@@ -81,6 +85,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
       icon: TrendingUp, 
       color: 'text-orange-600',
       progress: 78,
+      target: '25%',
       sparklineData: [
         { value: 150 }, { value: 180 }, { value: 220 }, { value: 190 }, { value: 240 }, { value: 210 }, { value: 260 }
       ]
@@ -93,6 +98,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
       icon: ShoppingCart, 
       color: 'text-indigo-600',
       progress: 88,
+      target: '1,500',
       sparklineData: [
         { value: 80 }, { value: 120 }, { value: 100 }, { value: 140 }, { value: 110 }, { value: 130 }, { value: 128 }
       ]
@@ -135,6 +141,201 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     }
     
     return baseConfig;
+  };
+
+  const renderProgressBar = (kpi: any, index: number, isMultiple: boolean) => {
+    if (!isMultiple) {
+      // Single KPI - standard progress bar
+      return (
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs" style={{ color: themeColors.textSecondary }}>
+            <span>Target Progress</span>
+            <span>{kpi.progress}%</span>
+          </div>
+          <Progress value={kpi.progress} className="h-2" />
+        </div>
+      );
+    }
+
+    // Multiple KPIs - varied progress bar styles
+    const progressStyles = [
+      // Gradient progress bar
+      <div key="gradient" className="space-y-1">
+        <div className="flex justify-between text-xs" style={{ color: themeColors.textSecondary }}>
+          <span>Progress</span>
+          <span>{kpi.progress}%</span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div 
+            className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all"
+            style={{ width: `${kpi.progress}%` }}
+          />
+        </div>
+      </div>,
+      // Segmented progress bar
+      <div key="segmented" className="space-y-1">
+        <div className="flex justify-between text-xs" style={{ color: themeColors.textSecondary }}>
+          <span>Achievement</span>
+          <span>{kpi.progress}%</span>
+        </div>
+        <div className="flex gap-1">
+          {Array.from({ length: 10 }, (_, i) => (
+            <div
+              key={i}
+              className={`h-2 flex-1 rounded-sm ${
+                i < Math.floor(kpi.progress / 10) ? 'bg-green-500' : 'bg-gray-200'
+              }`}
+            />
+          ))}
+        </div>
+      </div>,
+      // Circular progress indicator
+      <div key="circular" className="flex items-center justify-between">
+        <span className="text-xs" style={{ color: themeColors.textSecondary }}>Target</span>
+        <div className="relative w-8 h-8">
+          <svg className="w-8 h-8 transform -rotate-90" viewBox="0 0 32 32">
+            <circle
+              cx="16"
+              cy="16"
+              r="14"
+              stroke="currentColor"
+              strokeWidth="3"
+              fill="transparent"
+              className="text-gray-200"
+            />
+            <circle
+              cx="16"
+              cy="16"
+              r="14"
+              stroke="currentColor"
+              strokeWidth="3"
+              fill="transparent"
+              strokeDasharray={`${2 * Math.PI * 14 * (kpi.progress / 100)} ${2 * Math.PI * 14}`}
+              className="text-orange-500"
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-xs font-bold" style={{ color: themeColors.textPrimary }}>
+              {kpi.progress}%
+            </span>
+          </div>
+        </div>
+      </div>,
+      // Stepped progress bar
+      <div key="stepped" className="space-y-1">
+        <div className="flex justify-between text-xs" style={{ color: themeColors.textSecondary }}>
+          <span>Milestone</span>
+          <span>{kpi.progress}%</span>
+        </div>
+        <div className="relative">
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="h-2 rounded-full bg-gradient-to-r from-yellow-400 to-red-500 transition-all"
+              style={{ width: `${kpi.progress}%` }}
+            />
+          </div>
+          <div className="flex justify-between mt-1">
+            {[25, 50, 75, 100].map((step) => (
+              <div
+                key={step}
+                className={`w-1 h-1 rounded-full ${
+                  kpi.progress >= step ? 'bg-red-500' : 'bg-gray-300'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    ];
+
+    return progressStyles[index % progressStyles.length];
+  };
+
+  const renderMiniChart = (kpi: any, index: number) => {
+    const chartTypes = ['sparkline', 'miniBar', 'lollipop', 'area'];
+    const chartType = chartTypes[index % chartTypes.length];
+    
+    switch (chartType) {
+      case 'sparkline':
+        return (
+          <div className="mt-1">
+            <div className="text-xs mb-1" style={{ color: themeColors.textSecondary }}>7-day trend</div>
+            <ResponsiveContainer width="100%" height={30}>
+              <LineChart data={kpi.sparklineData}>
+                <Line 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke={themeColors.chartColors[index % themeColors.chartColors.length]} 
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        );
+      
+      case 'miniBar':
+        return (
+          <div className="mt-1">
+            <div className="text-xs mb-1" style={{ color: themeColors.textSecondary }}>Weekly data</div>
+            <ResponsiveContainer width="100%" height={30}>
+              <BarChart data={kpi.sparklineData}>
+                <Bar 
+                  dataKey="value" 
+                  fill={themeColors.chartColors[index % themeColors.chartColors.length]}
+                  radius={[1, 1, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        );
+      
+      case 'lollipop':
+        return (
+          <div className="mt-1">
+            <div className="text-xs mb-1" style={{ color: themeColors.textSecondary }}>Performance</div>
+            <div className="flex items-end justify-between h-6 gap-1">
+              {kpi.sparklineData.map((item: any, i: number) => (
+                <div key={i} className="flex flex-col items-center flex-1">
+                  <div
+                    className="w-2 h-2 rounded-full mb-1"
+                    style={{ 
+                      backgroundColor: themeColors.chartColors[index % themeColors.chartColors.length],
+                      opacity: item.value / 600
+                    }}
+                  />
+                  <div
+                    className="w-0.5 bg-gray-300"
+                    style={{ height: `${(item.value / 600) * 16}px` }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      
+      case 'area':
+        return (
+          <div className="mt-1">
+            <div className="text-xs mb-1" style={{ color: themeColors.textSecondary }}>Trend area</div>
+            <ResponsiveContainer width="100%" height={30}>
+              <AreaChart data={kpi.sparklineData}>
+                <Area 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke={themeColors.chartColors[index % themeColors.chartColors.length]} 
+                  fill={themeColors.chartColors[index % themeColors.chartColors.length]}
+                  fillOpacity={0.3}
+                  strokeWidth={1.5}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        );
+      
+      default:
+        return null;
+    }
   };
 
   const renderKPIComponent = () => {
@@ -181,39 +382,16 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
               </span>
             </div>
             
-            {/* Progress bar for advanced and highly-interactive levels */}
-            {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs" style={{ color: themeColors.textSecondary }}>
-                  <span>Target Progress</span>
-                  <span>{kpi.progress}%</span>
-                </div>
-                <Progress value={kpi.progress} className="h-2" />
-              </div>
-            )}
+            {/* Progress bar for advanced level only */}
+            {interactivityLevel === 'advanced' && renderProgressBar(kpi, 0, false)}
             
-            {/* Sparkline for highly interactive level only */}
-            {interactivityLevel === 'highly-interactive' && kpi.sparklineData && (
-              <div className="mt-2">
-                <div className="text-xs mb-1" style={{ color: themeColors.textSecondary }}>7-day trend</div>
-                <ResponsiveContainer width="100%" height={40}>
-                  <LineChart data={kpi.sparklineData}>
-                    <Line 
-                      type="monotone" 
-                      dataKey="value" 
-                      stroke={themeColors.chartColors[0]} 
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            )}
+            {/* Mini chart for highly interactive level only */}
+            {interactivityLevel === 'highly-interactive' && renderMiniChart(kpi, 0)}
           </CardContent>
         </Card>
       );
 
-      // Add tooltip for highly interactive mode only
+      // Add enhanced tooltip for highly interactive mode only
       if (interactivityLevel === 'highly-interactive') {
         return (
           <TooltipProvider>
@@ -221,12 +399,38 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
               <TooltipTrigger asChild>
                 {cardContent}
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-xs">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">{linkedVisual ? linkedVisual.name : kpi.label}</p>
-                  <p className="text-xs text-muted-foreground">Current: {kpi.value}</p>
-                  <p className="text-xs text-muted-foreground">Change: {kpi.change}</p>
-                  <p className="text-xs text-muted-foreground">Progress: {kpi.progress}%</p>
+              <TooltipContent side="bottom" className="max-w-sm p-4 bg-white border-2 shadow-xl">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <IconComponent className="h-5 w-5 text-blue-600" />
+                    <p className="text-base font-semibold text-gray-900">{linkedVisual ? linkedVisual.name : kpi.label}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-gray-500 text-xs">Current Value</p>
+                      <p className="font-bold text-gray-900">{kpi.value}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Change</p>
+                      <p className={`font-bold ${kpi.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>{kpi.change}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Target</p>
+                      <p className="font-bold text-gray-900">{kpi.target}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Progress</p>
+                      <p className="font-bold text-blue-600">{kpi.progress}%</p>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+                        style={{ width: `${kpi.progress}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </TooltipContent>
             </Tooltip>
@@ -274,47 +478,16 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                   <span className="text-xs ml-1" style={{ color: themeColors.textSecondary }}>vs last</span>
                 </div>
                 
-                {/* Progress bar for advanced and highly-interactive levels */}
-                {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
-                  <div className="space-y-1">
-                    <Progress value={kpi.progress} className="h-1" />
-                    <div className="text-xs text-center" style={{ color: themeColors.textMuted }}>
-                      {kpi.progress}%
-                    </div>
-                  </div>
-                )}
+                {/* Progress bar for advanced level - varied styles */}
+                {interactivityLevel === 'advanced' && renderProgressBar(kpi, index, true)}
                 
-                {/* Mini bar chart or sparkline for highly interactive only - vary by index */}
-                {interactivityLevel === 'highly-interactive' && (
-                  <div className="mt-1">
-                    <ResponsiveContainer width="100%" height={25}>
-                      {index % 2 === 0 ? (
-                        <BarChart data={kpi.sparklineData}>
-                          <Bar 
-                            dataKey="value" 
-                            fill={themeColors.chartColors[index % themeColors.chartColors.length]}
-                            radius={[1, 1, 0, 0]}
-                          />
-                        </BarChart>
-                      ) : (
-                        <LineChart data={kpi.sparklineData}>
-                          <Line 
-                            type="monotone" 
-                            dataKey="value" 
-                            stroke={themeColors.chartColors[index % themeColors.chartColors.length]} 
-                            strokeWidth={1.5}
-                            dot={false}
-                          />
-                        </LineChart>
-                      )}
-                    </ResponsiveContainer>
-                  </div>
-                )}
+                {/* Mini charts for highly interactive level - varied types */}
+                {interactivityLevel === 'highly-interactive' && renderMiniChart(kpi, index)}
               </CardContent>
             </Card>
           );
 
-          // Add tooltip for highly interactive mode only
+          // Add enhanced tooltip for highly interactive mode only
           if (interactivityLevel === 'highly-interactive') {
             return (
               <TooltipProvider key={index}>
@@ -322,12 +495,38 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
                   <TooltipTrigger asChild>
                     {cardContent}
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-xs">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">{linkedVisual ? linkedVisual.name : kpi.label}</p>
-                      <p className="text-xs text-muted-foreground">Current: {kpi.value}</p>
-                      <p className="text-xs text-muted-foreground">Change: {kpi.change}</p>
-                      <p className="text-xs text-muted-foreground">Progress: {kpi.progress}%</p>
+                  <TooltipContent side="bottom" className="max-w-sm p-4 bg-white border-2 shadow-xl">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <IconComponent className="h-5 w-5 text-blue-600" />
+                        <p className="text-base font-semibold text-gray-900">{linkedVisual ? linkedVisual.name : kpi.label}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-gray-500 text-xs">Current Value</p>
+                          <p className="font-bold text-gray-900">{kpi.value}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500 text-xs">Change</p>
+                          <p className={`font-bold ${kpi.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>{kpi.change}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500 text-xs">Target</p>
+                          <p className="font-bold text-gray-900">{kpi.target}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500 text-xs">Progress</p>
+                          <p className="font-bold text-blue-600">{kpi.progress}%</p>
+                        </div>
+                      </div>
+                      <div className="pt-2 border-t">
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+                            style={{ width: `${kpi.progress}%` }}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </TooltipContent>
                 </Tooltip>
