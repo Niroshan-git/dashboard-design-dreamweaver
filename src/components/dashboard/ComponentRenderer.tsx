@@ -7,13 +7,16 @@ import { AdvancedThemeColors, advancedThemes } from "@/utils/advancedThemeSystem
 
 interface ComponentRendererProps {
   component: any;
-  linkedVisual: any;
+  visual: any;
   themeColors: AdvancedThemeColors;
   mockData: any;
   config: any;
+  allComponents: any[];
+  containerHeight: any;
+  gridStructure: any;
 }
 
-const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, config }: ComponentRendererProps) => {
+const ComponentRenderer = ({ component, visual, themeColors, mockData, config }: ComponentRendererProps) => {
   const interactivityLevel = config?.interactivity || 'basic';
   const currentTheme = advancedThemes[config?.themeStyle] || advancedThemes.minimal;
   
@@ -51,48 +54,49 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
   // Enhanced KPI tooltip for highly interactive mode
   const KPITooltip = ({ kpi }: { kpi: any }) => (
     <div 
-      className="p-6 rounded-xl shadow-xl border backdrop-blur-sm min-w-[320px]"
+      className="absolute z-50 p-8 rounded-xl shadow-2xl border backdrop-blur-sm min-w-[400px] max-w-[500px] -top-4 left-1/2 transform -translate-x-1/2 -translate-y-full"
       style={{ 
         backgroundColor: currentTheme.tooltipBackground,
         borderColor: currentTheme.tooltipBorder,
-        color: currentTheme.tooltipText
+        color: currentTheme.tooltipText,
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
       }}
     >
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-bold">{kpi.label}</h3>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-2xl font-bold">{kpi.label}</h3>
         <div 
-          className="p-3 rounded-lg"
+          className="p-4 rounded-xl"
           style={{ backgroundColor: `${kpi.color.replace('text-', '').replace('-600', '')}20` }}
         >
-          <kpi.icon size={24} style={{ color: kpi.color.includes('green') ? currentTheme.positive : 
+          <kpi.icon size={32} style={{ color: kpi.color.includes('green') ? currentTheme.positive : 
                                               kpi.color.includes('red') ? currentTheme.negative :
                                               kpi.color.includes('blue') ? currentTheme.info : currentTheme.warning }} />
         </div>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div>
-          <span className="text-3xl font-bold">{kpi.value}</span>
+          <span className="text-4xl font-bold">{kpi.value}</span>
           <span 
-            className={`ml-3 text-lg font-medium ${kpi.trend === 'up' ? 'text-green-400' : 'text-red-400'}`}
+            className={`ml-4 text-xl font-medium`}
             style={{ color: kpi.trend === 'up' ? currentTheme.positive : currentTheme.negative }}
           >
             {kpi.change}
           </span>
         </div>
-        <div className="text-sm opacity-80">
-          <p className="font-semibold mb-2">Performance Insight:</p>
-          <p className="mb-2">
-            {kpi.trend === 'up' ? 'Showing positive growth trend with strong momentum' : 'Needs attention for improvement and optimization'}
+        <div className="text-base opacity-90">
+          <p className="font-semibold mb-3">Performance Insight:</p>
+          <p className="mb-3 leading-relaxed">
+            {kpi.trend === 'up' ? 'Showing positive growth trend with strong momentum and excellent performance indicators' : 'Needs attention for improvement and optimization to meet target objectives'}
           </p>
-          <div className="bg-opacity-20 p-3 rounded-lg mt-3" style={{ backgroundColor: currentTheme.info }}>
-            <p className="text-sm">
-              <strong>Key Metrics:</strong> Track daily variations and identify patterns for better decision making.
+          <div className="bg-opacity-20 p-4 rounded-lg mt-4" style={{ backgroundColor: currentTheme.info }}>
+            <p className="text-base">
+              <strong>Key Metrics:</strong> Track daily variations and identify patterns for better decision making and strategic planning.
             </p>
           </div>
         </div>
-        <div className="pt-3 border-t" style={{ borderColor: currentTheme.tooltipBorder }}>
-          <p className="text-xs opacity-60">Last updated: {new Date().toLocaleString()}</p>
-          <p className="text-xs opacity-60 mt-1">Data refreshes every 5 minutes</p>
+        <div className="pt-4 border-t" style={{ borderColor: currentTheme.tooltipBorder }}>
+          <p className="text-sm opacity-70">Last updated: {new Date().toLocaleString()}</p>
+          <p className="text-sm opacity-70 mt-1">Data refreshes every 5 minutes</p>
         </div>
       </div>
     </div>
@@ -108,68 +112,65 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     return baseData;
   };
 
-  // Progress bar variants for advanced level
-  const getProgressBarVariant = (index: number) => {
-    const variants = [
-      { type: 'gradient', colors: [currentTheme.positive, currentTheme.info] },
-      { type: 'striped', color: currentTheme.warning },
-      { type: 'animated', color: currentTheme.negative },
-      { type: 'segmented', colors: [currentTheme.positive, currentTheme.warning, currentTheme.negative] }
-    ];
-    return variants[index % variants.length];
-  };
-
   const renderMiniChart = (type: string, data: any[], colors: string[]) => {
     switch (type) {
       case 'sparkline':
         return (
-          <ResponsiveContainer width="100%" height={40}>
-            <LineChart data={data}>
-              <Line 
-                type="monotone" 
-                dataKey="value" 
-                stroke={colors[0]} 
-                strokeWidth={2} 
-                dot={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="w-full h-12">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data}>
+                <Line 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke={colors[0]} 
+                  strokeWidth={2} 
+                  dot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         );
       case 'minibar':
         return (
-          <ResponsiveContainer width="100%" height={40}>
-            <BarChart data={data}>
-              <Bar dataKey="value" fill={colors[1]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="w-full h-12">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data}>
+                <Bar dataKey="value" fill={colors[1]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         );
       case 'lollipop':
         return (
-          <ResponsiveContainer width="100%" height={40}>
-            <LineChart data={data}>
-              <Line 
-                type="monotone" 
-                dataKey="value" 
-                stroke={colors[2]} 
-                strokeWidth={3}
-                dot={{ fill: colors[2], strokeWidth: 2, r: 3 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="w-full h-12">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data}>
+                <Line 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke={colors[2]} 
+                  strokeWidth={3}
+                  dot={{ fill: colors[2], strokeWidth: 2, r: 3 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         );
       case 'area':
         return (
-          <ResponsiveContainer width="100%" height={40}>
-            <AreaChart data={data}>
-              <Area 
-                type="monotone" 
-                dataKey="value" 
-                stroke={colors[3]} 
-                fill={colors[3]} 
-                fillOpacity={0.3}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div className="w-full h-12">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data}>
+                <Area 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke={colors[3]} 
+                  fill={colors[3]} 
+                  fillOpacity={0.3}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         );
       default:
         return null;
@@ -184,7 +185,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
 
     return (
       <div 
-        className="flex flex-col justify-between h-full"
+        className="flex flex-col justify-between h-full relative"
         style={{ color: currentTheme.textPrimary }}
       >
         <div>
@@ -201,7 +202,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
           </div>
           <div className="text-3xl font-bold">{kpi.value}</div>
           <div 
-            className={`text-sm font-medium ${kpi.trend === 'up' ? 'text-green-500' : 'text-red-500'}`}
+            className="text-sm font-medium"
             style={{ color: kpi.trend === 'up' ? currentTheme.positive : currentTheme.negative }}
           >
             {kpi.change}
@@ -240,11 +241,11 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
         
         {/* Enhanced Interaction - Tooltip on Hover */}
         {interactivityLevel === 'highly-interactive' && (
-          <div className="relative group">
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none">
+          <div className="relative group mt-2">
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
               <KPITooltip kpi={kpi} />
             </div>
-            <div className="text-sm mt-2" style={{ color: currentTheme.textMuted }}>
+            <div className="text-sm cursor-pointer" style={{ color: currentTheme.textMuted }}>
               Hover for detailed insights
             </div>
           </div>
@@ -257,8 +258,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
     const chartProps = {
       data: mockData.chartData,
       width: "100%",
-      height: 300,
-      style: { backgroundColor: currentTheme.chartBackground }
+      height: 300
     };
 
     const commonChartStyles = {
@@ -279,11 +279,11 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
       }
     };
 
-    switch (linkedVisual?.type) {
+    switch (visual?.type) {
       case 'bar':
         return (
           <ResponsiveContainer {...chartProps}>
-            <BarChart data={mockData.chartData}>
+            <BarChart data={mockData.chartData} style={{ backgroundColor: currentTheme.chartBackground }}>
               <CartesianGrid {...commonChartStyles.cartesianGrid} />
               <XAxis {...commonChartStyles.xAxis} dataKey="month" />
               <YAxis {...commonChartStyles.yAxis} />
@@ -302,7 +302,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
       case 'line':
         return (
           <ResponsiveContainer {...chartProps}>
-            <LineChart data={mockData.chartData}>
+            <LineChart data={mockData.chartData} style={{ backgroundColor: currentTheme.chartBackground }}>
               <CartesianGrid {...commonChartStyles.cartesianGrid} />
               <XAxis {...commonChartStyles.xAxis} dataKey="month" />
               <YAxis {...commonChartStyles.yAxis} />
@@ -324,7 +324,7 @@ const ComponentRenderer = ({ component, linkedVisual, themeColors, mockData, con
       case 'area':
         return (
           <ResponsiveContainer {...chartProps}>
-            <AreaChart data={mockData.chartData}>
+            <AreaChart data={mockData.chartData} style={{ backgroundColor: currentTheme.chartBackground }}>
               <CartesianGrid {...commonChartStyles.cartesianGrid} />
               <XAxis {...commonChartStyles.xAxis} dataKey="month" />
               <YAxis {...commonChartStyles.yAxis} />
