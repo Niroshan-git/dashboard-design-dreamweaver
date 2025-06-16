@@ -109,10 +109,7 @@ const DashboardNavigation = ({
           size="icon"
           onClick={onToggleCollapse}
           className={cn("flex-shrink-0 transition-colors", collapsed && "mx-auto")}
-          style={{ 
-            color: currentTheme.navigationText,
-            ':hover': { backgroundColor: currentTheme.navigationHover }
-          }}
+          style={{ color: currentTheme.navigationText }}
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = currentTheme.navigationHover}
           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
         >
@@ -134,7 +131,6 @@ const DashboardNavigation = ({
               style={{ 
                 backgroundColor: `${currentTheme.surface}40`,
                 color: currentTheme.navigationText,
-                '::placeholder': { color: currentTheme.navigationTextSecondary },
                 borderColor: currentTheme.navigationBorder
               }}
               value={searchTerm}

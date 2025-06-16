@@ -1,4 +1,3 @@
-
 import ComponentRenderer from './ComponentRenderer';
 
 interface DashboardGridProps {
@@ -116,9 +115,6 @@ const DashboardGrid = ({ components, visuals, themeColors, mockData, config }: D
                   themeColors={themeColors}
                   mockData={mockData}
                   config={config}
-                  allComponents={components}
-                  containerHeight={currentRowHeight}
-                  gridStructure={gridStructure}
                 />
               </div>
             );
