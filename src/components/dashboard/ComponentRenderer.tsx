@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
@@ -127,15 +126,32 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
   };
 
   const renderChart = () => {
-    // Get chart type from component configuration
-    let chartType = component.visualType || component.type || 'bar';
+    // Get chart type from visual or component configuration
+    let chartType;
+    
+    // First check the visual object for chart type
+    if (visual && visual.chartType) {
+      chartType = visual.chartType.toLowerCase();
+    }
+    // Then check component's visualType
+    else if (component.visualType) {
+      chartType = component.visualType.toLowerCase();
+    }
+    // Finally check component type
+    else if (component.type && component.type !== 'chart') {
+      chartType = component.type.toLowerCase();
+    }
+    // Default fallback
+    else {
+      chartType = 'bar';
+    }
     
     // Clean up chart type naming
     if (chartType && chartType.includes('-')) {
       chartType = chartType.split('-')[0];
     }
     
-    console.log('Rendering Chart Type:', chartType, 'Component:', component);
+    console.log('Rendering Chart Type:', chartType, 'Visual:', visual, 'Component:', component);
 
     const chartProps = {
       data: mockData.chartData,
@@ -161,13 +177,13 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       }
     };
 
-    switch (chartType.toLowerCase()) {
+    switch (chartType) {
       case 'bar':
         return (
           <div className="h-full">
             <div className="mb-4">
               <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
-                Bar Chart
+                {component.name || component.label || 'Bar Chart'}
               </h3>
             </div>
             <ResponsiveContainer {...chartProps}>
@@ -193,7 +209,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
           <div className="h-full">
             <div className="mb-4">
               <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
-                Line Chart
+                {component.name || component.label || 'Line Chart'}
               </h3>
             </div>
             <ResponsiveContainer {...chartProps}>
@@ -222,7 +238,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
           <div className="h-full">
             <div className="mb-4">
               <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
-                Area Chart
+                {component.name || component.label || 'Area Chart'}
               </h3>
             </div>
             <ResponsiveContainer {...chartProps}>
@@ -247,6 +263,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
         );
 
       case 'pie':
+      case 'donut':
         const pieData = mockData.chartData.map((item: any, index: number) => ({
           name: item.month,
           value: item.value,
@@ -257,7 +274,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
           <div className="h-full">
             <div className="mb-4">
               <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
-                Pie Chart
+                {component.name || component.label || (chartType === 'donut' ? 'Donut Chart' : 'Pie Chart')}
               </h3>
             </div>
             <ResponsiveContainer {...chartProps}>
@@ -270,6 +287,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
                   cy="50%"
                   labelLine={false}
                   outerRadius={80}
+                  innerRadius={chartType === 'donut' ? 40 : 0}
                   fill="#8884d8"
                   dataKey="value"
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
@@ -391,9 +409,14 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
     }
   };
 
-  // Improved chart detection logic - check component type and visual configuration
+  // Improved chart detection logic
   const isChart = () => {
-    // Check component type first
+    // Check if visual has chartType specified
+    if (visual && visual.chartType) {
+      return true;
+    }
+    
+    // Check component type and visual type
     const componentType = (component.type || '').toLowerCase();
     const visualType = (component.visualType || '').toLowerCase();
     const componentName = (component.name || component.label || '').toLowerCase();
@@ -402,11 +425,13 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       componentType,
       visualType,
       componentName,
+      hasVisual: !!visual,
+      visualChartType: visual?.chartType,
       component
     });
     
     // Chart types to look for
-    const chartTypes = ['bar', 'line', 'area', 'pie', 'heatmap', 'scatter', 'funnel', 'chart'];
+    const chartTypes = ['bar', 'line', 'area', 'pie', 'donut', 'heatmap', 'scatter', 'funnel'];
     
     // Check if it's explicitly a chart type
     if (chartTypes.some(type => 
@@ -417,8 +442,12 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       return true;
     }
     
-    // Check if component type is 'chart'
-    if (componentType === 'chart' || visualType === 'chart') {
+    // Check if component type is 'chart' or has 'chart' in the name
+    if (componentType === 'chart' || 
+        visualType === 'chart' || 
+        componentName.includes('chart') ||
+        componentType.includes('chart') ||
+        visualType.includes('chart')) {
       return true;
     }
     
@@ -443,7 +472,9 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
     shouldRenderAsTable,
     componentName: component.name || component.label,
     componentType: component.type,
-    visualType: component.visualType
+    visualType: component.visualType,
+    hasVisual: !!visual,
+    visualChartType: visual?.chartType
   });
 
   return (
