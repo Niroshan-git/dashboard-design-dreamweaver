@@ -51,57 +51,6 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
     return null;
   };
 
-  // Enhanced KPI tooltip for highly interactive mode
-  const KPITooltip = ({ kpi }: { kpi: any }) => (
-    <div 
-      className="absolute z-50 p-8 rounded-xl shadow-2xl border backdrop-blur-sm min-w-[400px] max-w-[500px] -top-4 left-1/2 transform -translate-x-1/2 -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-      style={{ 
-        backgroundColor: currentTheme.tooltipBackground,
-        borderColor: currentTheme.tooltipBorder,
-        color: currentTheme.tooltipText,
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
-      }}
-    >
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-bold">{kpi.label}</h3>
-        <div 
-          className="p-4 rounded-xl"
-          style={{ backgroundColor: `${kpi.color.replace('text-', '').replace('-600', '')}20` }}
-        >
-          <kpi.icon size={32} style={{ color: kpi.color.includes('green') ? currentTheme.positive : 
-                                              kpi.color.includes('red') ? currentTheme.negative :
-                                              kpi.color.includes('blue') ? currentTheme.info : currentTheme.warning }} />
-        </div>
-      </div>
-      <div className="space-y-6">
-        <div>
-          <span className="text-4xl font-bold">{kpi.value}</span>
-          <span 
-            className={`ml-4 text-xl font-medium`}
-            style={{ color: kpi.trend === 'up' ? currentTheme.positive : currentTheme.negative }}
-          >
-            {kpi.change}
-          </span>
-        </div>
-        <div className="text-base opacity-90">
-          <p className="font-semibold mb-3">Performance Insight:</p>
-          <p className="mb-3 leading-relaxed">
-            {kpi.trend === 'up' ? 'Showing positive growth trend with strong momentum and excellent performance indicators' : 'Needs attention for improvement and optimization to meet target objectives'}
-          </p>
-          <div className="bg-opacity-20 p-4 rounded-lg mt-4" style={{ backgroundColor: currentTheme.info }}>
-            <p className="text-base">
-              <strong>Key Metrics:</strong> Track daily variations and identify patterns for better decision making and strategic planning.
-            </p>
-          </div>
-        </div>
-        <div className="pt-4 border-t" style={{ borderColor: currentTheme.tooltipBorder }}>
-          <p className="text-sm opacity-70">Last updated: {new Date().toLocaleString()}</p>
-          <p className="text-sm opacity-70 mt-1">Data refreshes every 5 minutes</p>
-        </div>
-      </div>
-    </div>
-  );
-
   // Mini chart data generator
   const generateMiniChartData = (type: string) => {
     const baseData = Array.from({ length: 7 }, (_, i) => ({
@@ -267,7 +216,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       }
     };
 
-    // Determine chart type - prioritize visual type, then component visualType, then component type
+    // Get chart type from visual or component
     let chartType = visual?.type || component.visualType || component.type;
     
     // Clean up chart type naming
@@ -275,7 +224,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       chartType = chartType.split('-')[0]; // Convert 'bar-charts' to 'bar'
     }
 
-    console.log('Chart Rendering:', {
+    console.log('Rendering Chart:', {
       visualType: visual?.type,
       componentVisualType: component.visualType,
       componentType: component.type,
@@ -388,21 +337,21 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       case 'heatmap':
         return (
           <div className="flex flex-col items-center justify-center h-full text-center p-8" style={{ color: currentTheme.textPrimary }}>
-            <div className="grid grid-cols-6 gap-2 mb-6">
-              {Array.from({ length: 42 }, (_, i) => (
+            <div className="text-xl font-bold mb-4">Heatmap Visualization</div>
+            <div className="grid grid-cols-8 gap-1 mb-6">
+              {Array.from({ length: 56 }, (_, i) => (
                 <div
                   key={i}
-                  className="w-8 h-8 rounded border"
+                  className="w-6 h-6 rounded border"
                   style={{
-                    backgroundColor: currentTheme.chartColors[Math.floor(Math.random() * currentTheme.chartColors.length)] + '40',
+                    backgroundColor: currentTheme.chartColors[Math.floor(Math.random() * currentTheme.chartColors.length)] + '60',
                     borderColor: currentTheme.cardBorder
                   }}
                 />
               ))}
             </div>
-            <div className="text-xl font-bold mb-2">Heatmap Visualization</div>
             <div className="text-sm" style={{ color: currentTheme.textSecondary }}>
-              Interactive heatmap showing data intensity
+              Interactive heatmap showing data intensity patterns
             </div>
           </div>
         );
@@ -411,12 +360,22 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
         return (
           <div className="flex items-center justify-center h-full text-center p-8" style={{ color: currentTheme.textPrimary }}>
             <div>
-              <div className="text-xl font-bold mb-2">Scatter Plot</div>
-              <div className="text-sm mb-4" style={{ color: currentTheme.textSecondary }}>
-                Data point correlation visualization
+              <div className="text-xl font-bold mb-4">Scatter Plot Analysis</div>
+              <div className="w-full h-48 rounded flex items-center justify-center relative" style={{ backgroundColor: currentTheme.chartBackground }}>
+                {Array.from({ length: 15 }, (_, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-3 h-3 rounded-full"
+                    style={{
+                      backgroundColor: currentTheme.chartColors[i % currentTheme.chartColors.length],
+                      left: `${10 + Math.random() * 80}%`,
+                      top: `${10 + Math.random() * 80}%`
+                    }}
+                  />
+                ))}
               </div>
-              <div className="w-full h-32 bg-gray-100 rounded flex items-center justify-center">
-                <span style={{ color: currentTheme.textMuted }}>Scatter plot data points</span>
+              <div className="text-sm mt-4" style={{ color: currentTheme.textSecondary }}>
+                Data point correlation visualization
               </div>
             </div>
           </div>
@@ -426,22 +385,25 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
         return (
           <div className="flex items-center justify-center h-full text-center p-8" style={{ color: currentTheme.textPrimary }}>
             <div>
-              <div className="text-xl font-bold mb-2">Funnel Chart</div>
-              <div className="text-sm mb-4" style={{ color: currentTheme.textSecondary }}>
-                Conversion process visualization
-              </div>
-              <div className="space-y-2">
-                {['100%', '75%', '50%', '25%'].map((width, index) => (
-                  <div
-                    key={index}
-                    className="h-8 rounded"
-                    style={{
-                      width: width,
-                      backgroundColor: currentTheme.chartColors[index % currentTheme.chartColors.length] + '60',
-                      margin: '0 auto'
-                    }}
-                  />
+              <div className="text-xl font-bold mb-4">Funnel Analysis</div>
+              <div className="space-y-3">
+                {['100% - Initial Stage', '85% - Qualified Leads', '65% - Proposals', '40% - Negotiations', '25% - Closed Deals'].map((label, index) => (
+                  <div key={index} className="flex items-center justify-center">
+                    <div
+                      className="h-8 rounded flex items-center justify-center text-white text-xs font-medium"
+                      style={{
+                        width: `${100 - index * 15}%`,
+                        backgroundColor: currentTheme.chartColors[index % currentTheme.chartColors.length],
+                        minWidth: '120px'
+                      }}
+                    >
+                      {label}
+                    </div>
+                  </div>
                 ))}
+              </div>
+              <div className="text-sm mt-4" style={{ color: currentTheme.textSecondary }}>
+                Conversion process visualization
               </div>
             </div>
           </div>
@@ -460,51 +422,62 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
     }
   };
 
-  // Improved chart detection logic - more specific and reliable
+  // Fixed chart detection logic - prioritize visual type and component type
   const isChart = () => {
-    const visualType = visual?.type;
-    const componentType = component.type;
-    const componentVisualType = component.visualType;
-    
-    console.log('Chart Detection Logic:', {
-      visualType,
-      componentType,
-      componentVisualType,
-      componentName: component.name || component.label
-    });
-    
-    // Chart types that should render as charts
-    const chartTypes = [
-      'bar', 'bar-charts',
-      'line', 'line-charts', 
-      'area', 'area-charts',
-      'pie', 'pie-charts',
-      'heatmap', 'heatmaps',
-      'scatter', 'scatter-charts',
-      'funnel', 'funnel-charts'
-    ];
-    
-    // First check visual type (highest priority)
-    if (visualType && chartTypes.includes(visualType)) {
-      return true;
+    // First check if visual exists and has a chart type
+    if (visual && visual.type) {
+      const visualType = visual.type.toLowerCase();
+      console.log('Visual type detected:', visualType);
+      
+      // Check if visual type is a chart type
+      if (visualType.includes('chart') || 
+          ['bar', 'line', 'area', 'pie', 'heatmap', 'scatter', 'funnel'].includes(visualType) ||
+          visualType.includes('bar') || visualType.includes('line') || 
+          visualType.includes('area') || visualType.includes('pie') ||
+          visualType.includes('heatmap') || visualType.includes('scatter') ||
+          visualType.includes('funnel')) {
+        return true;
+      }
     }
     
-    // Then check component visual type
-    if (componentVisualType && chartTypes.includes(componentVisualType)) {
-      return true;
-    }    
-    
-    // Finally check component type
-    if (componentType === 'chart' || chartTypes.includes(componentType)) {
-      return true;
+    // Then check component properties
+    if (component.visualType) {
+      const componentVisualType = component.visualType.toLowerCase();
+      console.log('Component visual type detected:', componentVisualType);
+      
+      if (componentVisualType.includes('chart') || 
+          ['bar', 'line', 'area', 'pie', 'heatmap', 'scatter', 'funnel'].includes(componentVisualType) ||
+          componentVisualType.includes('bar') || componentVisualType.includes('line') || 
+          componentVisualType.includes('area') || componentVisualType.includes('pie') ||
+          componentVisualType.includes('heatmap') || componentVisualType.includes('scatter') ||
+          componentVisualType.includes('funnel')) {
+        return true;
+      }
     }
     
-    // Special case: if component has 'chart' in its name or label
+    // Check component type
+    if (component.type) {
+      const componentType = component.type.toLowerCase();
+      console.log('Component type detected:', componentType);
+      
+      if (componentType === 'chart' || 
+          ['bar', 'line', 'area', 'pie', 'heatmap', 'scatter', 'funnel'].includes(componentType) ||
+          componentType.includes('chart') || componentType.includes('graph')) {
+        return true;
+      }
+    }
+    
+    // Check component name/label for chart keywords
     const componentName = (component.name || component.label || '').toLowerCase();
-    if (componentName.includes('chart') || componentName.includes('graph')) {
+    if (componentName.includes('chart') || componentName.includes('graph') ||
+        componentName.includes('heatmap') || componentName.includes('funnel') ||
+        componentName.includes('scatter')) {
+      console.log('Chart detected by name:', componentName);
       return true;
     }
     
+    // Default to KPI if no chart indicators found
+    console.log('No chart indicators found, defaulting to KPI');
     return false;
   };
 
@@ -514,7 +487,8 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
     shouldRenderAsChart,
     componentName: component.name || component.label,
     componentType: component.type,
-    visualType: visual?.type
+    visualType: visual?.type,
+    componentVisualType: component.visualType
   });
 
   return (
