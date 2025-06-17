@@ -51,87 +51,9 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
     return null;
   };
 
-  // Mini chart data generator
-  const generateMiniChartData = (type: string) => {
-    const baseData = Array.from({ length: 7 }, (_, i) => ({
-      name: `Day ${i + 1}`,
-      value: Math.floor(Math.random() * 100) + 20,
-      value2: Math.floor(Math.random() * 80) + 10
-    }));
-    return baseData;
-  };
-
-  const renderMiniChart = (type: string, data: any[], colors: string[]) => {
-    switch (type) {
-      case 'sparkline':
-        return (
-          <div className="w-full h-8">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data}>
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke={colors[0]} 
-                  strokeWidth={2} 
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        );
-      case 'minibar':
-        return (
-          <div className="w-full h-8">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data}>
-                <Bar dataKey="value" fill={colors[1]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        );
-      case 'lollipop':
-        return (
-          <div className="w-full h-8">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data}>
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke={colors[2]} 
-                  strokeWidth={3}
-                  dot={{ fill: colors[2], strokeWidth: 2, r: 3 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        );
-      case 'area':
-        return (
-          <div className="w-full h-8">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data}>
-                <Area 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke={colors[3]} 
-                  fill={colors[3]} 
-                  fillOpacity={0.3}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-
   const renderKPI = () => {
     const kpi = mockData.kpiData[0]; // Get the first KPI for simplicity
-    const miniChartData = generateMiniChartData('kpi');
-    const chartTypes = ['sparkline', 'minibar', 'lollipop', 'area'];
-    const selectedChartType = chartTypes[Math.floor(Math.random() * chartTypes.length)];
-
+    
     return (
       <div 
         className="flex flex-col justify-between h-full relative group"
@@ -157,41 +79,64 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
             {kpi.change}
           </div>
         </div>
-        
-        {/* Advanced Level - Progress Bars */}
-        {interactivityLevel === 'advanced' && (
-          <div className="mt-4">
-            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-              <div 
-                className="h-2 rounded-full transition-all duration-500"
-                style={{ 
-                  width: `${Math.floor(Math.random() * 100)}%`,
-                  background: `linear-gradient(90deg, ${currentTheme.positive}, ${currentTheme.info})`
-                }}
-              ></div>
-            </div>
-            <div className="text-xs mt-1" style={{ color: currentTheme.textSecondary }}>
-              Performance indicator
-            </div>
-          </div>
-        )}
+      </div>
+    );
+  };
 
-        {/* Highly Interactive Level - Mini Charts */}
-        {interactivityLevel === 'highly-interactive' && (
-          <div className="mt-4">
-            <div className="mb-2">
-              <span className="text-xs font-medium" style={{ color: currentTheme.textSecondary }}>
-                Trend ({selectedChartType})
-              </span>
-            </div>
-            {renderMiniChart(selectedChartType, miniChartData, currentTheme.chartColors)}
-          </div>
-        )}
+  const renderTable = () => {
+    const tableData = [
+      { month: 'January', revenue: '$45,000', orders: 156, growth: '+12%' },
+      { month: 'February', revenue: '$52,000', orders: 189, growth: '+15%' },
+      { month: 'March', revenue: '$48,000', orders: 167, growth: '+8%' },
+      { month: 'April', revenue: '$61,000', orders: 203, growth: '+22%' },
+      { month: 'May', revenue: '$55,000', orders: 178, growth: '+18%' },
+      { month: 'June', revenue: '$67,000', orders: 234, growth: '+25%' }
+    ];
+
+    return (
+      <div className="h-full overflow-auto">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
+            Data Table
+          </h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr style={{ backgroundColor: currentTheme.cardBorder }}>
+                <th className="text-left p-3 font-semibold" style={{ color: currentTheme.textPrimary }}>Month</th>
+                <th className="text-left p-3 font-semibold" style={{ color: currentTheme.textPrimary }}>Revenue</th>
+                <th className="text-left p-3 font-semibold" style={{ color: currentTheme.textPrimary }}>Orders</th>
+                <th className="text-left p-3 font-semibold" style={{ color: currentTheme.textPrimary }}>Growth</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tableData.map((row, index) => (
+                <tr key={index} className="border-b" style={{ borderColor: currentTheme.cardBorder }}>
+                  <td className="p-3" style={{ color: currentTheme.textPrimary }}>{row.month}</td>
+                  <td className="p-3 font-semibold" style={{ color: currentTheme.textPrimary }}>{row.revenue}</td>
+                  <td className="p-3" style={{ color: currentTheme.textPrimary }}>{row.orders}</td>
+                  <td className="p-3 font-semibold" style={{ color: currentTheme.positive }}>{row.growth}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   };
 
   const renderChart = () => {
+    // Get chart type from component configuration
+    let chartType = component.visualType || component.type || 'bar';
+    
+    // Clean up chart type naming
+    if (chartType && chartType.includes('-')) {
+      chartType = chartType.split('-')[0];
+    }
+    
+    console.log('Rendering Chart Type:', chartType, 'Component:', component);
+
     const chartProps = {
       data: mockData.chartData,
       width: "100%",
@@ -216,90 +161,89 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       }
     };
 
-    // Get chart type from visual or component
-    let chartType = visual?.type || component.visualType || component.type;
-    
-    // Clean up chart type naming
-    if (chartType && chartType.includes('-')) {
-      chartType = chartType.split('-')[0]; // Convert 'bar-charts' to 'bar'
-    }
-
-    console.log('Rendering Chart:', {
-      visualType: visual?.type,
-      componentVisualType: component.visualType,
-      componentType: component.type,
-      finalChartType: chartType,
-      componentName: component.name || component.label
-    });
-
-    switch (chartType) {
+    switch (chartType.toLowerCase()) {
       case 'bar':
         return (
-          <ResponsiveContainer {...chartProps}>
-            <BarChart data={mockData.chartData} style={{ backgroundColor: currentTheme.chartBackground }}>
-              <CartesianGrid {...commonChartStyles.cartesianGrid} />
-              <XAxis {...commonChartStyles.xAxis} dataKey="month" />
-              <YAxis {...commonChartStyles.yAxis} />
-              {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
+          <div className="h-full">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
+                Bar Chart
+              </h3>
+            </div>
+            <ResponsiveContainer {...chartProps}>
+              <BarChart data={mockData.chartData}>
+                <CartesianGrid {...commonChartStyles.cartesianGrid} />
+                <XAxis {...commonChartStyles.xAxis} dataKey="month" />
+                <YAxis {...commonChartStyles.yAxis} />
                 <Tooltip content={<CustomTooltip />} />
-              )}
-              <Legend />
-              <Bar 
-                dataKey="value" 
-                fill={currentTheme.chartColors[0]}
-                radius={[4, 4, 0, 0]}
-                name="Sales Data"
-              />
-            </BarChart>
-          </ResponsiveContainer>
+                <Legend />
+                <Bar 
+                  dataKey="value" 
+                  fill={currentTheme.chartColors[0]}
+                  radius={[4, 4, 0, 0]}
+                  name="Sales Data"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         );
       
       case 'line':
         return (
-          <ResponsiveContainer {...chartProps}>
-            <LineChart data={mockData.chartData} style={{ backgroundColor: currentTheme.chartBackground }}>
-              <CartesianGrid {...commonChartStyles.cartesianGrid} />
-              <XAxis {...commonChartStyles.xAxis} dataKey="month" />
-              <YAxis {...commonChartStyles.yAxis} />
-              {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
+          <div className="h-full">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
+                Line Chart
+              </h3>
+            </div>
+            <ResponsiveContainer {...chartProps}>
+              <LineChart data={mockData.chartData}>
+                <CartesianGrid {...commonChartStyles.cartesianGrid} />
+                <XAxis {...commonChartStyles.xAxis} dataKey="month" />
+                <YAxis {...commonChartStyles.yAxis} />
                 <Tooltip content={<CustomTooltip />} />
-              )}
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="value" 
-                stroke={currentTheme.chartColors[1]}
-                strokeWidth={3}
-                dot={{ fill: currentTheme.chartColors[1], strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, stroke: currentTheme.chartColors[1], strokeWidth: 2 }}
-                name="Trend Line"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke={currentTheme.chartColors[1]}
+                  strokeWidth={3}
+                  dot={{ fill: currentTheme.chartColors[1], strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, stroke: currentTheme.chartColors[1], strokeWidth: 2 }}
+                  name="Trend Line"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         );
       
       case 'area':
         return (
-          <ResponsiveContainer {...chartProps}>
-            <AreaChart data={mockData.chartData} style={{ backgroundColor: currentTheme.chartBackground }}>
-              <CartesianGrid {...commonChartStyles.cartesianGrid} />
-              <XAxis {...commonChartStyles.xAxis} dataKey="month" />
-              <YAxis {...commonChartStyles.yAxis} />
-              {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
+          <div className="h-full">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
+                Area Chart
+              </h3>
+            </div>
+            <ResponsiveContainer {...chartProps}>
+              <AreaChart data={mockData.chartData}>
+                <CartesianGrid {...commonChartStyles.cartesianGrid} />
+                <XAxis {...commonChartStyles.xAxis} dataKey="month" />
+                <YAxis {...commonChartStyles.yAxis} />
                 <Tooltip content={<CustomTooltip />} />
-              )}
-              <Legend />
-              <Area 
-                type="monotone" 
-                dataKey="value" 
-                stroke={currentTheme.chartColors[2]}
-                fill={currentTheme.chartColors[2]}
-                fillOpacity={0.3}
-                strokeWidth={2}
-                name="Area Data"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+                <Legend />
+                <Area 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke={currentTheme.chartColors[2]}
+                  fill={currentTheme.chartColors[2]}
+                  fillOpacity={0.3}
+                  strokeWidth={2}
+                  name="Area Data"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         );
 
       case 'pie':
@@ -310,83 +254,108 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
         }));
         
         return (
-          <ResponsiveContainer {...chartProps}>
-            <PieChart>
-              {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
+          <div className="h-full">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
+                Pie Chart
+              </h3>
+            </div>
+            <ResponsiveContainer {...chartProps}>
+              <PieChart>
                 <Tooltip content={<CustomTooltip />} />
-              )}
-              <Legend />
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              >
-                {pieData.map((entry: any, index: number) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
+                <Legend />
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {pieData.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         );
 
       case 'heatmap':
         return (
-          <div className="flex flex-col items-center justify-center h-full text-center p-8" style={{ color: currentTheme.textPrimary }}>
-            <div className="text-xl font-bold mb-4">Heatmap Visualization</div>
-            <div className="grid grid-cols-8 gap-1 mb-6">
-              {Array.from({ length: 56 }, (_, i) => (
-                <div
-                  key={i}
-                  className="w-6 h-6 rounded border"
-                  style={{
-                    backgroundColor: currentTheme.chartColors[Math.floor(Math.random() * currentTheme.chartColors.length)] + '60',
-                    borderColor: currentTheme.cardBorder
-                  }}
-                />
-              ))}
+          <div className="h-full">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
+                Heatmap Visualization
+              </h3>
             </div>
-            <div className="text-sm" style={{ color: currentTheme.textSecondary }}>
-              Interactive heatmap showing data intensity patterns
+            <div className="flex flex-col items-center justify-center flex-1">
+              <div className="grid grid-cols-8 gap-1 mb-6">
+                {Array.from({ length: 56 }, (_, i) => (
+                  <div
+                    key={i}
+                    className="w-6 h-6 rounded border flex items-center justify-center text-xs font-bold"
+                    style={{
+                      backgroundColor: currentTheme.chartColors[Math.floor(Math.random() * currentTheme.chartColors.length)] + '60',
+                      borderColor: currentTheme.cardBorder,
+                      color: currentTheme.textPrimary
+                    }}
+                  >
+                    {Math.floor(Math.random() * 100)}
+                  </div>
+                ))}
+              </div>
+              <div className="text-sm" style={{ color: currentTheme.textSecondary }}>
+                Interactive heatmap showing data intensity patterns
+              </div>
             </div>
           </div>
         );
 
       case 'scatter':
         return (
-          <div className="flex items-center justify-center h-full text-center p-8" style={{ color: currentTheme.textPrimary }}>
-            <div>
-              <div className="text-xl font-bold mb-4">Scatter Plot Analysis</div>
+          <div className="h-full">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
+                Scatter Plot Analysis
+              </h3>
+            </div>
+            <div className="flex items-center justify-center flex-1">
               <div className="w-full h-48 rounded flex items-center justify-center relative" style={{ backgroundColor: currentTheme.chartBackground }}>
                 {Array.from({ length: 15 }, (_, i) => (
                   <div
                     key={i}
-                    className="absolute w-3 h-3 rounded-full"
+                    className="absolute w-3 h-3 rounded-full flex items-center justify-center text-xs font-bold"
                     style={{
                       backgroundColor: currentTheme.chartColors[i % currentTheme.chartColors.length],
                       left: `${10 + Math.random() * 80}%`,
-                      top: `${10 + Math.random() * 80}%`
+                      top: `${10 + Math.random() * 80}%`,
+                      color: 'white'
                     }}
-                  />
+                  >
+                    {i + 1}
+                  </div>
                 ))}
               </div>
-              <div className="text-sm mt-4" style={{ color: currentTheme.textSecondary }}>
-                Data point correlation visualization
-              </div>
+            </div>
+            <div className="text-sm mt-4 text-center" style={{ color: currentTheme.textSecondary }}>
+              Data point correlation visualization
             </div>
           </div>
         );
 
       case 'funnel':
         return (
-          <div className="flex items-center justify-center h-full text-center p-8" style={{ color: currentTheme.textPrimary }}>
-            <div>
-              <div className="text-xl font-bold mb-4">Funnel Analysis</div>
-              <div className="space-y-3">
+          <div className="h-full">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
+                Funnel Analysis
+              </h3>
+            </div>
+            <div className="flex flex-col items-center justify-center flex-1">
+              <div className="space-y-3 w-full max-w-md">
                 {['100% - Initial Stage', '85% - Qualified Leads', '65% - Proposals', '40% - Negotiations', '25% - Closed Deals'].map((label, index) => (
                   <div key={index} className="flex items-center justify-center">
                     <div
@@ -422,73 +391,59 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
     }
   };
 
-  // Fixed chart detection logic - prioritize visual type and component type
+  // Improved chart detection logic - check component type and visual configuration
   const isChart = () => {
-    // First check if visual exists and has a chart type
-    if (visual && visual.type) {
-      const visualType = visual.type.toLowerCase();
-      console.log('Visual type detected:', visualType);
-      
-      // Check if visual type is a chart type
-      if (visualType.includes('chart') || 
-          ['bar', 'line', 'area', 'pie', 'heatmap', 'scatter', 'funnel'].includes(visualType) ||
-          visualType.includes('bar') || visualType.includes('line') || 
-          visualType.includes('area') || visualType.includes('pie') ||
-          visualType.includes('heatmap') || visualType.includes('scatter') ||
-          visualType.includes('funnel')) {
-        return true;
-      }
-    }
-    
-    // Then check component properties
-    if (component.visualType) {
-      const componentVisualType = component.visualType.toLowerCase();
-      console.log('Component visual type detected:', componentVisualType);
-      
-      if (componentVisualType.includes('chart') || 
-          ['bar', 'line', 'area', 'pie', 'heatmap', 'scatter', 'funnel'].includes(componentVisualType) ||
-          componentVisualType.includes('bar') || componentVisualType.includes('line') || 
-          componentVisualType.includes('area') || componentVisualType.includes('pie') ||
-          componentVisualType.includes('heatmap') || componentVisualType.includes('scatter') ||
-          componentVisualType.includes('funnel')) {
-        return true;
-      }
-    }
-    
-    // Check component type
-    if (component.type) {
-      const componentType = component.type.toLowerCase();
-      console.log('Component type detected:', componentType);
-      
-      if (componentType === 'chart' || 
-          ['bar', 'line', 'area', 'pie', 'heatmap', 'scatter', 'funnel'].includes(componentType) ||
-          componentType.includes('chart') || componentType.includes('graph')) {
-        return true;
-      }
-    }
-    
-    // Check component name/label for chart keywords
+    // Check component type first
+    const componentType = (component.type || '').toLowerCase();
+    const visualType = (component.visualType || '').toLowerCase();
     const componentName = (component.name || component.label || '').toLowerCase();
-    if (componentName.includes('chart') || componentName.includes('graph') ||
-        componentName.includes('heatmap') || componentName.includes('funnel') ||
-        componentName.includes('scatter')) {
-      console.log('Chart detected by name:', componentName);
+    
+    console.log('Chart Detection:', {
+      componentType,
+      visualType,
+      componentName,
+      component
+    });
+    
+    // Chart types to look for
+    const chartTypes = ['bar', 'line', 'area', 'pie', 'heatmap', 'scatter', 'funnel', 'chart'];
+    
+    // Check if it's explicitly a chart type
+    if (chartTypes.some(type => 
+      componentType.includes(type) || 
+      visualType.includes(type) || 
+      componentName.includes(type)
+    )) {
       return true;
     }
     
-    // Default to KPI if no chart indicators found
-    console.log('No chart indicators found, defaulting to KPI');
+    // Check if component type is 'chart'
+    if (componentType === 'chart' || visualType === 'chart') {
+      return true;
+    }
+    
     return false;
   };
 
+  const isTable = () => {
+    const componentType = (component.type || '').toLowerCase();
+    const visualType = (component.visualType || '').toLowerCase();
+    const componentName = (component.name || component.label || '').toLowerCase();
+    
+    return componentType === 'table' || 
+           visualType === 'table' || 
+           componentName.includes('table');
+  };
+
   const shouldRenderAsChart = isChart();
+  const shouldRenderAsTable = isTable();
   
   console.log('Final Render Decision:', {
     shouldRenderAsChart,
+    shouldRenderAsTable,
     componentName: component.name || component.label,
     componentType: component.type,
-    visualType: visual?.type,
-    componentVisualType: component.visualType
+    visualType: component.visualType
   });
 
   return (
@@ -500,7 +455,9 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       }}
     >
       <CardContent className="p-6 h-full">
-        {shouldRenderAsChart ? renderChart() : renderKPI()}
+        {shouldRenderAsTable ? renderTable() : 
+         shouldRenderAsChart ? renderChart() : 
+         renderKPI()}
       </CardContent>
     </Card>
   );
