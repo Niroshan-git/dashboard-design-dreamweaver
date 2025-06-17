@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
 import { DollarSign, Users, TrendingDown, User, TrendingUp, ShoppingCart } from "lucide-react";
 import { AdvancedThemeColors, advancedThemes } from "@/utils/advancedThemeSystem";
 
@@ -238,16 +238,6 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
             {renderMiniChart(selectedChartType, miniChartData, currentTheme.chartColors)}
           </div>
         )}
-        
-        {/* Enhanced Interaction - Tooltip on Hover */}
-        {interactivityLevel === 'highly-interactive' && (
-          <>
-            <KPITooltip kpi={kpi} />
-            <div className="text-sm cursor-pointer mt-2" style={{ color: currentTheme.textMuted }}>
-              Hover for detailed insights
-            </div>
-          </>
-        )}
       </div>
     );
   };
@@ -277,19 +267,24 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       }
     };
 
-    // Determine chart type - prioritize visual type over component type
-    const chartType = visual?.type || component.visualType || component.type;
+    // Determine chart type - prioritize visual type, then component visualType, then component type
+    let chartType = visual?.type || component.visualType || component.type;
+    
+    // Clean up chart type naming
+    if (chartType && chartType.includes('-')) {
+      chartType = chartType.split('-')[0]; // Convert 'bar-charts' to 'bar'
+    }
 
-    console.log('Chart Type Detection:', {
+    console.log('Chart Rendering:', {
       visualType: visual?.type,
       componentVisualType: component.visualType,
       componentType: component.type,
-      finalChartType: chartType
+      finalChartType: chartType,
+      componentName: component.name || component.label
     });
 
     switch (chartType) {
       case 'bar':
-      case 'bar-charts':
         return (
           <ResponsiveContainer {...chartProps}>
             <BarChart data={mockData.chartData} style={{ backgroundColor: currentTheme.chartBackground }}>
@@ -299,17 +294,18 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
               {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
                 <Tooltip content={<CustomTooltip />} />
               )}
+              <Legend />
               <Bar 
                 dataKey="value" 
                 fill={currentTheme.chartColors[0]}
                 radius={[4, 4, 0, 0]}
+                name="Sales Data"
               />
             </BarChart>
           </ResponsiveContainer>
         );
       
       case 'line':
-      case 'line-charts':
         return (
           <ResponsiveContainer {...chartProps}>
             <LineChart data={mockData.chartData} style={{ backgroundColor: currentTheme.chartBackground }}>
@@ -319,6 +315,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
               {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
                 <Tooltip content={<CustomTooltip />} />
               )}
+              <Legend />
               <Line 
                 type="monotone" 
                 dataKey="value" 
@@ -326,13 +323,13 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
                 strokeWidth={3}
                 dot={{ fill: currentTheme.chartColors[1], strokeWidth: 2, r: 4 }}
                 activeDot={{ r: 6, stroke: currentTheme.chartColors[1], strokeWidth: 2 }}
+                name="Trend Line"
               />
             </LineChart>
           </ResponsiveContainer>
         );
       
       case 'area':
-      case 'area-charts':
         return (
           <ResponsiveContainer {...chartProps}>
             <AreaChart data={mockData.chartData} style={{ backgroundColor: currentTheme.chartBackground }}>
@@ -342,6 +339,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
               {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
                 <Tooltip content={<CustomTooltip />} />
               )}
+              <Legend />
               <Area 
                 type="monotone" 
                 dataKey="value" 
@@ -349,19 +347,101 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
                 fill={currentTheme.chartColors[2]}
                 fillOpacity={0.3}
                 strokeWidth={2}
+                name="Area Data"
               />
             </AreaChart>
           </ResponsiveContainer>
         );
-      
-      case 'heatmaps':
+
+      case 'pie':
+        const pieData = mockData.chartData.map((item: any, index: number) => ({
+          name: item.month,
+          value: item.value,
+          fill: currentTheme.chartColors[index % currentTheme.chartColors.length]
+        }));
+        
+        return (
+          <ResponsiveContainer {...chartProps}>
+            <PieChart>
+              {(interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive') && (
+                <Tooltip content={<CustomTooltip />} />
+              )}
+              <Legend />
+              <Pie
+                data={pieData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              >
+                {pieData.map((entry: any, index: number) => (
+                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        );
+
       case 'heatmap':
         return (
-          <div className="flex items-center justify-center h-full text-center" style={{ color: currentTheme.textPrimary }}>
+          <div className="flex flex-col items-center justify-center h-full text-center p-8" style={{ color: currentTheme.textPrimary }}>
+            <div className="grid grid-cols-6 gap-2 mb-6">
+              {Array.from({ length: 42 }, (_, i) => (
+                <div
+                  key={i}
+                  className="w-8 h-8 rounded border"
+                  style={{
+                    backgroundColor: currentTheme.chartColors[Math.floor(Math.random() * currentTheme.chartColors.length)] + '40',
+                    borderColor: currentTheme.cardBorder
+                  }}
+                />
+              ))}
+            </div>
+            <div className="text-xl font-bold mb-2">Heatmap Visualization</div>
+            <div className="text-sm" style={{ color: currentTheme.textSecondary }}>
+              Interactive heatmap showing data intensity
+            </div>
+          </div>
+        );
+
+      case 'scatter':
+        return (
+          <div className="flex items-center justify-center h-full text-center p-8" style={{ color: currentTheme.textPrimary }}>
             <div>
-              <div className="text-2xl font-bold mb-2">Heatmap Chart</div>
-              <div className="text-sm" style={{ color: currentTheme.textSecondary }}>
-                Heatmap visualization will be rendered here
+              <div className="text-xl font-bold mb-2">Scatter Plot</div>
+              <div className="text-sm mb-4" style={{ color: currentTheme.textSecondary }}>
+                Data point correlation visualization
+              </div>
+              <div className="w-full h-32 bg-gray-100 rounded flex items-center justify-center">
+                <span style={{ color: currentTheme.textMuted }}>Scatter plot data points</span>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'funnel':
+        return (
+          <div className="flex items-center justify-center h-full text-center p-8" style={{ color: currentTheme.textPrimary }}>
+            <div>
+              <div className="text-xl font-bold mb-2">Funnel Chart</div>
+              <div className="text-sm mb-4" style={{ color: currentTheme.textSecondary }}>
+                Conversion process visualization
+              </div>
+              <div className="space-y-2">
+                {['100%', '75%', '50%', '25%'].map((width, index) => (
+                  <div
+                    key={index}
+                    className="h-8 rounded"
+                    style={{
+                      width: width,
+                      backgroundColor: currentTheme.chartColors[index % currentTheme.chartColors.length] + '60',
+                      margin: '0 auto'
+                    }}
+                  />
+                ))}
               </div>
             </div>
           </div>
@@ -373,17 +453,25 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
             <div>
               <div className="text-lg font-medium mb-2">Chart Preview</div>
               <div className="text-sm">Type: {chartType || 'Unknown'}</div>
+              <div className="text-xs mt-2">Component: {component.name || component.label || 'Unnamed'}</div>
             </div>
           </div>
         );
     }
   };
 
-  // Improved chart detection logic
+  // Improved chart detection logic - more specific and reliable
   const isChart = () => {
     const visualType = visual?.type;
     const componentType = component.type;
     const componentVisualType = component.visualType;
+    
+    console.log('Chart Detection Logic:', {
+      visualType,
+      componentType,
+      componentVisualType,
+      componentName: component.name || component.label
+    });
     
     // Chart types that should render as charts
     const chartTypes = [
@@ -392,14 +480,42 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       'area', 'area-charts',
       'pie', 'pie-charts',
       'heatmap', 'heatmaps',
-      'scatter', 'scatter-charts'
+      'scatter', 'scatter-charts',
+      'funnel', 'funnel-charts'
     ];
     
-    return chartTypes.includes(visualType) || 
-           chartTypes.includes(componentType) || 
-           chartTypes.includes(componentVisualType) ||
-           componentType === 'chart';
+    // First check visual type (highest priority)
+    if (visualType && chartTypes.includes(visualType)) {
+      return true;
+    }
+    
+    // Then check component visual type
+    if (componentVisualType && chartTypes.includes(componentVisualType)) {
+      return true;
+    }    
+    
+    // Finally check component type
+    if (componentType === 'chart' || chartTypes.includes(componentType)) {
+      return true;
+    }
+    
+    // Special case: if component has 'chart' in its name or label
+    const componentName = (component.name || component.label || '').toLowerCase();
+    if (componentName.includes('chart') || componentName.includes('graph')) {
+      return true;
+    }
+    
+    return false;
   };
+
+  const shouldRenderAsChart = isChart();
+  
+  console.log('Final Render Decision:', {
+    shouldRenderAsChart,
+    componentName: component.name || component.label,
+    componentType: component.type,
+    visualType: visual?.type
+  });
 
   return (
     <Card 
@@ -410,7 +526,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       }}
     >
       <CardContent className="p-6 h-full">
-        {isChart() ? renderChart() : renderKPI()}
+        {shouldRenderAsChart ? renderChart() : renderKPI()}
       </CardContent>
     </Card>
   );
