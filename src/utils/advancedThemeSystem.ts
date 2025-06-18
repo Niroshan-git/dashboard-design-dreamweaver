@@ -315,6 +315,48 @@ export const advancedThemes: Record<string, AdvancedThemeColors> = {
   }
 };
 
+export const getNavigationThemeDefaults = (navigationStyle: string, baseTheme: AdvancedThemeColors) => {
+  switch (navigationStyle) {
+    case 'left-full':
+    case 'left-collapsible':
+      return {
+        ...baseTheme,
+        navigationBackground: baseTheme.navigationBackground,
+        navigationBorder: baseTheme.navigationBorder,
+        navigationText: baseTheme.navigationText,
+        navigationTextSecondary: baseTheme.navigationTextSecondary,
+        navigationHover: baseTheme.navigationHover,
+        navigationActive: baseTheme.navigationActive,
+      };
+    
+    case 'top-wide':
+    case 'top-tabs':
+      return {
+        ...baseTheme,
+        navigationBackground: baseTheme.background,
+        navigationBorder: baseTheme.cardBorder,
+        navigationText: baseTheme.textPrimary,
+        navigationTextSecondary: baseTheme.textSecondary,
+        navigationHover: baseTheme.hover,
+        navigationActive: baseTheme.active,
+      };
+    
+    case 'top-minimal':
+      return {
+        ...baseTheme,
+        navigationBackground: 'transparent',
+        navigationBorder: 'transparent',
+        navigationText: baseTheme.textPrimary,
+        navigationTextSecondary: baseTheme.textMuted,
+        navigationHover: baseTheme.hover,
+        navigationActive: baseTheme.surface,
+      };
+    
+    default:
+      return baseTheme;
+  }
+};
+
 export const generateColorPalette = (baseColors: string[]): string[] => {
   // Generate variations of base colors for charts
   const variations: string[] = [];

@@ -4,9 +4,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Palette, RefreshCw, Copy, Paintbrush, Eye, Navigation, Zap, Square } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { 
+  Palette, RefreshCw, Copy, Paintbrush, Eye, Navigation, Zap, Square, 
+  BarChart3, TrendingUp, Filter, Calendar, Users 
+} from "lucide-react";
 import { toast } from "sonner";
-import { advancedThemes, generateColorPalette } from "@/utils/advancedThemeSystem";
+import { advancedThemes, generateColorPalette, getNavigationThemeDefaults } from "@/utils/advancedThemeSystem";
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 
 interface ThemeCustomizerProps {
   config: any;
@@ -15,7 +22,31 @@ interface ThemeCustomizerProps {
 }
 
 const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProps) => {
-  const currentTheme = advancedThemes[config.themeStyle] || advancedThemes.minimal;
+  const baseTheme = advancedThemes[config.themeStyle] || advancedThemes.minimal;
+  const currentTheme = getNavigationThemeDefaults(config.navigationStyle || 'left-full', baseTheme);
+
+  // Sample data for charts
+  const sampleChartData = [
+    { name: 'Jan', value: 400, sales: 240 },
+    { name: 'Feb', value: 300, sales: 139 },
+    { name: 'Mar', value: 200, sales: 980 },
+    { name: 'Apr', value: 278, sales: 390 },
+    { name: 'May', value: 189, sales: 480 },
+  ];
+
+  const samplePieData = [
+    { name: 'Product A', value: 400, color: currentTheme.chartColors[0] },
+    { name: 'Product B', value: 300, color: currentTheme.chartColors[1] },
+    { name: 'Product C', value: 300, color: currentTheme.chartColors[2] },
+    { name: 'Product D', value: 200, color: currentTheme.chartColors[3] },
+  ];
+
+  // Sample filter options
+  const sampleFilters = [
+    { id: 'category', label: 'Category', type: 'select', options: ['All', 'Sales', 'Marketing', 'Finance'] },
+    { id: 'dateRange', label: 'Date Range', type: 'select', options: ['Last 7 days', 'Last 30 days', 'Last 90 days'] },
+    { id: 'status', label: 'Status', type: 'checkbox', options: ['Active', 'Pending', 'Completed'] },
+  ];
 
   const generateRandomPalette = () => {
     const colorSets = [
@@ -49,6 +80,58 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
         [colorKey]: value
       }
     }));
+  };
+
+  const renderSampleFilter = (filter: any) => {
+    switch (filter.type) {
+      case 'select':
+        return (
+          <div key={filter.id} className="space-y-2">
+            <Label className="text-sm" style={{ color: currentTheme.textSecondary }}>{filter.label}</Label>
+            <Select>
+              <SelectTrigger 
+                className="w-full h-8 text-sm"
+                style={{ 
+                  backgroundColor: currentTheme.inputBackground,
+                  borderColor: currentTheme.inputBorder,
+                  color: currentTheme.textPrimary
+                }}
+              >
+                <SelectValue placeholder={filter.options[0]} />
+              </SelectTrigger>
+              <SelectContent>
+                {filter.options.map((option: string) => (
+                  <SelectItem key={option} value={option}>{option}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        );
+      
+      case 'checkbox':
+        return (
+          <div key={filter.id} className="space-y-2">
+            <Label className="text-sm" style={{ color: currentTheme.textSecondary }}>{filter.label}</Label>
+            <div className="space-y-1">
+              {filter.options.map((option: string) => (
+                <div key={option} className="flex items-center space-x-2">
+                  <Checkbox id={`${filter.id}-${option}`} />
+                  <Label 
+                    htmlFor={`${filter.id}-${option}`} 
+                    className="text-xs"
+                    style={{ color: currentTheme.textPrimary }}
+                  >
+                    {option}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      
+      default:
+        return null;
+    }
   };
 
   return (
@@ -140,7 +223,7 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
               <div className="space-y-4">
                 <Label className="text-base font-semibold flex items-center gap-2">
                   <Navigation className="w-4 h-4" />
-                  Navigation Colors
+                  Navigation Colors for {config.navigationStyle?.replace('-', ' ').toUpperCase() || 'LEFT FULL'}
                 </Label>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -181,6 +264,21 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                       </div>
                     ))}
                   </div>
+                </div>
+
+                {/* Sample Filter Preview */}
+                <div className="mt-6">
+                  <Label className="text-sm font-semibold flex items-center gap-2 mb-3">
+                    <Filter className="w-4 h-4" />
+                    Sample Filters Preview
+                  </Label>
+                  <Card style={{ backgroundColor: currentTheme.cardBackground, borderColor: currentTheme.cardBorder }}>
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {sampleFilters.map(renderSampleFilter)}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
             </TabsContent>
@@ -344,6 +442,96 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                   </Card>
                 </div>
 
+                {/* Sample Charts Preview */}
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold">Sample Charts with Current Theme</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Bar Chart */}
+                    <Card style={{ backgroundColor: currentTheme.cardBackground, borderColor: currentTheme.cardBorder }}>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm" style={{ color: currentTheme.textPrimary }}>Bar Chart</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-2">
+                        <div className="h-32">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={sampleChartData}>
+                              <XAxis dataKey="name" fontSize={10} stroke={currentTheme.chartAxes} />
+                              <YAxis fontSize={10} stroke={currentTheme.chartAxes} />
+                              <Tooltip 
+                                contentStyle={{ 
+                                  backgroundColor: currentTheme.tooltipBackground,
+                                  border: `1px solid ${currentTheme.tooltipBorder}`,
+                                  color: currentTheme.tooltipText
+                                }}
+                              />
+                              <Bar dataKey="value" fill={currentTheme.chartColors[0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Line Chart */}
+                    <Card style={{ backgroundColor: currentTheme.cardBackground, borderColor: currentTheme.cardBorder }}>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm" style={{ color: currentTheme.textPrimary }}>Line Chart</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-2">
+                        <div className="h-32">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={sampleChartData}>
+                              <XAxis dataKey="name" fontSize={10} stroke={currentTheme.chartAxes} />
+                              <YAxis fontSize={10} stroke={currentTheme.chartAxes} />
+                              <Tooltip 
+                                contentStyle={{ 
+                                  backgroundColor: currentTheme.tooltipBackground,
+                                  border: `1px solid ${currentTheme.tooltipBorder}`,
+                                  color: currentTheme.tooltipText
+                                }}
+                              />
+                              <Line type="monotone" dataKey="sales" stroke={currentTheme.chartColors[1]} strokeWidth={2} />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Pie Chart */}
+                    <Card style={{ backgroundColor: currentTheme.cardBackground, borderColor: currentTheme.cardBorder }}>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm" style={{ color: currentTheme.textPrimary }}>Pie Chart</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-2">
+                        <div className="h-32">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={samplePieData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={20}
+                                outerRadius={50}
+                                dataKey="value"
+                              >
+                                {samplePieData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                              </Pie>
+                              <Tooltip 
+                                contentStyle={{ 
+                                  backgroundColor: currentTheme.tooltipBackground,
+                                  border: `1px solid ${currentTheme.tooltipBorder}`,
+                                  color: currentTheme.tooltipText
+                                }}
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
                 {/* Enhanced Color Swatches */}
                 <div className="space-y-4">
                   <Label className="text-sm font-semibold">Color Swatches</Label>
@@ -362,8 +550,8 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                   </div>
                   
                   <div className="grid grid-cols-4 gap-2">
-                    <Label className="text-xs font-semibold col-span-4">Badge Colors</Label>
-                    {(currentTheme.badgeColors || []).map((color, i) => (
+                    <Label className="text-xs font-semibold col-span-4">Chart Colors</Label>
+                    {(currentTheme.chartColors || []).map((color, i) => (
                       <div key={i} className="h-8 rounded border" style={{ backgroundColor: color }} />
                     ))}
                   </div>
