@@ -12,7 +12,14 @@ import {
   BarChart3, TrendingUp, Filter, Calendar, Users 
 } from "lucide-react";
 import { toast } from "sonner";
-import { advancedThemes, generateColorPalette, getNavigationThemeDefaults } from "@/utils/advancedThemeSystem";
+import { 
+  advancedThemes, 
+  generateColorPalette, 
+  getNavigationThemeDefaults, 
+  updateThemeFromPalette,
+  filterLayouts,
+  getFilterLayoutComponent 
+} from "@/utils/advancedThemeSystem";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 
 interface ThemeCustomizerProps {
@@ -25,6 +32,9 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
   const baseTheme = advancedThemes[config.themeStyle] || advancedThemes.minimal;
   const currentTheme = getNavigationThemeDefaults(config.navigationStyle || 'left-full', baseTheme);
 
+  // Apply custom theme updates if they exist
+  const finalTheme = config.customTheme ? { ...currentTheme, ...config.customTheme } : currentTheme;
+
   // Sample data for charts
   const sampleChartData = [
     { name: 'Jan', value: 400, sales: 240 },
@@ -35,17 +45,10 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
   ];
 
   const samplePieData = [
-    { name: 'Product A', value: 400, color: currentTheme.chartColors[0] },
-    { name: 'Product B', value: 300, color: currentTheme.chartColors[1] },
-    { name: 'Product C', value: 300, color: currentTheme.chartColors[2] },
-    { name: 'Product D', value: 200, color: currentTheme.chartColors[3] },
-  ];
-
-  // Sample filter options
-  const sampleFilters = [
-    { id: 'category', label: 'Category', type: 'select', options: ['All', 'Sales', 'Marketing', 'Finance'] },
-    { id: 'dateRange', label: 'Date Range', type: 'select', options: ['Last 7 days', 'Last 30 days', 'Last 90 days'] },
-    { id: 'status', label: 'Status', type: 'checkbox', options: ['Active', 'Pending', 'Completed'] },
+    { name: 'Product A', value: 400, color: finalTheme.chartColors[0] },
+    { name: 'Product B', value: 300, color: finalTheme.chartColors[1] },
+    { name: 'Product C', value: 300, color: finalTheme.chartColors[2] },
+    { name: 'Product D', value: 200, color: finalTheme.chartColors[3] },
   ];
 
   const generateRandomPalette = () => {
@@ -58,14 +61,26 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
     ];
     const randomPalette = colorSets[Math.floor(Math.random() * colorSets.length)];
     const extendedPalette = generateColorPalette(randomPalette);
-    setConfig(prev => ({ ...prev, colorPalette: extendedPalette }));
-    toast.success("New advanced color palette generated!");
+    
+    // Update both color palette and component colors based on palette
+    const updatedTheme = updateThemeFromPalette(extendedPalette, finalTheme);
+    
+    setConfig(prev => ({ 
+      ...prev, 
+      colorPalette: extendedPalette,
+      customTheme: {
+        ...prev.customTheme,
+        ...updatedTheme
+      }
+    }));
+    
+    toast.success("Color palette and component colors updated!");
   };
 
   const copyThemeConfig = () => {
     const themeConfig = {
       style: config.themeStyle,
-      colors: currentTheme,
+      colors: finalTheme,
       palette: config.colorPalette
     };
     navigator.clipboard.writeText(JSON.stringify(themeConfig, null, 2));
@@ -80,6 +95,51 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
         [colorKey]: value
       }
     }));
+  };
+
+  const renderNavigationPreview = (navStyle: string) => {
+    const navTheme = getNavigationThemeDefaults(navStyle, baseTheme);
+    
+    return (
+      <div className="space-y-2">
+        <div 
+          className="p-3 rounded border"
+          style={{ 
+            backgroundColor: navTheme.navigationBackground,
+            borderColor: navTheme.navigationBorder 
+          }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span style={{ color: navTheme.navigationText }} className="font-medium">
+              Dashboard
+            </span>
+            <span style={{ color: navTheme.navigationTextSecondary }} className="text-sm">
+              {navStyle.replace('-', ' ').toUpperCase()}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <div 
+              className="px-2 py-1 rounded text-xs"
+              style={{ 
+                backgroundColor: navTheme.navigationActive,
+                color: navTheme.navigationText 
+              }}
+            >
+              Active
+            </div>
+            <div 
+              className="px-2 py-1 rounded text-xs"
+              style={{ 
+                backgroundColor: navTheme.navigationHover,
+                color: navTheme.navigationTextSecondary 
+              }}
+            >
+              Hover
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const renderSampleFilter = (filter: any) => {
@@ -184,11 +244,11 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                     <div key={key} className="flex items-center gap-2">
                       <div 
                         className="w-8 h-8 rounded border"
-                        style={{ backgroundColor: currentTheme[key as keyof typeof currentTheme] as string }}
+                        style={{ backgroundColor: finalTheme[key as keyof typeof finalTheme] as string }}
                       />
                       <Label className="text-xs capitalize">{key}</Label>
                       <Input
-                        value={currentTheme[key as keyof typeof currentTheme] as string}
+                        value={finalTheme[key as keyof typeof finalTheme] as string}
                         onChange={(e) => updateThemeColor(key, e.target.value)}
                         className="text-xs font-mono"
                         placeholder="#000000"
@@ -204,11 +264,11 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                     <div key={key} className="flex items-center gap-2">
                       <div 
                         className="w-8 h-8 rounded border"
-                        style={{ backgroundColor: currentTheme[key as keyof typeof currentTheme] as string }}
+                        style={{ backgroundColor: finalTheme[key as keyof typeof finalTheme] as string }}
                       />
                       <Label className="text-xs capitalize">{key}</Label>
                       <Input
-                        value={currentTheme[key as keyof typeof currentTheme] as string}
+                        value={finalTheme[key as keyof typeof finalTheme] as string}
                         onChange={(e) => updateThemeColor(key, e.target.value)}
                         className="text-xs font-mono"
                         placeholder="#000000"
@@ -223,62 +283,52 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
               <div className="space-y-4">
                 <Label className="text-base font-semibold flex items-center gap-2">
                   <Navigation className="w-4 h-4" />
-                  Navigation Colors for {config.navigationStyle?.replace('-', ' ').toUpperCase() || 'LEFT FULL'}
+                  Navigation Styles Preview
                 </Label>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold">Navigation Base</Label>
-                    {['navigationBackground', 'navigationBorder', 'navigationText'].map((key) => (
-                      <div key={key} className="flex items-center gap-2">
-                        <div 
-                          className="w-8 h-8 rounded border"
-                          style={{ backgroundColor: currentTheme[key as keyof typeof currentTheme] as string }}
-                        />
-                        <Label className="text-xs">{key.replace('navigation', '')}</Label>
-                        <Input
-                          value={currentTheme[key as keyof typeof currentTheme] as string}
-                          onChange={(e) => updateThemeColor(key, e.target.value)}
-                          className="text-xs font-mono"
-                          placeholder="#000000"
-                        />
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold">Navigation States</Label>
-                    {['navigationTextSecondary', 'navigationHover', 'navigationActive'].map((key) => (
-                      <div key={key} className="flex items-center gap-2">
-                        <div 
-                          className="w-8 h-8 rounded border"
-                          style={{ backgroundColor: currentTheme[key as keyof typeof currentTheme] as string }}
-                        />
-                        <Label className="text-xs">{key.replace('navigation', '')}</Label>
-                        <Input
-                          value={currentTheme[key as keyof typeof currentTheme] as string}
-                          onChange={(e) => updateThemeColor(key, e.target.value)}
-                          className="text-xs font-mono"
-                          placeholder="#000000"
-                        />
-                      </div>
-                    ))}
-                  </div>
+                  {['top-wide', 'top-tabs', 'top-minimal', 'left-full'].map((style) => (
+                    <div key={style} className="space-y-2">
+                      <Label className="text-sm font-medium capitalize">
+                        {style.replace('-', ' ')}
+                      </Label>
+                      {renderNavigationPreview(style)}
+                    </div>
+                  ))}
                 </div>
 
-                {/* Sample Filter Preview */}
+                {/* Filter Layouts Preview */}
                 <div className="mt-6">
                   <Label className="text-sm font-semibold flex items-center gap-2 mb-3">
                     <Filter className="w-4 h-4" />
-                    Sample Filters Preview
+                    Filter Layouts (Select One)
                   </Label>
-                  <Card style={{ backgroundColor: currentTheme.cardBackground, borderColor: currentTheme.cardBorder }}>
-                    <CardContent className="p-4">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {sampleFilters.map(renderSampleFilter)}
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {filterLayouts.map((layout) => (
+                      <Card 
+                        key={layout.id}
+                        className={`cursor-pointer transition-all hover:shadow-md ${
+                          config.selectedFilterLayout === layout.id 
+                            ? 'ring-2 ring-blue-500 bg-blue-50' 
+                            : 'hover:bg-gray-50'
+                        }`}
+                        onClick={() => setConfig(prev => ({ ...prev, selectedFilterLayout: layout.id }))}
+                      >
+                        <CardContent className="p-3">
+                          <div className="font-medium text-sm mb-1">{layout.name}</div>
+                          <div className="text-xs text-gray-500 mb-2">{layout.description}</div>
+                          <Badge variant="outline" className="text-xs">
+                            {layout.preview}
+                          </Badge>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                  {config.selectedFilterLayout && (
+                    <div className="mt-3 p-2 bg-blue-50 rounded text-sm">
+                      Selected: <strong>{filterLayouts.find(l => l.id === config.selectedFilterLayout)?.name}</strong>
+                    </div>
+                  )}
                 </div>
               </div>
             </TabsContent>
@@ -297,11 +347,11 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                       <div key={key} className="flex items-center gap-2">
                         <div 
                           className="w-8 h-8 rounded border"
-                          style={{ backgroundColor: currentTheme[key as keyof typeof currentTheme] as string }}
+                          style={{ backgroundColor: finalTheme[key as keyof typeof finalTheme] as string }}
                         />
                         <Label className="text-xs capitalize">{key.replace('button', '').replace('input', '')}</Label>
                         <Input
-                          value={currentTheme[key as keyof typeof currentTheme] as string}
+                          value={finalTheme[key as keyof typeof finalTheme] as string}
                           onChange={(e) => updateThemeColor(key, e.target.value)}
                           className="text-xs font-mono"
                           placeholder="#000000"
@@ -313,7 +363,7 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                   <div className="space-y-3">
                     <Label className="text-sm font-semibold">Badge Colors</Label>
                     <div className="grid grid-cols-2 gap-2">
-                      {(currentTheme.badgeColors || []).map((color, index) => (
+                      {(finalTheme.badgeColors || []).map((color, index) => (
                         <div key={index} className="flex items-center gap-2">
                           <div 
                             className="w-6 h-6 rounded border"
@@ -322,7 +372,7 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                           <Input
                             value={color}
                             onChange={(e) => {
-                              const newBadges = [...(currentTheme.badgeColors || [])];
+                              const newBadges = [...(finalTheme.badgeColors || [])];
                               newBadges[index] = e.target.value;
                               setConfig(prev => ({ ...prev, customTheme: { ...prev.customTheme, badgeColors: newBadges } }));
                             }}
@@ -348,7 +398,7 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                     className="flex items-center gap-2"
                   >
                     <RefreshCw className="w-4 h-4" />
-                    Generate
+                    Generate & Apply
                   </Button>
                   <Button
                     variant="outline"
@@ -363,7 +413,7 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
               </div>
 
               <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
-                {(config.colorPalette || currentTheme.chartColors).map((color: string, index: number) => (
+                {(config.colorPalette || finalTheme.chartColors).map((color: string, index: number) => (
                   <div key={index} className="space-y-2">
                     <div 
                       className="w-full h-16 rounded-lg border-2 border-gray-200 cursor-pointer hover:scale-105 transition-transform"
@@ -372,15 +422,27 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                     <Input
                       value={color}
                       onChange={(e) => {
-                        const newPalette = [...(config.colorPalette || currentTheme.chartColors)];
+                        const newPalette = [...(config.colorPalette || finalTheme.chartColors)];
                         newPalette[index] = e.target.value;
-                        setConfig(prev => ({ ...prev, colorPalette: newPalette }));
+                        const updatedTheme = updateThemeFromPalette(newPalette, finalTheme);
+                        setConfig(prev => ({ 
+                          ...prev, 
+                          colorPalette: newPalette,
+                          customTheme: {
+                            ...prev.customTheme,
+                            ...updatedTheme
+                          }
+                        }));
                       }}
                       className="font-mono text-xs"
                       placeholder="#000000"
                     />
                   </div>
                 ))}
+              </div>
+              
+              <div className="text-sm text-gray-500 bg-blue-50 p-3 rounded">
+                <strong>Note:</strong> Changing colors here will also update button colors, focus colors, and other component colors automatically.
               </div>
             </TabsContent>
 
@@ -393,47 +455,47 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                 
                 {/* Theme Preview Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card style={{ backgroundColor: currentTheme.cardBackground, borderColor: currentTheme.cardBorder }}>
+                  <Card style={{ backgroundColor: finalTheme.cardBackground, borderColor: finalTheme.cardBorder }}>
                     <CardHeader>
-                      <CardTitle style={{ color: currentTheme.textPrimary }}>KPI Card Preview</CardTitle>
+                      <CardTitle style={{ color: finalTheme.textPrimary }}>KPI Card Preview</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold" style={{ color: currentTheme.positive }}>$45,280</div>
-                      <div className="text-sm" style={{ color: currentTheme.textSecondary }}>+12.5% vs last month</div>
-                      <div className="mt-2 h-2 rounded" style={{ backgroundColor: currentTheme.progressBackground }}>
+                      <div className="text-2xl font-bold" style={{ color: finalTheme.positive }}>$45,280</div>
+                      <div className="text-sm" style={{ color: finalTheme.textSecondary }}>+12.5% vs last month</div>
+                      <div className="mt-2 h-2 rounded" style={{ backgroundColor: finalTheme.progressBackground }}>
                         <div 
                           className="h-full w-3/4 rounded" 
-                          style={{ backgroundColor: currentTheme.progressFill }}
+                          style={{ backgroundColor: finalTheme.progressFill }}
                         />
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card style={{ backgroundColor: currentTheme.cardBackground, borderColor: currentTheme.cardBorder }}>
+                  <Card style={{ backgroundColor: finalTheme.cardBackground, borderColor: finalTheme.cardBorder }}>
                     <CardHeader>
-                      <CardTitle style={{ color: currentTheme.textPrimary }}>Navigation Preview</CardTitle>
+                      <CardTitle style={{ color: finalTheme.textPrimary }}>Navigation Preview</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div 
                         className="p-3 rounded mb-3"
-                        style={{ backgroundColor: currentTheme.navigationBackground, borderColor: currentTheme.navigationBorder }}
+                        style={{ backgroundColor: finalTheme.navigationBackground, borderColor: finalTheme.navigationBorder }}
                       >
                         <div className="flex items-center justify-between">
-                          <span style={{ color: currentTheme.navigationText }} className="font-medium">Dashboard</span>
-                          <span style={{ color: currentTheme.navigationTextSecondary }} className="text-sm">Navigation</span>
+                          <span style={{ color: finalTheme.navigationText }} className="font-medium">Dashboard</span>
+                          <span style={{ color: finalTheme.navigationTextSecondary }} className="text-sm">Navigation</span>
                         </div>
                       </div>
                       <div className="flex gap-2">
                         <Button 
                           size="sm" 
-                          style={{ backgroundColor: currentTheme.buttonPrimary, color: 'white' }}
+                          style={{ backgroundColor: finalTheme.buttonPrimary, color: 'white' }}
                         >
                           Primary
                         </Button>
                         <Button 
                           size="sm" 
                           variant="outline"
-                          style={{ backgroundColor: currentTheme.buttonSecondary, color: 'white' }}
+                          style={{ backgroundColor: finalTheme.buttonSecondary, color: 'white' }}
                         >
                           Secondary
                         </Button>
@@ -447,24 +509,24 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                   <Label className="text-base font-semibold">Sample Charts with Current Theme</Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {/* Bar Chart */}
-                    <Card style={{ backgroundColor: currentTheme.cardBackground, borderColor: currentTheme.cardBorder }}>
+                    <Card style={{ backgroundColor: finalTheme.cardBackground, borderColor: finalTheme.cardBorder }}>
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-sm" style={{ color: currentTheme.textPrimary }}>Bar Chart</CardTitle>
+                        <CardTitle className="text-sm" style={{ color: finalTheme.textPrimary }}>Bar Chart</CardTitle>
                       </CardHeader>
                       <CardContent className="p-2">
                         <div className="h-32">
                           <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={sampleChartData}>
-                              <XAxis dataKey="name" fontSize={10} stroke={currentTheme.chartAxes} />
-                              <YAxis fontSize={10} stroke={currentTheme.chartAxes} />
+                              <XAxis dataKey="name" fontSize={10} stroke={finalTheme.chartAxes} />
+                              <YAxis fontSize={10} stroke={finalTheme.chartAxes} />
                               <Tooltip 
                                 contentStyle={{ 
-                                  backgroundColor: currentTheme.tooltipBackground,
-                                  border: `1px solid ${currentTheme.tooltipBorder}`,
-                                  color: currentTheme.tooltipText
+                                  backgroundColor: finalTheme.tooltipBackground,
+                                  border: `1px solid ${finalTheme.tooltipBorder}`,
+                                  color: finalTheme.tooltipText
                                 }}
                               />
-                              <Bar dataKey="value" fill={currentTheme.chartColors[0]} />
+                              <Bar dataKey="value" fill={finalTheme.chartColors[0]} />
                             </BarChart>
                           </ResponsiveContainer>
                         </div>
@@ -472,24 +534,24 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                     </Card>
 
                     {/* Line Chart */}
-                    <Card style={{ backgroundColor: currentTheme.cardBackground, borderColor: currentTheme.cardBorder }}>
+                    <Card style={{ backgroundColor: finalTheme.cardBackground, borderColor: finalTheme.cardBorder }}>
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-sm" style={{ color: currentTheme.textPrimary }}>Line Chart</CardTitle>
+                        <CardTitle className="text-sm" style={{ color: finalTheme.textPrimary }}>Line Chart</CardTitle>
                       </CardHeader>
                       <CardContent className="p-2">
                         <div className="h-32">
                           <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={sampleChartData}>
-                              <XAxis dataKey="name" fontSize={10} stroke={currentTheme.chartAxes} />
-                              <YAxis fontSize={10} stroke={currentTheme.chartAxes} />
+                              <XAxis dataKey="name" fontSize={10} stroke={finalTheme.chartAxes} />
+                              <YAxis fontSize={10} stroke={finalTheme.chartAxes} />
                               <Tooltip 
                                 contentStyle={{ 
-                                  backgroundColor: currentTheme.tooltipBackground,
-                                  border: `1px solid ${currentTheme.tooltipBorder}`,
-                                  color: currentTheme.tooltipText
+                                  backgroundColor: finalTheme.tooltipBackground,
+                                  border: `1px solid ${finalTheme.tooltipBorder}`,
+                                  color: finalTheme.tooltipText
                                 }}
                               />
-                              <Line type="monotone" dataKey="sales" stroke={currentTheme.chartColors[1]} strokeWidth={2} />
+                              <Line type="monotone" dataKey="sales" stroke={finalTheme.chartColors[1]} strokeWidth={2} />
                             </LineChart>
                           </ResponsiveContainer>
                         </div>
@@ -497,9 +559,9 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                     </Card>
 
                     {/* Pie Chart */}
-                    <Card style={{ backgroundColor: currentTheme.cardBackground, borderColor: currentTheme.cardBorder }}>
+                    <Card style={{ backgroundColor: finalTheme.cardBackground, borderColor: finalTheme.cardBorder }}>
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-sm" style={{ color: currentTheme.textPrimary }}>Pie Chart</CardTitle>
+                        <CardTitle className="text-sm" style={{ color: finalTheme.textPrimary }}>Pie Chart</CardTitle>
                       </CardHeader>
                       <CardContent className="p-2">
                         <div className="h-32">
@@ -519,9 +581,9 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                               </Pie>
                               <Tooltip 
                                 contentStyle={{ 
-                                  backgroundColor: currentTheme.tooltipBackground,
-                                  border: `1px solid ${currentTheme.tooltipBorder}`,
-                                  color: currentTheme.tooltipText
+                                  backgroundColor: finalTheme.tooltipBackground,
+                                  border: `1px solid ${finalTheme.tooltipBorder}`,
+                                  color: finalTheme.tooltipText
                                 }}
                               />
                             </PieChart>
@@ -536,7 +598,7 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                 <div className="space-y-4">
                   <Label className="text-sm font-semibold">Color Swatches</Label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {Object.entries(currentTheme).filter(([key]) => 
+                    {Object.entries(finalTheme).filter(([key]) => 
                       ['positive', 'negative', 'warning', 'info'].includes(key)
                     ).map(([key, color]) => (
                       <div key={key} className="text-center">
@@ -551,7 +613,7 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                   
                   <div className="grid grid-cols-4 gap-2">
                     <Label className="text-xs font-semibold col-span-4">Chart Colors</Label>
-                    {(currentTheme.chartColors || []).map((color, i) => (
+                    {(finalTheme.chartColors || []).map((color, i) => (
                       <div key={i} className="h-8 rounded border" style={{ backgroundColor: color }} />
                     ))}
                   </div>

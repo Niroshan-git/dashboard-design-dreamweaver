@@ -1,3 +1,4 @@
+
 export interface AdvancedThemeColors {
   // Background colors
   primary: string;
@@ -330,15 +331,25 @@ export const getNavigationThemeDefaults = (navigationStyle: string, baseTheme: A
       };
     
     case 'top-wide':
-    case 'top-tabs':
       return {
         ...baseTheme,
-        navigationBackground: baseTheme.background,
+        navigationBackground: baseTheme.cardBackground,
         navigationBorder: baseTheme.cardBorder,
         navigationText: baseTheme.textPrimary,
         navigationTextSecondary: baseTheme.textSecondary,
         navigationHover: baseTheme.hover,
         navigationActive: baseTheme.active,
+      };
+    
+    case 'top-tabs':
+      return {
+        ...baseTheme,
+        navigationBackground: baseTheme.surface,
+        navigationBorder: baseTheme.cardBorder,
+        navigationText: baseTheme.textPrimary,
+        navigationTextSecondary: baseTheme.textMuted,
+        navigationHover: baseTheme.hover,
+        navigationActive: baseTheme.primary,
       };
     
     case 'top-minimal':
@@ -372,6 +383,25 @@ export const generateColorPalette = (baseColors: string[]): string[] => {
   return variations;
 };
 
+export const updateThemeFromPalette = (palette: string[], baseTheme: AdvancedThemeColors): AdvancedThemeColors => {
+  return {
+    ...baseTheme,
+    chartColors: palette,
+    buttonPrimary: palette[0] || baseTheme.buttonPrimary,
+    buttonSecondary: palette[1] || baseTheme.buttonSecondary,
+    buttonHover: adjustColorBrightness(palette[0] || baseTheme.buttonPrimary, -0.1),
+    inputFocus: palette[0] || baseTheme.inputFocus,
+    focus: palette[0] || baseTheme.focus,
+    progressFill: palette[0] || baseTheme.progressFill,
+    positive: palette[1] || baseTheme.positive,
+    info: palette[2] || baseTheme.info,
+    warning: palette[3] || baseTheme.warning,
+    negative: palette[4] || baseTheme.negative,
+    accentColors: palette.slice(0, 4),
+    badgeColors: palette.slice(0, 4).map(color => adjustColorBrightness(color, 0.4))
+  };
+};
+
 const adjustColorBrightness = (color: string, amount: number): string => {
   // Simple color brightness adjustment
   const usePound = color[0] === '#';
@@ -384,4 +414,55 @@ const adjustColorBrightness = (color: string, amount: number): string => {
   g = g > 255 ? 255 : g < 0 ? 0 : g;
   b = b > 255 ? 255 : b < 0 ? 0 : b;
   return (usePound ? '#' : '') + (r << 16 | g << 8 | b).toString(16).padStart(6, '0');
+};
+
+// Filter layout types
+export const filterLayouts = [
+  { 
+    id: 'horizontal-cards', 
+    name: 'Horizontal Cards', 
+    description: 'Filter options displayed as horizontal cards',
+    preview: 'Cards in a row'
+  },
+  { 
+    id: 'vertical-sidebar', 
+    name: 'Vertical Sidebar', 
+    description: 'Filters in a collapsible side panel',
+    preview: 'Side panel layout'
+  },
+  { 
+    id: 'dropdown-compact', 
+    name: 'Dropdown Compact', 
+    description: 'Compact dropdown filters',
+    preview: 'Minimal dropdowns'
+  },
+  { 
+    id: 'tabs-grouped', 
+    name: 'Tabs Grouped', 
+    description: 'Filters organized in tab groups',
+    preview: 'Tabbed interface'
+  },
+  { 
+    id: 'accordion-sections', 
+    name: 'Accordion Sections', 
+    description: 'Collapsible filter sections',
+    preview: 'Expandable sections'
+  },
+  { 
+    id: 'floating-panel', 
+    name: 'Floating Panel', 
+    description: 'Floating filter panel overlay',
+    preview: 'Overlay panel'
+  }
+];
+
+export const getFilterLayoutComponent = (layoutId: string, theme: AdvancedThemeColors) => {
+  const filterOptions = [
+    { id: 'category', label: 'Category', type: 'select', options: ['All', 'Sales', 'Marketing', 'Finance'] },
+    { id: 'dateRange', label: 'Date Range', type: 'select', options: ['Last 7 days', 'Last 30 days', 'Last 90 days'] },
+    { id: 'status', label: 'Status', type: 'checkbox', options: ['Active', 'Pending', 'Completed'] },
+    { id: 'priority', label: 'Priority', type: 'radio', options: ['High', 'Medium', 'Low'] }
+  ];
+
+  return { layoutId, filterOptions, theme };
 };
