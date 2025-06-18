@@ -186,8 +186,8 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
 
   const renderKPI = () => {
     const kpi = mockData.kpiData[0];
-    const showProgress = interactivityLevel === 'advanced' || interactivityLevel === 'highly-interactive';
-    const showSparkline = interactivityLevel === 'highly-interactive';
+    const showProgress = interactivityLevel === 'advanced';
+    const showMiniChart = interactivityLevel === 'highly-interactive';
     
     const kpiCard = (
       <div 
@@ -227,18 +227,20 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
           </div>
         )}
         
-        {showSparkline && (
-          <div className="mt-3" style={{ height: '40px' }}>
+        {showMiniChart && (
+          <div className="mt-3" style={{ height: '50px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={mockData.chartData.slice(-6)}>
-                <Line 
-                  type="monotone" 
+              <BarChart data={mockData.chartData.slice(-6)} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                <Bar 
                   dataKey="value" 
-                  stroke={currentTheme.chartColors[0]}
-                  strokeWidth={2}
-                  dot={false}
+                  fill={currentTheme.chartColors[0]}
+                  radius={[2, 2, 0, 0]}
                 />
-              </LineChart>
+                <RechartsTooltip 
+                  content={<CustomTooltip />}
+                  cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }}
+                />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         )}

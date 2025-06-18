@@ -1,4 +1,3 @@
-
 export interface AdvancedThemeColors {
   // Background colors
   primary: string;
@@ -42,6 +41,17 @@ export interface AdvancedThemeColors {
   tooltipText: string;
   progressBackground: string;
   progressFill: string;
+  
+  // Enhanced color categories
+  buttonPrimary: string;
+  buttonSecondary: string;
+  buttonHover: string;
+  inputBackground: string;
+  inputBorder: string;
+  inputFocus: string;
+  badgeColors: string[];
+  accentColors: string[];
+  shadowColors: string[];
 }
 
 export const advancedThemes: Record<string, AdvancedThemeColors> = {
@@ -76,7 +86,17 @@ export const advancedThemes: Record<string, AdvancedThemeColors> = {
     tooltipBorder: '#374151',
     tooltipText: '#ffffff',
     progressBackground: '#e5e7eb',
-    progressFill: '#3b82f6'
+    progressFill: '#3b82f6',
+    // Enhanced colors
+    buttonPrimary: '#3b82f6',
+    buttonSecondary: '#6b7280',
+    buttonHover: '#2563eb',
+    inputBackground: '#ffffff',
+    inputBorder: '#d1d5db',
+    inputFocus: '#3b82f6',
+    badgeColors: ['#dbeafe', '#dcfce7', '#fef3c7', '#fecaca'],
+    accentColors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
+    shadowColors: ['rgba(0, 0, 0, 0.1)', 'rgba(0, 0, 0, 0.05)', 'rgba(0, 0, 0, 0.2)']
   },
   dark: {
     primary: '#0f172a',
@@ -109,7 +129,17 @@ export const advancedThemes: Record<string, AdvancedThemeColors> = {
     tooltipBorder: '#4b5563',
     tooltipText: '#f9fafb',
     progressBackground: '#374151',
-    progressFill: '#60a5fa'
+    progressFill: '#60a5fa',
+    // Enhanced colors
+    buttonPrimary: '#3b82f6',
+    buttonSecondary: '#4b5563',
+    buttonHover: '#2563eb',
+    inputBackground: '#1f2937',
+    inputBorder: '#374151',
+    inputFocus: '#60a5fa',
+    badgeColors: ['#1e3a8a', '#166534', '#92400e', '#991b1b'],
+    accentColors: ['#60a5fa', '#34d399', '#fbbf24', '#f87171'],
+    shadowColors: ['rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 0.2)', 'rgba(0, 0, 0, 0.5)']
   },
   corporate: {
     primary: '#1e40af',
@@ -142,7 +172,17 @@ export const advancedThemes: Record<string, AdvancedThemeColors> = {
     tooltipBorder: '#374151',
     tooltipText: '#ffffff',
     progressBackground: '#e5e7eb',
-    progressFill: '#1e40af'
+    progressFill: '#1e40af',
+    // Enhanced colors
+    buttonPrimary: '#1e40af',
+    buttonSecondary: '#6b7280',
+    buttonHover: '#1e3a8a',
+    inputBackground: '#ffffff',
+    inputBorder: '#d1d5db',
+    inputFocus: '#1e40af',
+    badgeColors: ['#dbeafe', '#dcfce7', '#fef3c7', '#fecaca'],
+    accentColors: ['#1e40af', '#059669', '#d97706', '#dc2626'],
+    shadowColors: ['rgba(30, 64, 175, 0.1)', 'rgba(0, 0, 0, 0.05)', 'rgba(30, 64, 175, 0.2)']
   },
   gradient: {
     primary: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -175,7 +215,17 @@ export const advancedThemes: Record<string, AdvancedThemeColors> = {
     tooltipBorder: 'rgba(255, 255, 255, 0.2)',
     tooltipText: '#ffffff',
     progressBackground: 'rgba(255, 255, 255, 0.2)',
-    progressFill: '#10dcb4'
+    progressFill: '#10dcb4',
+    // Enhanced colors
+    buttonPrimary: 'linear-gradient(135deg, #10dcb4 0%, #6bcf7f 100%)',
+    buttonSecondary: 'rgba(255, 255, 255, 0.2)',
+    buttonHover: 'linear-gradient(135deg, #0bb89e 0%, #5bb96b 100%)',
+    inputBackground: 'rgba(255, 255, 255, 0.1)',
+    inputBorder: 'rgba(255, 255, 255, 0.3)',
+    inputFocus: '#6bcf7f',
+    badgeColors: ['rgba(16, 220, 180, 0.2)', 'rgba(255, 107, 157, 0.2)', 'rgba(255, 217, 61, 0.2)', 'rgba(107, 207, 127, 0.2)'],
+    accentColors: ['#10dcb4', '#ff6b9d', '#ffd93d', '#6bcf7f'],
+    shadowColors: ['rgba(0, 0, 0, 0.2)', 'rgba(255, 255, 255, 0.1)', 'rgba(0, 0, 0, 0.3)']
   },
   creative: {
     primary: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
@@ -208,7 +258,17 @@ export const advancedThemes: Record<string, AdvancedThemeColors> = {
     tooltipBorder: 'rgba(255, 255, 255, 0.2)',
     tooltipText: '#ffffff',
     progressBackground: 'rgba(255, 255, 255, 0.4)',
-    progressFill: '#4299e1'
+    progressFill: '#4299e1',
+    // Enhanced colors
+    buttonPrimary: 'linear-gradient(135deg, #4299e1 0%, #48bb78 100%)',
+    buttonSecondary: 'rgba(255, 255, 255, 0.6)',
+    buttonHover: 'linear-gradient(135deg, #3182ce 0%, #38a169 100%)',
+    inputBackground: 'rgba(255, 255, 255, 0.9)',
+    inputBorder: 'rgba(255, 255, 255, 0.5)',
+    inputFocus: '#4299e1',
+    badgeColors: ['rgba(66, 153, 225, 0.2)', 'rgba(72, 187, 120, 0.2)', 'rgba(237, 137, 54, 0.2)', 'rgba(245, 101, 101, 0.2)'],
+    accentColors: ['#4299e1', '#48bb78', '#ed8936', '#f56565'],
+    shadowColors: ['rgba(255, 154, 158, 0.2)', 'rgba(168, 237, 234, 0.2)', 'rgba(254, 207, 239, 0.2)']
   },
   flat: {
     primary: '#34495e',
@@ -241,7 +301,17 @@ export const advancedThemes: Record<string, AdvancedThemeColors> = {
     tooltipBorder: '#2c3e50',
     tooltipText: '#ecf0f1',
     progressBackground: '#ecf0f1',
-    progressFill: '#3498db'
+    progressFill: '#3498db',
+    // Enhanced colors
+    buttonPrimary: '#3498db',
+    buttonSecondary: '#95a5a6',
+    buttonHover: '#2980b9',
+    inputBackground: '#ffffff',
+    inputBorder: '#bdc3c7',
+    inputFocus: '#3498db',
+    badgeColors: ['#d6eaf8', '#d5f4e6', '#fdeaa7', '#fadbd8'],
+    accentColors: ['#3498db', '#27ae60', '#f39c12', '#e74c3c'],
+    shadowColors: ['rgba(52, 73, 94, 0.1)', 'rgba(0, 0, 0, 0.05)', 'rgba(52, 73, 94, 0.2)']
   }
 };
 

@@ -1,11 +1,10 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Palette, RefreshCw, Copy, Paintbrush, Eye } from "lucide-react";
+import { Palette, RefreshCw, Copy, Paintbrush, Eye, Navigation, Zap, Square } from "lucide-react";
 import { toast } from "sonner";
 import { advancedThemes, generateColorPalette } from "@/utils/advancedThemeSystem";
 
@@ -63,9 +62,11 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
         </CardHeader>
         <CardContent className="space-y-6">
           <Tabs defaultValue="styles" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="styles">Styles</TabsTrigger>
               <TabsTrigger value="colors">Colors</TabsTrigger>
+              <TabsTrigger value="navigation">Navigation</TabsTrigger>
+              <TabsTrigger value="components">Components</TabsTrigger>
               <TabsTrigger value="palette">Palette</TabsTrigger>
               <TabsTrigger value="preview">Preview</TabsTrigger>
             </TabsList>
@@ -131,6 +132,109 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
                       />
                     </div>
                   ))}
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="navigation" className="space-y-4">
+              <div className="space-y-4">
+                <Label className="text-base font-semibold flex items-center gap-2">
+                  <Navigation className="w-4 h-4" />
+                  Navigation Colors
+                </Label>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold">Navigation Base</Label>
+                    {['navigationBackground', 'navigationBorder', 'navigationText'].map((key) => (
+                      <div key={key} className="flex items-center gap-2">
+                        <div 
+                          className="w-8 h-8 rounded border"
+                          style={{ backgroundColor: currentTheme[key as keyof typeof currentTheme] as string }}
+                        />
+                        <Label className="text-xs">{key.replace('navigation', '')}</Label>
+                        <Input
+                          value={currentTheme[key as keyof typeof currentTheme] as string}
+                          onChange={(e) => updateThemeColor(key, e.target.value)}
+                          className="text-xs font-mono"
+                          placeholder="#000000"
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold">Navigation States</Label>
+                    {['navigationTextSecondary', 'navigationHover', 'navigationActive'].map((key) => (
+                      <div key={key} className="flex items-center gap-2">
+                        <div 
+                          className="w-8 h-8 rounded border"
+                          style={{ backgroundColor: currentTheme[key as keyof typeof currentTheme] as string }}
+                        />
+                        <Label className="text-xs">{key.replace('navigation', '')}</Label>
+                        <Input
+                          value={currentTheme[key as keyof typeof currentTheme] as string}
+                          onChange={(e) => updateThemeColor(key, e.target.value)}
+                          className="text-xs font-mono"
+                          placeholder="#000000"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="components" className="space-y-4">
+              <div className="space-y-4">
+                <Label className="text-base font-semibold flex items-center gap-2">
+                  <Square className="w-4 h-4" />
+                  Component Colors
+                </Label>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold">Buttons & Inputs</Label>
+                    {['buttonPrimary', 'buttonSecondary', 'buttonHover', 'inputBackground', 'inputBorder', 'inputFocus'].map((key) => (
+                      <div key={key} className="flex items-center gap-2">
+                        <div 
+                          className="w-8 h-8 rounded border"
+                          style={{ backgroundColor: currentTheme[key as keyof typeof currentTheme] as string }}
+                        />
+                        <Label className="text-xs capitalize">{key.replace('button', '').replace('input', '')}</Label>
+                        <Input
+                          value={currentTheme[key as keyof typeof currentTheme] as string}
+                          onChange={(e) => updateThemeColor(key, e.target.value)}
+                          className="text-xs font-mono"
+                          placeholder="#000000"
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold">Badge Colors</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(currentTheme.badgeColors || []).map((color, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <div 
+                            className="w-6 h-6 rounded border"
+                            style={{ backgroundColor: color }}
+                          />
+                          <Input
+                            value={color}
+                            onChange={(e) => {
+                              const newBadges = [...(currentTheme.badgeColors || [])];
+                              newBadges[index] = e.target.value;
+                              setConfig(prev => ({ ...prev, customTheme: { ...prev.customTheme, badgeColors: newBadges } }));
+                            }}
+                            className="text-xs font-mono"
+                            placeholder="#000000"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </TabsContent>
@@ -209,34 +313,60 @@ const ThemeCustomizer = ({ config, setConfig, themeStyles }: ThemeCustomizerProp
 
                   <Card style={{ backgroundColor: currentTheme.cardBackground, borderColor: currentTheme.cardBorder }}>
                     <CardHeader>
-                      <CardTitle style={{ color: currentTheme.textPrimary }}>Chart Preview</CardTitle>
+                      <CardTitle style={{ color: currentTheme.textPrimary }}>Navigation Preview</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex gap-2 mb-3">
-                        {currentTheme.chartColors.slice(0, 4).map((color: string, i: number) => (
-                          <div key={i} className="w-4 h-4 rounded" style={{ backgroundColor: color }} />
-                        ))}
+                      <div 
+                        className="p-3 rounded mb-3"
+                        style={{ backgroundColor: currentTheme.navigationBackground, borderColor: currentTheme.navigationBorder }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span style={{ color: currentTheme.navigationText }} className="font-medium">Dashboard</span>
+                          <span style={{ color: currentTheme.navigationTextSecondary }} className="text-sm">Navigation</span>
+                        </div>
                       </div>
-                      <div style={{ color: currentTheme.textSecondary }} className="text-sm">
-                        Chart colors and theme integration
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          style={{ backgroundColor: currentTheme.buttonPrimary, color: 'white' }}
+                        >
+                          Primary
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          style={{ backgroundColor: currentTheme.buttonSecondary, color: 'white' }}
+                        >
+                          Secondary
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
                 </div>
 
-                {/* Color Swatches */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {Object.entries(currentTheme).filter(([key]) => 
-                    ['positive', 'negative', 'warning', 'info'].includes(key)
-                  ).map(([key, color]) => (
-                    <div key={key} className="text-center">
-                      <div 
-                        className="w-full h-12 rounded-lg mb-2 border"
-                        style={{ backgroundColor: color as string }}
-                      />
-                      <Label className="text-xs capitalize">{key}</Label>
-                    </div>
-                  ))}
+                {/* Enhanced Color Swatches */}
+                <div className="space-y-4">
+                  <Label className="text-sm font-semibold">Color Swatches</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {Object.entries(currentTheme).filter(([key]) => 
+                      ['positive', 'negative', 'warning', 'info'].includes(key)
+                    ).map(([key, color]) => (
+                      <div key={key} className="text-center">
+                        <div 
+                          className="w-full h-12 rounded-lg mb-2 border"
+                          style={{ backgroundColor: color as string }}
+                        />
+                        <Label className="text-xs capitalize">{key}</Label>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="grid grid-cols-4 gap-2">
+                    <Label className="text-xs font-semibold col-span-4">Badge Colors</Label>
+                    {(currentTheme.badgeColors || []).map((color, i) => (
+                      <div key={i} className="h-8 rounded border" style={{ backgroundColor: color }} />
+                    ))}
+                  </div>
                 </div>
               </div>
             </TabsContent>
