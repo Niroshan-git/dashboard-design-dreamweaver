@@ -56,7 +56,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
     
     return (
       <div 
-        className="flex flex-col justify-between h-full relative group p-2"
+        className="flex flex-col justify-between h-full relative group p-4"
         style={{ color: currentTheme.textPrimary }}
       >
         <div>
@@ -94,7 +94,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
     ];
 
     return (
-      <div className="h-full overflow-auto p-2">
+      <div className="h-full overflow-auto p-4">
         <div className="mb-4">
           <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
             Data Table
@@ -126,22 +126,35 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
     );
   };
 
-  // Function to determine the actual chart type from component
+  // Improved chart type detection - prioritize component.chartType property
   const getChartType = () => {
-    // First check component name/label for chart type
+    console.log('Component for chart type detection:', component);
+    
+    // First priority: direct chartType property from component
+    if (component.chartType) {
+      console.log('Found chartType property:', component.chartType);
+      return component.chartType;
+    }
+    
+    // Second priority: linked visual's chartType
+    if (visual && visual.chartType) {
+      console.log('Found visual chartType:', visual.chartType);
+      return visual.chartType;
+    }
+    
+    // Third priority: component name/label analysis
     const componentName = (component.name || component.label || '').toLowerCase();
     const componentType = (component.type || '').toLowerCase();
     const visualType = (component.visualType || '').toLowerCase();
     
-    console.log('Chart Type Detection:', {
+    console.log('Chart Type Detection fallback:', {
       componentName,
       componentType,
       visualType,
       component
     });
 
-    // Direct chart type mapping
-    if (componentName.includes('bar') || componentType.includes('bar') || visualType.includes('bar')) return 'bar';
+    // Chart type detection from names
     if (componentName.includes('line') || componentType.includes('line') || visualType.includes('line')) return 'line';
     if (componentName.includes('area') || componentType.includes('area') || visualType.includes('area')) return 'area';
     if (componentName.includes('pie') || componentType.includes('pie') || visualType.includes('pie')) return 'pie';
@@ -149,6 +162,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
     if (componentName.includes('heatmap') || componentType.includes('heatmap') || visualType.includes('heatmap')) return 'heatmap';
     if (componentName.includes('scatter') || componentType.includes('scatter') || visualType.includes('scatter')) return 'scatter';
     if (componentName.includes('funnel') || componentType.includes('funnel') || visualType.includes('funnel')) return 'funnel';
+    if (componentName.includes('bar') || componentType.includes('bar') || visualType.includes('bar')) return 'bar';
     
     // Default fallback
     return 'bar';
@@ -157,11 +171,11 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
   const renderChart = () => {
     const chartType = getChartType();
     
-    console.log('Rendering Chart Type:', chartType);
+    console.log('Final Chart Type for Rendering:', chartType);
 
     const chartProps = {
       data: mockData.chartData,
-      margin: { top: 20, right: 30, left: 20, bottom: 20 }
+      margin: { top: 10, right: 10, left: 10, bottom: 10 }
     };
 
     const commonChartStyles = {
@@ -172,12 +186,12 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       },
       xAxis: { 
         stroke: currentTheme.chartAxes,
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: 500
       },
       yAxis: { 
         stroke: currentTheme.chartAxes,
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: 500
       }
     };
@@ -185,13 +199,13 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
     switch (chartType) {
       case 'bar':
         return (
-          <div className="h-full p-2">
-            <div className="mb-3">
-              <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
+          <div className="h-full p-3">
+            <div className="mb-2">
+              <h3 className="text-sm font-semibold" style={{ color: currentTheme.textPrimary }}>
                 {component.name || component.label || 'Bar Chart'}
               </h3>
             </div>
-            <div className="h-64">
+            <div style={{ height: 'calc(100% - 40px)', minHeight: '200px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart {...chartProps}>
                   <CartesianGrid {...commonChartStyles.cartesianGrid} />
@@ -213,13 +227,13 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       
       case 'line':
         return (
-          <div className="h-full p-2">
-            <div className="mb-3">
-              <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
+          <div className="h-full p-3">
+            <div className="mb-2">
+              <h3 className="text-sm font-semibold" style={{ color: currentTheme.textPrimary }}>
                 {component.name || component.label || 'Line Chart'}
               </h3>
             </div>
-            <div className="h-64">
+            <div style={{ height: 'calc(100% - 40px)', minHeight: '200px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart {...chartProps}>
                   <CartesianGrid {...commonChartStyles.cartesianGrid} />
@@ -244,13 +258,13 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       
       case 'area':
         return (
-          <div className="h-full p-2">
-            <div className="mb-3">
-              <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
+          <div className="h-full p-3">
+            <div className="mb-2">
+              <h3 className="text-sm font-semibold" style={{ color: currentTheme.textPrimary }}>
                 {component.name || component.label || 'Area Chart'}
               </h3>
             </div>
-            <div className="h-64">
+            <div style={{ height: 'calc(100% - 40px)', minHeight: '200px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart {...chartProps}>
                   <CartesianGrid {...commonChartStyles.cartesianGrid} />
@@ -274,7 +288,6 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
         );
 
       case 'pie':
-      case 'donut':
         const pieData = mockData.chartData.map((item: any, index: number) => ({
           name: item.month,
           value: item.value,
@@ -282,13 +295,13 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
         }));
         
         return (
-          <div className="h-full p-2">
-            <div className="mb-3">
-              <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
-                {component.name || component.label || (chartType === 'donut' ? 'Donut Chart' : 'Pie Chart')}
+          <div className="h-full p-3">
+            <div className="mb-2">
+              <h3 className="text-sm font-semibold" style={{ color: currentTheme.textPrimary }}>
+                {component.name || component.label || 'Pie Chart'}
               </h3>
             </div>
-            <div className="h-64">
+            <div style={{ height: 'calc(100% - 40px)', minHeight: '200px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Tooltip content={<CustomTooltip />} />
@@ -298,8 +311,8 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    outerRadius={60}
-                    innerRadius={chartType === 'donut' ? 30 : 0}
+                    outerRadius={Math.min(80, 60)}
+                    innerRadius={0}
                     fill="#8884d8"
                     dataKey="value"
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
@@ -314,15 +327,55 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
           </div>
         );
 
+      case 'donut':
+        const donutData = mockData.chartData.map((item: any, index: number) => ({
+          name: item.month,
+          value: item.value,
+          fill: currentTheme.chartColors[index % currentTheme.chartColors.length]
+        }));
+        
+        return (
+          <div className="h-full p-3">
+            <div className="mb-2">
+              <h3 className="text-sm font-semibold" style={{ color: currentTheme.textPrimary }}>
+                {component.name || component.label || 'Donut Chart'}
+              </h3>
+            </div>
+            <div style={{ height: 'calc(100% - 40px)', minHeight: '200px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  <Pie
+                    data={donutData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={Math.min(80, 60)}
+                    innerRadius={30}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {donutData.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+
       case 'heatmap':
         return (
-          <div className="h-full p-2">
-            <div className="mb-3">
-              <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
+          <div className="h-full p-3">
+            <div className="mb-2">
+              <h3 className="text-sm font-semibold" style={{ color: currentTheme.textPrimary }}>
                 Heatmap Visualization
               </h3>
             </div>
-            <div className="flex flex-col items-center justify-center flex-1">
+            <div className="flex flex-col items-center justify-center" style={{ height: 'calc(100% - 40px)' }}>
               <div className="grid grid-cols-8 gap-1 mb-4">
                 {Array.from({ length: 56 }, (_, i) => (
                   <div
@@ -338,7 +391,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
                   </div>
                 ))}
               </div>
-              <div className="text-sm" style={{ color: currentTheme.textSecondary }}>
+              <div className="text-xs" style={{ color: currentTheme.textSecondary }}>
                 Interactive heatmap showing data intensity patterns
               </div>
             </div>
@@ -347,14 +400,14 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
 
       case 'scatter':
         return (
-          <div className="h-full p-2">
-            <div className="mb-3">
-              <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
+          <div className="h-full p-3">
+            <div className="mb-2">
+              <h3 className="text-sm font-semibold" style={{ color: currentTheme.textPrimary }}>
                 Scatter Plot Analysis
               </h3>
             </div>
-            <div className="flex items-center justify-center flex-1">
-              <div className="w-full h-48 rounded flex items-center justify-center relative" style={{ backgroundColor: currentTheme.chartBackground }}>
+            <div className="flex items-center justify-center" style={{ height: 'calc(100% - 40px)' }}>
+              <div className="w-full h-full rounded flex items-center justify-center relative" style={{ backgroundColor: currentTheme.chartBackground }}>
                 {Array.from({ length: 15 }, (_, i) => (
                   <div
                     key={i}
@@ -371,26 +424,23 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
                 ))}
               </div>
             </div>
-            <div className="text-sm mt-2 text-center" style={{ color: currentTheme.textSecondary }}>
-              Data point correlation visualization
-            </div>
           </div>
         );
 
       case 'funnel':
         return (
-          <div className="h-full p-2">
-            <div className="mb-3">
-              <h3 className="text-lg font-semibold" style={{ color: currentTheme.textPrimary }}>
+          <div className="h-full p-3">
+            <div className="mb-2">
+              <h3 className="text-sm font-semibold" style={{ color: currentTheme.textPrimary }}>
                 Funnel Analysis
               </h3>
             </div>
-            <div className="flex flex-col items-center justify-center flex-1">
-              <div className="space-y-3 w-full max-w-md">
+            <div className="flex flex-col items-center justify-center" style={{ height: 'calc(100% - 40px)' }}>
+              <div className="space-y-2 w-full max-w-md">
                 {['100% - Initial Stage', '85% - Qualified Leads', '65% - Proposals', '40% - Negotiations', '25% - Closed Deals'].map((label, index) => (
                   <div key={index} className="flex items-center justify-center">
                     <div
-                      className="h-8 rounded flex items-center justify-center text-white text-xs font-medium"
+                      className="h-6 rounded flex items-center justify-center text-white text-xs font-medium"
                       style={{
                         width: `${100 - index * 15}%`,
                         backgroundColor: currentTheme.chartColors[index % currentTheme.chartColors.length],
@@ -402,7 +452,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
                   </div>
                 ))}
               </div>
-              <div className="text-sm mt-4" style={{ color: currentTheme.textSecondary }}>
+              <div className="text-xs mt-2" style={{ color: currentTheme.textSecondary }}>
                 Conversion process visualization
               </div>
             </div>
@@ -411,7 +461,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       
       default:
         return (
-          <div className="flex items-center justify-center h-full text-center p-2" style={{ color: currentTheme.textMuted }}>
+          <div className="flex items-center justify-center h-full text-center p-4" style={{ color: currentTheme.textMuted }}>
             <div>
               <div className="text-lg font-medium mb-2">Chart Preview</div>
               <div className="text-sm">Type: {chartType || 'Unknown'}</div>
@@ -422,8 +472,11 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
     }
   };
 
-  // Improved detection logic - check for specific chart types first
+  // Improved detection logic - check for specific chart types
   const isChart = () => {
+    // Direct type check first
+    if (component.type === 'chart') return true;
+    
     const componentName = (component.name || component.label || '').toLowerCase();
     const componentType = (component.type || '').toLowerCase();
     const visualType = (component.visualType || '').toLowerCase();
@@ -436,7 +489,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
       componentName.includes(type) || 
       componentType.includes(type) || 
       visualType.includes(type)
-    ) || componentType === 'chart' || componentName.includes('chart');
+    ) || componentName.includes('chart');
   };
 
   const isTable = () => {
@@ -457,6 +510,7 @@ const ComponentRenderer = ({ component, visual, themeColors, mockData, config }:
     shouldRenderAsTable,
     componentName: component.name || component.label,
     componentType: component.type,
+    chartType: component.chartType,
     visualType: component.visualType
   });
 
